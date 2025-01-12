@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=300, initial-scale=1.0"/> 
-  <!-- Nota: La viewport è impostata in modo da mantenere la larghezza fissa per il gioco -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ski Track Simulator - Replay Feature</title>
   <style>
     /* ==============================
@@ -214,8 +213,6 @@
       line-height: 1;
     }
   </style>
-  <!-- Includiamo FileSaver.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
@@ -404,11 +401,18 @@
       chronoOverlay.classList.add('hidden');
     });
 
-    // Impostiamo le dimensioni fisse
+    // Poiché il campo di gioco ha dimensioni fisse, non serve più ascoltare il ridimensionamento della finestra.
+    // Tuttavia, la funzione resizeCanvas() viene comunque utilizzata per impostare le variabili in base alle dimensioni fisse.
+
     function resizeCanvas() {
+      // Impostiamo le dimensioni fisse secondo il CSS del .container
       canvas.width = 300;
       canvas.height = 520;
+      
+      // Impostiamo il punto di partenza (in questo esempio centrato in orizzontale e a 20px dall'alto)
       startPoint = { x: canvas.width / 2, y: 20 };
+      
+      // Impostiamo l'area di arrivo (il traguardo) in basso
       const finishLineX1 = canvas.width / 2 - 20;
       const finishLineY1 = canvas.height - 30;
       finishRect = {
@@ -444,7 +448,7 @@
 
     function drawFinishArea() {
       const { x, y, width, height } = finishRect;
-      const squareSize = width / 8;
+      const squareSize = width / 8;  // 8 quadratini orizzontali
       const rowCount = Math.floor(height / (width / 8));
       for (let row = 0; row < rowCount; row++) {
           for (let col = 0; col < 8; col++) {
@@ -459,18 +463,18 @@
         const { x, y, color, line } = gate;
         ctx.fillStyle = color;
         ctx.beginPath();
-        if(color === 'red') {
-          ctx.moveTo(x - 5, y - 5);
-          ctx.lineTo(x + 5, y);
-          ctx.lineTo(x - 5, y + 5);
+        if(color==='red') {
+          ctx.moveTo(x-5, y-5);
+          ctx.lineTo(x+5, y);
+          ctx.lineTo(x-5, y+5);
         } else {
-          ctx.moveTo(x + 5, y - 5);
-          ctx.lineTo(x - 5, y);
-          ctx.lineTo(x + 5, y + 5);
+          ctx.moveTo(x+5, y-5);
+          ctx.lineTo(x-5, y);
+          ctx.lineTo(x+5, y+5);
         }
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = 'transparent';
+        ctx.strokeStyle='transparent';
         ctx.beginPath();
         ctx.moveTo(line.x1, line.y1);
         ctx.lineTo(line.x2, line.y2);
@@ -479,8 +483,8 @@
     }
 
     function generateGates() {
-      const gateCount = Math.floor(Math.random() * 5) + 6;
-      const startWithRedRight = Math.random() < 0.5;
+      const gateCount = Math.floor(Math.random() * 5) + 6; // Da 6 a 10 porte
+      const startWithRedRight = Math.random() < 0.5; // Randomizza la prima porta
       let isRed = startWithRedRight;
 
       const newGates = [];
@@ -503,35 +507,35 @@
     }
 
     function setModeLabel(gateCount){
-      if(gateCount === 6 || gateCount === 7) {
-        modeLabel.textContent = '💾SuperG';
-      } else if(gateCount === 8) {
-        modeLabel.textContent = '💾Gigante';
-      } else if(gateCount === 9 || gateCount === 10) {
-        modeLabel.textContent = '💾Speciale';
+      if(gateCount===6||gateCount===7) {
+        modeLabel.textContent='💾SuperG';
+      } else if(gateCount===8) {
+        modeLabel.textContent='💾Gigante';
+      } else if(gateCount===9||gateCount===10) {
+        modeLabel.textContent='💾Speciale';
       } else {
-        modeLabel.textContent = '';
+        modeLabel.textContent='';
       }
     }
 
-    function resetTrack(track = null, resetLeaderboards = false) {
-      drawing = false;
-      points = [];
+    function resetTrack(track=null, resetLeaderboards=false){
+      drawing=false;
+      points=[];
       intersectedGates.clear();
-      finalTimeOutput.textContent = "Final Time: 1'00\"000'''";
-      statusOutput.textContent = '';
+      finalTimeOutput.textContent="Final Time: 1'00\"000'''";
+      statusOutput.textContent='';
       if(resetLeaderboards){
-        bestTimes = [];
+        bestTimes=[];
         updateLeaderboard();
       }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
       drawTrack(track);
     }
 
-    // Gestione disegno con mouse
+    // Gestione disegno
     function isNearStartPoint(x, y) {
-      const dist = Math.sqrt((x - startPoint.x) ** 2 + (y - startPoint.y) ** 2);
-      return (dist <= 20);
+      const dist=Math.sqrt((x-startPoint.x)**2 + (y-startPoint.y)**2);
+      return (dist<=20);
     }
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -539,8 +543,8 @@
 
     function handleMouseDown(e){
       const { x, y } = getMouseCoords(e);
-      if(!isNearStartPoint(x, y)){
-        statusOutput.textContent = 'False start! Try again!';
+      if(!isNearStartPoint(x,y)){
+        statusOutput.textContent='False start! Try again!';
         return;
       }
       drawing = true;
@@ -548,15 +552,15 @@
       startTime = performance.now();
       statusOutput.textContent = '';
       ctx.beginPath();
-      points.push({ x, y, t: 0 });
+      points.push({ x, y, t:0 });
       ctx.moveTo(x, y);
     }
     function handleMouseMove(e){
       if(!drawing) return;
       const { x, y } = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      points.push({ x, y, t: now });
-      ctx.lineTo(x, y);
+      const now = performance.now()-startTime;
+      points.push({ x, y, t:now });
+      ctx.lineTo(x,y);
       ctx.strokeStyle = 'grey';
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -564,50 +568,50 @@
     }
     function handleMouseUp(e){
       if(!drawing)return;
-      drawing = false;
+      drawing=false;
     }
 
-    // Supporto touch
+    // Supporto per Touch
     canvas.addEventListener('touchstart', handleTouchStart);
     canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', handleTouchEnd);
 
     function handleTouchStart(e){
       e.preventDefault();
-      const { x, y } = getMouseCoords(e);
-      if(!isNearStartPoint(x, y)){
-        statusOutput.textContent = 'You must start from the start point!';
+      const { x,y } = getMouseCoords(e);
+      if(!isNearStartPoint(x,y)){
+        statusOutput.textContent='You must start from the start point!';
         return;
       }
-      drawing = true;
-      points = [];
-      startTime = performance.now();
-      statusOutput.textContent = '';
+      drawing=true;
+      points=[];
+      startTime=performance.now();
+      statusOutput.textContent='';
       ctx.beginPath();
-      points.push({ x, y, t: 0 });
-      ctx.moveTo(x, y);
+      points.push({ x,y,t:0 });
+      ctx.moveTo(x,y);
     }
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing)return;
-      const { x, y } = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      points.push({ x, y, t: now });
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = 'grey';
-      ctx.lineWidth = 1.5;
+      const { x,y } = getMouseCoords(e);
+      const now = performance.now()-startTime;
+      points.push({ x,y,t:now });
+      ctx.lineTo(x,y);
+      ctx.strokeStyle='grey';
+      ctx.lineWidth=1.5;
       ctx.stroke();
       checkIntersections();
     }
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing)return;
-      drawing = false;
+      drawing=false;
     }
 
     function checkIntersections(){
       for(let i = 1; i < points.length; i++){
-        const p1 = points[i - 1], p2 = points[i];
+        const p1 = points[i-1], p2 = points[i];
         for(const [index, gate] of gates.entries()){
           if(linesIntersect(p1.x, p1.y, p2.x, p2.y,
                             gate.line.x1, gate.line.y1,
@@ -619,8 +623,8 @@
           if(intersectedGates.size === gates.length){
             finishRun();
           } else {
-            statusOutput.textContent = 'You missed a gate!';
-            drawing = false;
+            statusOutput.textContent='You missed a gate!';
+            drawing=false;
           }
           return;
         }
@@ -633,11 +637,11 @@
          (p1.x > rect.x + rect.width && p2.x > rect.x + rect.width)) return false;
       return true;
     }
-    function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4){
-      const det = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3);
-      if(det === 0) return false;
-      const lambda = ((y4 - y3) * (x4 - x1) + (x3 - x4) * (y4 - y1)) / det;
-      const gamma = ((y1 - y2) * (x4 - x1) + (x2 - x1) * (y4 - y1)) / det;
+    function linesIntersect(x1,y1,x2,y2,x3,y3,x4,y4){
+      const det = (x2-x1)*(y4-y3) - (y2-y1)*(x4-x3);
+      if(det===0)return false;
+      const lambda = ((y4-y3)*(x4-x1)+(x3-x4)*(y4-y1))/det;
+      const gamma  = ((y1-y2)*(x4-x1)+(x2-x1)*(y4-y1))/det;
       return (0 < lambda && lambda < 1 && 0 < gamma && gamma < 1);
     }
 
@@ -647,9 +651,9 @@
       const elapsedTime = endTime - startTime;
       let totalLength = 0;
       for(let i = 1; i < points.length; i++){
-        const dx = points[i].x - points[i - 1].x;
-        const dy = points[i].y - points[i - 1].y;
-        totalLength += Math.sqrt(dx * dx + dy * dy);
+        const dx = points[i].x - points[i-1].x;
+        const dy = points[i].y - points[i-1].y;
+        totalLength += Math.sqrt(dx*dx + dy*dy);
       }
       const finalTimeSeconds = calculateFinalTime(elapsedTime, totalLength);
       finalTimeOutput.textContent = `Final Time: ${formatTime(finalTimeSeconds)}`;
@@ -658,12 +662,12 @@
     }
 
     function calculateFinalTime(actualTimeMs, pathLength){
-      const timeInSeconds = actualTimeMs / 1000;
+      const timeInSeconds = actualTimeMs/1000;
       const penalty = PENALTY_WEIGHT * (pathLength / PATH_LENGTH_SCALING);
       return 60 + timeInSeconds + penalty;
     }
     function formatTime(seconds){
-      const minutes = Math.floor(seconds / 60);
+      const minutes = Math.floor(seconds/60);
       const remaining = (seconds % 60).toFixed(3);
       return `${minutes}'${remaining.replace('.', '"')}'''`;
     }
@@ -674,25 +678,27 @@
     replayButton.addEventListener('click', replayTrajectory);
     function replayTrajectory(){
       if(points.length < 2){
-        statusOutput.textContent = "No run to replay!";
+        statusOutput.textContent="No run to replay!";
         return;
       }
+      // Svuotiamo e ridisegniamo il campo
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStartPoint();
       drawFinishArea();
       drawGates(gates);
+
       let i = 0;
       function step(){
-        if(i >= points.length - 1) return;
+        if(i >= points.length-1)return;
         ctx.beginPath();
         ctx.moveTo(points[i].x, points[i].y);
-        ctx.lineTo(points[i + 1].x, points[i + 1].y);
-        ctx.strokeStyle = 'grey';
-        ctx.lineWidth = 1.5;
+        ctx.lineTo(points[i+1].x, points[i+1].y);
+        ctx.strokeStyle='grey';
+        ctx.lineWidth=1.5;
         ctx.stroke();
-        const dt = points[i + 1].t - points[i].t;
+        const dt = points[i+1].t - points[i].t; 
         i++;
-        if(i < points.length - 1){
+        if(i < points.length-1){
           setTimeout(step, dt);
         }
       }
@@ -829,67 +835,71 @@
       }
     });
 
-    // Funzioni per esportare e importare il tracciato, con FileSaver.js per il download
+    // Funzioni per esportare e importare il tracciato
     function exportTrack() {
       if (!currentTrack || currentTrack.length === 0) {
-          alert("Non ci sono piste da esportare!");
-          return;
+        alert("Non ci sono piste da esportare!");
+        return;
       }
       const trackData = {
-          trackName: currentTrackName || "Unnamed Track",
-          gates: currentTrack,
-          bestTimes: bestTimes
+        trackName: currentTrackName || "Unnamed Track",
+        gates: currentTrack,
+        bestTimes: bestTimes
       };
       const trackDataStr = JSON.stringify(trackData);
       const blob = new Blob([trackDataStr], { type: 'application/json' });
-      const filename = `${currentTrackName || "Unnamed Track"}.json`;
-      
-      // Utilizzo di FileSaver.js per forzare il salvataggio del file
-      saveAs(blob, filename);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${trackData.trackName}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     function importTrack(event) {
       const fileInput = event.target || document.getElementById('fileInput');
       const file = fileInput.files[0];
       if (!file) {
-          alert("Seleziona un file da importare!");
-          return;
+        alert("Seleziona un file da importare!");
+        return;
       }
       const defaultTrackName = file.name.replace(/\.json$/, '');
       const confirmImport = confirm(`Vuoi importare la pista "${defaultTrackName}"?`);
       if (!confirmImport) return;
       const reader = new FileReader();
       reader.onload = function(event) {
-          try {
-              const trackData = JSON.parse(event.target.result);
-              if (!trackData.gates || !Array.isArray(trackData.gates)) {
-                  throw new Error("File non valido");
-              }
-              currentTrack = trackData.gates;
-              currentTrackName = defaultTrackName;
-              bestTimes = trackData.bestTimes || [];
-              let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
-              const existingTrackIndex = savedTracks.findIndex(t => t.trackName === currentTrackName);
-              const trackToSave = {
-                  trackName: currentTrackName, 
-                  gates: currentTrack, 
-                  bestTimes: bestTimes
-              };
-              if (existingTrackIndex !== -1) {
-                  savedTracks[existingTrackIndex] = trackToSave;
-              } else {
-                  savedTracks.push(trackToSave);
-              }
-              localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
-              resizeCanvas();
-              drawTrack(currentTrack);
-              updateLeaderboard();
-              populateSavedTracksList();
-              alert(`Pista "${currentTrackName}" importata e salvata con successo!`);
-              fileInput.value = '';
-          } catch (error) {
-              alert("Errore durante l'importazione: " + error.message);
+        try {
+          const trackData = JSON.parse(event.target.result);
+          if (!trackData.gates || !Array.isArray(trackData.gates)) {
+            throw new Error("File non valido");
           }
+          currentTrack = trackData.gates;
+          currentTrackName = defaultTrackName;
+          bestTimes = trackData.bestTimes || [];
+          let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
+          const existingTrackIndex = savedTracks.findIndex(t => t.trackName === currentTrackName);
+          const trackToSave = {
+            trackName: currentTrackName, 
+            gates: currentTrack, 
+            bestTimes: bestTimes
+          };
+          if (existingTrackIndex !== -1) {
+            savedTracks[existingTrackIndex] = trackToSave;
+          } else {
+            savedTracks.push(trackToSave);
+          }
+          localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
+          resizeCanvas();
+          drawTrack(currentTrack);
+          updateLeaderboard();
+          populateSavedTracksList();
+          alert(`Pista "${currentTrackName}" importata e salvata con successo!`);
+          fileInput.value = '';
+        } catch (error) {
+          alert("Errore durante l'importazione: " + error.message);
+        }
       };
       reader.readAsText(file);
     }
