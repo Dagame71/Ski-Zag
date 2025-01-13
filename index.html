@@ -72,7 +72,14 @@
     button:hover {
       opacity: 0.7; 
     }
-
+#modeToggle {
+    font-size: 14px;  
+    padding: 5px 8px;
+    position: absolute; /* Aggiunto per posizionamento preciso */
+    bottom: 5px;       /* Spostato più in basso rispetto al bordo inferiore */
+    left: 225px;        
+    transform: translateX(-50%); /* Centrare esattamente */
+}
     /* Posizioni specifiche per i bottoni icona */
     #sameTrack {
       position: absolute;
@@ -222,9 +229,10 @@
       animation: blink 0.5s ease-in-out 3;
     }
   </style>
-  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
   <style>
     .tutorial-overlay {
       position: fixed;
@@ -321,6 +329,7 @@
 
     <!-- Label “SuperG / Gigante / Speciale” -->
     <p id="modeLabel"></p>
+<button id="modeToggle" title="Toggle Difficulty">⛷️Fast</button>
 
     <!-- Bottoni-icona di controllo in basso/alto -->
     <button id="sameTrack" title="Same Run">🔁</button>
@@ -442,6 +451,19 @@
     const chronoButton         = document.getElementById('chronoButton');
     const chronoOverlay        = document.getElementById('chronoOverlay');
     const closeOverlay         = document.getElementById('closeOverlay');
+const modeToggleButton = document.getElementById('modeToggle');
+
+modeToggleButton.addEventListener('click', () => {
+    hardMode = !hardMode;
+    modeToggleButton.textContent = hardMode ? '🌲Trees' : 'Fast';
+    
+    // Selezione alberi in base alla modalità
+    resetTrack(null, true);  // Genera una nuova pista con o senza alberi
+    if (hardMode) {
+        generateTrees(gates); // Solo in modalità difficile
+    }
+    drawTrack(currentTrack);
+});
 
     const modeLabel            = document.getElementById('modeLabel');
 
@@ -455,6 +477,9 @@
     let currentTrack   = null;
     let currentTrackName = null;
     let gates          = [];
+let hardMode = false; // Modalità predefinita: Fast
+let trees = [];       // Array per contenere gli alberi
+
 
     // Punti: salveremo (x, y, t)
     let points         = [];
@@ -486,21 +511,39 @@
       };
     }
 
-    function drawTrack(track) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStartPoint();
-      drawFinishArea();
+function drawTrack(track) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawStartPoint();
+    drawFinishArea();
 
-      if(!track) {
+    if (!track) {
+        // Genera i gate
         gates = generateGates();
-        currentTrack = gates;
+        
+        // Se siamo in modalità difficile, generiamo anche gli alberi
+        if (hardMode) {
+            trees = [];  // Assicuriamoci di partire da un array vuoto
+            generateTrees(gates);  // Questa funzione popolerà l'array globale "trees"
+        } else {
+            trees = [];
+        }
+        
+        // Creiamo l'oggetto "track" completo contenente gate e alberi
+        currentTrack = { gates: gates, trees: trees };
         currentTrackName = null;
-      } else {
-        gates = track;
-      }
-      drawGates(gates);
-      setModeLabel(gates.length);
+    } else {
+        // Quando viene passato un track, ci aspettiamo che sia un oggetto con le proprietà "gates" e "trees"
+        gates = track.gates;
+        trees = track.trees;
+        currentTrack = track;
     }
+
+    // Disegna i gate e poi gli alberi
+    drawGates(gates);
+    drawTrees();
+    setModeLabel(gates.length);
+}
+
 
     function drawStartPoint() {
       ctx.font = '18px Arial';
@@ -544,7 +587,15 @@
         ctx.stroke();
       }
     }
+function drawTrees() {
+    ctx.font = "20px Arial";  // Dimensione dell'icona albero
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
+    trees.forEach(tree => {
+        ctx.fillText("🌲", tree.x, tree.y);  // Emoji albero
+    });
+}
     function generateGates() {
       const gateCount = Math.floor(Math.random() * 5) + 6; // Da 6 a 10 porte
       const startWithRedRight = Math.random() < 0.5;
@@ -568,6 +619,46 @@
       }
       return newGates;
     }
+function generateTrees(gates) {
+    if (trees.length > 0) return;  // Non rigenera se già presenti
+
+    // Genera un numero casuale di alberi tra 6 e 8
+    const treeCount = Math.floor(Math.random() * 3) + 6;
+    trees = [];
+    const minDistanceFromGate = 50;  
+    const minDistanceBetweenTrees = 30; // Distanza minima tra alberi per farli apparire singoli
+    const minDistanceFromFinish = 50;   // Distanza minima dal traguardo
+    const minDistanceFromStart = 20;    // Distanza minima dal punto di partenza
+    const margin = 15; // Margine per assicurare che gli alberi siano entro il canvas
+
+    while (trees.length < treeCount) {
+        // Genera coordinate casuali tenendo conto del margine
+        const treeX = margin + Math.random() * (canvas.width - 2 * margin);
+        const treeY = margin + Math.random() * (canvas.height - 2 * margin);
+
+        // Controllo che l'albero non sia troppo vicino a nessun gate
+        const tooCloseToGate = gates.some(gate => {
+            const dist = Math.hypot(treeX - gate.x, treeY - gate.y);
+            return dist < minDistanceFromGate;
+        });
+        
+        // Controllo che l'albero non sia troppo vicino ad altri alberi già posizionati
+        const tooCloseToOtherTrees = trees.some(tree => {
+            const dist = Math.hypot(treeX - tree.x, treeY - tree.y);
+            return dist < minDistanceBetweenTrees;
+        });
+        
+        // Controllo che l'albero non sia troppo vicino al traguardo
+        const tooCloseToFinish = isNearFinish(treeX, treeY, finishRect, minDistanceFromFinish);
+
+        // Nuovo controllo: assicurati che l'albero non sia troppo vicino al punto di partenza
+        const tooCloseToStart = Math.hypot(treeX - startPoint.x, treeY - startPoint.y) < minDistanceFromStart;
+
+        if (!tooCloseToGate && !tooCloseToOtherTrees && !tooCloseToFinish && !tooCloseToStart) {
+            trees.push({ x: treeX, y: treeY });
+        }
+    }
+}
 
     function setModeLabel(gateCount){
       if(gateCount===6 || gateCount===7) {
@@ -581,28 +672,40 @@
       }
     }
 
-    function resetTrack(track=null, resetLeaderboards=false){
-      drawing = false;
-      points = [];
-      intersectedGates.clear();
-      finalTimeOutput.textContent = "⏰1'00\"000'''";
-      statusOutput.textContent = '';
-      if(resetLeaderboards){
-        bestTimes = [];
-        updateLeaderboard();
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawTrack(track);
+function resetTrack(track = null, resetLeaderboards = false) {
+    drawing = false;
+    points = [];
+    intersectedGates.clear();
+    trees = [];  // Reset degli alberi
+    finalTimeOutput.textContent = "⏰1'00\"000'''";
+    statusOutput.textContent = '';
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+     if (track) {
+        // Il parametro "track" deve essere un oggetto con proprietà "gates" e "trees"
+        currentTrack = track;
+    } else {
+        // Se non viene passato, forziamo la generazione di una nuova pista
+        currentTrack = null;
     }
+    
+    // Chiamando drawTrack con l’oggetto currentTrack (o null se non esiste) verrà usato il tracciato
+    drawTrack(currentTrack);
+}
+
 
     // Gestione disegno
     function isNearStartPoint(x, y) {
       const dist = Math.sqrt((x - startPoint.x)**2 + (y - startPoint.y)**2);
       return (dist <= 20);
     }
+if (!canvas._eventsAttached) { 
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
+    canvas._eventsAttached = true;  // ✅ Flag per prevenire duplicati
+}
 
     function handleMouseDown(e){
       const { x, y } = getMouseCoords(e);
@@ -672,28 +775,65 @@
       drawing = false;
     }
 
-    function checkIntersections(){
-      for(let i = 1; i < points.length; i++){
-        const p1 = points[i-1], p2 = points[i];
-        for(const [index, gate] of gates.entries()){
-          if(linesIntersect(p1.x, p1.y, p2.x, p2.y,
-                            gate.line.x1, gate.line.y1,
-                            gate.line.x2, gate.line.y2)){
-            intersectedGates.add(index);
-          }
+    function checkIntersections() {
+    for (let i = 1; i < points.length; i++) {
+        const p1 = points[i - 1], p2 = points[i];
+
+        // ✅ Controllo collisione con gli alberi
+        if (hardMode) {  
+            for (const tree of trees) {
+                const dist1 = Math.hypot(p1.x - tree.x, p1.y - tree.y);
+                const dist2 = Math.hypot(p2.x - tree.x, p2.y - tree.y);
+                
+                // Ridotto il range di collisione a 15 pixel per renderlo più evidente
+                if (dist1 < 15 || dist2 < 15) {  
+                    statusOutput.textContent = '💥You hit a tree! Try again!';
+                    drawing = false;
+                    setTimeout(() => resetTrack(currentTrack), 2000); // Reset dopo 2 secondi
+                    return;  // Ferma il controllo
+                }
+            }
         }
-        if(isSegmentInFinishArea(p1, p2, finishRect)){
-          if(intersectedGates.size === gates.length){
-            finishRun();
-          } else {
-            statusOutput.textContent = 'You missed a gate!';
-            drawing = false;
-          }
-          return;
+
+        // Controllo per i cancelli
+        for (const [index, gate] of gates.entries()) {
+            if (linesIntersect(p1.x, p1.y, p2.x, p2.y, gate.line.x1, gate.line.y1, gate.line.x2, gate.line.y2)) {
+                intersectedGates.add(index);
+            }
         }
-      }
+
+        // Controllo se la linea attraversa l'area di arrivo
+        if (isSegmentInFinishArea(p1, p2, finishRect)) {
+            if (intersectedGates.size === gates.length) {
+                finishRun();
+            } else {
+                statusOutput.textContent = 'You missed a gate!';
+                drawing = false;
+            }
+            return;
+        }
     }
-    function isSegmentInFinishArea(p1, p2, rect){
+}
+
+
+ function checkTreeCollision() {
+    if (!trees || trees.length === 0) return false;  // Controllo se ci sono alberi
+
+    for (const point of points) {
+        for (const tree of trees) {
+            const dx = point.x - tree.x;
+            const dy = point.y - tree.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 10) {  
+                drawing = false;
+                statusOutput.textContent = "💥 Collisione con un albero! Manche fallita!";
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function isSegmentInFinishArea(p1, p2, rect){
       if((p1.y < rect.y && p2.y < rect.y) ||
          (p1.y > rect.y + rect.height && p2.y > rect.y + rect.height)) return false;
       if((p1.x < rect.x && p2.x < rect.x) ||
@@ -727,6 +867,16 @@
       const penalty = PENALTY_WEIGHT * (realDistance / PATH_LENGTH_SCALING);
       return 60 + timeInSeconds + penalty;
     }
+function isNearFinish(x, y, rect, minDistance) {
+    // Se il punto (x, y) cade all'interno del rettangolo finishRect
+    // esteso di minDistance in ogni direzione, allora viene considerato troppo vicino.
+    return (
+        x >= rect.x - minDistance &&
+        x <= rect.x + rect.width + minDistance &&
+        y >= rect.y - minDistance &&
+        y <= rect.y + rect.height + minDistance
+    );
+}
     function formatTime(seconds){
       const minutes = Math.floor(seconds/60);
       const remaining = (seconds % 60).toFixed(3);
@@ -738,32 +888,34 @@
     ====================================== */
     replayButton.addEventListener('click', replayTrajectory);
     function replayTrajectory(){
-      if(points.length < 2){
-        statusOutput.textContent = "No run to replay!";
-        return;
-      }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawStartPoint();
-      drawFinishArea();
-      drawGates(gates);
+  if(points.length < 2){
+    statusOutput.textContent = "No run to replay!";
+    return;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawStartPoint();
+  drawFinishArea();
+  drawGates(gates);
+  drawTrees();  // AGGIUNGI QUESTA RIGA
 
-      let i = 0;
-      function step(){
-        if(i >= points.length-1)return;
-        ctx.beginPath();
-        ctx.moveTo(points[i].x, points[i].y);
-        ctx.lineTo(points[i+1].x, points[i+1].y);
-        ctx.strokeStyle = 'grey';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        const dt = points[i+1].t - points[i].t; 
-        i++;
-        if(i < points.length-1){
-          setTimeout(step, dt);
-        }
-      }
-      setTimeout(step, 0);
+  let i = 0;
+  function step(){
+    if(i >= points.length-1)return;
+    ctx.beginPath();
+    ctx.moveTo(points[i].x, points[i].y);
+    ctx.lineTo(points[i+1].x, points[i+1].y);
+    ctx.strokeStyle = 'grey';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    const dt = points[i+1].t - points[i].t; 
+    i++;
+    if(i < points.length-1){
+      setTimeout(step, dt);
     }
+  }
+  setTimeout(step, 0);
+}
+
 
     // Aggiornamento tempi e bestTimes
     function updateTimes(timeInSeconds){
@@ -804,39 +956,51 @@
         localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
       }
     }
-    function saveCurrentTrack(){
-      if(!currentTrack || currentTrack.length === 0){
+ function saveCurrentTrack() {
+    if (!currentTrack || !currentTrack.gates || currentTrack.gates.length === 0) {
         alert("No track to save!");
         return;
-      }
-      const trackName = prompt("Insert a name for this track:");
-      if(!trackName)return;
-      let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
-      const trackData = {
-        trackName, 
-        gates: currentTrack, 
-        bestTimes
-      };
-      savedTracks.push(trackData);
-      localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
-      currentTrackName = trackName;
-      alert(`Track "${trackName}" has been saved!`);
-      populateSavedTracksList();
     }
-    function loadTrackByName(trackName){
-      let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
-      const foundTrack = savedTracks.find(t => t.trackName === trackName);
-      if(!foundTrack){
+    const trackName = prompt("Insert a name for this track:");
+    if (!trackName) return;
+
+    let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
+    const trackData = {
+        trackName, 
+        gates: currentTrack.gates, 
+        trees: currentTrack.trees,  // Salvataggio degli alberi
+        bestTimes
+    };
+    savedTracks.push(trackData);
+    localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
+    currentTrackName = trackName;
+    alert(`Track "${trackName}" has been saved!`);
+    populateSavedTracksList();
+}
+
+function loadTrackByName(trackName) {
+    let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
+    const foundTrack = savedTracks.find(t => t.trackName === trackName);
+    if (!foundTrack) {
         alert(`Track "${trackName}" not found!`);
         return;
-      }
-      currentTrack = foundTrack.gates;
-      currentTrackName = foundTrack.trackName;
-      bestTimes = foundTrack.bestTimes || [];
-      resetTrack(currentTrack, false);
-      updateLeaderboard();
-      statusOutput.textContent = `Loaded track "${trackName}"`;
     }
+    
+    // Crea l'oggetto currentTrack con entrambe le proprietà
+    currentTrack = {
+        gates: foundTrack.gates,
+        trees: foundTrack.trees || []  // Se non ci sono alberi, usa array vuoto
+    };
+    
+    currentTrackName = foundTrack.trackName;
+    bestTimes = foundTrack.bestTimes || [];
+    
+    // Passa l'oggetto completo a resetTrack per ripristinare esattamente la pista
+    resetTrack(currentTrack, false);
+    updateLeaderboard();
+    statusOutput.textContent = `Loaded track "${trackName}"`;
+}
+
     function deleteTrackByName(trackName){
       let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
       const newTracks = savedTracks.filter(t => t.trackName !== trackName);
@@ -1044,6 +1208,7 @@
           }
           localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
           resizeCanvas();
+hardMode = false;  // Modalità predefinita: Fast
           drawTrack(currentTrack);
           updateLeaderboard();
           populateSavedTracksList();
@@ -1068,100 +1233,133 @@
     drawTrack();
     populateSavedTracksList();
   </script>
-  <script type="text/babel">
+ <script type="text/babel">
     function Tutorial() {
-      const [currentSlide, setCurrentSlide] = React.useState(0);
-      const [showTutorial, setShowTutorial] = React.useState(true);
+        const [currentSlide, setCurrentSlide] = React.useState(0);
+        const [showTutorial, setShowTutorial] = React.useState(true);
 
-      const slides = [
-        {
-          title: "Benvenuto in Ski-Zag! ⛷️",
-          content: "Impara a giocare e diventa campione 🏆!"
-        },
-        {
-          title: "Come Iniziare 🎯",
-          content: "Parti dal box in alto🏠e traccia il tuo percorso con il dito. Devi passare correttamente tutte le porte per completare la discesa tagliando il traguardo🏁!"
-        },
-        {
-          title: "Le Porte 🚩",
-          content: "Affronta le porte rosse e blu nell'ordine corretto. Le porte rosse vanno prese da sinistra a destra, quelle blu da destra a sinistra. Velocità e traiettoria più breve concorreranno a definire il tuo tempo finale⏰!"
-        },
-        {
-          title: "Controlli del Gioco 🎮",
-          content: "🔁 Rigioca sulla stessa pista\n⏯️ Rivedi la discesa\n✨ Gioca su una nuova pista\n⏰ Classifica tempi Top 5"
-        },
-        {
-          title: "Salvataggio e Caricamento 💾",
-          content: "Clicca💾in alto a sinistra per salvare la pista. Usa i controlli in basso per scrivere il nome del giocatore e per caricare📥e cancellare🗑️le piste salvate.Puoi esportare una pista per poi condividere il file cliccando📤e importare il file di una pista cliccando 📁."
-        }
-      ];
+        const slides = [
+            { title: "Benvenuto in Ski-Zag! ⛷️", content: "Impara a giocare e diventa campione 🏆!" },
+            { title: "Come Iniziare 🎯", content: "Parti dal box in alto🏠e traccia il tuo percorso con il dito. Devi passare correttamente tutte le porte per completare la discesa tagliando il traguardo🏁!" },
+            { title: "Le Porte 🚩", content: "Affronta le porte rosse e blu nell'ordine corretto. Le porte rosse vanno prese da sinistra a destra, quelle blu da destra a sinistra. Velocità e traiettoria più breve concorreranno a definire il tuo tempo finale⏰!" },
+            { title: "Controlli del Gioco 🎮", content: "🔁 Rigioca sulla stessa pista\n⏯️ Rivedi la discesa\n✨ Gioca su una nuova pista\n⏰ Classifica tempi Top 5" },
+            { title: "Salvataggio e Caricamento 💾", content: "Clicca💾 in alto a sinistra per salvare la pista. Usa i controlli in basso per scrivere il nome del giocatore e per caricare📥 e cancellare🗑️ le piste salvate. Puoi esportare una pista per poi condividere il file cliccando 📤 e importare il file di una pista cliccando 📁." }
+        ];
 
-      if (!showTutorial) return null;
+        // ✅ Funzione aggiunta per chiudere il tutorial e disegnare la pista
+     function handleCloseTutorial() {
+    setShowTutorial(false);
+    if (typeof onClose === 'function') {
+        onClose();  // ✅ Solo se la prop è passata correttamente
+    }
+}
 
-      return (
-        <div className="tutorial-overlay">
-          <div className="tutorial-content">
-            <button 
-              className="close-button"
-              onClick={() => setShowTutorial(false)}
-            >
-              ×
-            </button>
-            
-            <div className="tutorial-slide">
-              <h2>{slides[currentSlide].title}</h2>
-              <p style={{whiteSpace: 'pre-line'}}>{slides[currentSlide].content}</p>
+
+        if (!showTutorial) return null;
+
+        return (
+            <div className="tutorial-overlay">
+                <div className="tutorial-content">
+                    <button 
+                        className="close-button"
+                        onClick={handleCloseTutorial}
+                    >
+                        ×
+                    </button>
+                    
+                    <div className="tutorial-slide">
+                        <h2>{slides[currentSlide].title}</h2>
+                        <p style={{whiteSpace: 'pre-line'}}>{slides[currentSlide].content}</p>
+                    </div>
+
+                    <div className="tutorial-dots">
+                        {slides.map((_, index) => (
+                            <div 
+                                key={index}
+                                className={`dot ${currentSlide === index ? 'active' : ''}`}
+                                onClick={() => setCurrentSlide(index)}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="tutorial-nav">
+                        <button 
+                            className="nav-button"
+                            onClick={() => setCurrentSlide(prev => prev - 1)}
+                            disabled={currentSlide === 0}
+                        >
+                            ←
+                        </button>
+
+                        {currentSlide === slides.length - 1 ? (
+                            <button 
+                                className="nav-button"
+                                onClick={handleCloseTutorial}  
+                            >
+                                Gioca!
+                            </button>
+                        ) : (
+                            <button 
+                                className="skip-button"
+                                onClick={handleCloseTutorial}  
+                            >
+                                Salta
+                            </button>
+                        )}
+
+                        <button 
+                            className="nav-button"
+                            onClick={() => setCurrentSlide(prev => prev + 1)}
+                            disabled={currentSlide === slides.length - 1}
+                        >
+                            →
+                        </button>
+                    </div>
+                </div>
             </div>
-
-            <div className="tutorial-dots">
-              {slides.map((_, index) => (
-                <div 
-                  key={index}
-                  className={`dot ${currentSlide === index ? 'active' : ''}`}
-                  onClick={() => setCurrentSlide(index)}
-                />
-              ))}
-            </div>
-
-            <div className="tutorial-nav">
-              <button 
-                className="nav-button"
-                onClick={() => setCurrentSlide(prev => prev - 1)}
-                disabled={currentSlide === 0}
-              >
-                ←
-              </button>
-
-              {currentSlide === slides.length - 1 ? (
-                <button 
-                  className="nav-button"
-                  onClick={() => setShowTutorial(false)}
-                >
-                  Gioca!
-                </button>
-              ) : (
-                <button 
-                  className="skip-button"
-                  onClick={() => setShowTutorial(false)}
-                >
-                  Salta
-                </button>
-              )}
-
-              <button 
-                className="nav-button"
-                onClick={() => setCurrentSlide(prev => prev + 1)}
-                disabled={currentSlide === slides.length - 1}
-              >
-                →
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+        );
     }
 
-    ReactDOM.render(<Tutorial />, document.getElementById('tutorial-root'));
-  </script>
+    // Montaggio del componente React
+    ReactDOM.render(
+    <Tutorial onClose={() => { resizeCanvas(); drawTrack(); }} />,
+    document.getElementById('tutorial-root')
+);
+</script>
+
+<script>
+   document.addEventListener('DOMContentLoaded', () => {
+    // ⚠️ NON DISEGNARE IL CANVAS SUBITO
+    populateSavedTracksList();
+});
+
+// ✅ Disegna la pista SOLO dopo la chiusura del tutorial
+function initializeTrackAfterTutorial() {
+    resizeCanvas();
+    drawTrack();
+}
+});
+        
+        // Assicura che i pulsanti funzionino correttamente
+        sameTrackButton.addEventListener('click', () => resetTrack(currentTrack));
+        differentTrackButton.addEventListener('click', () => resetTrack(null, true));
+        replayButton.addEventListener('click', replayTrajectory);
+        loadTrackButton.addEventListener('click', () => {
+            const chosenTrackName = savedTracksSelect.value;
+            if (chosenTrackName) {
+                loadTrackByName(chosenTrackName);
+            } else {
+                alert("Select a track first!");
+            }
+        });
+        deleteTrackButton.addEventListener('click', () => {
+            const chosenTrackName = savedTracksSelect.value;
+            if (chosenTrackName && confirm(`Delete track "${chosenTrackName}"?`)) {
+                deleteTrackByName(chosenTrackName);
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
