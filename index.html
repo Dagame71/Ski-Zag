@@ -679,19 +679,25 @@ function resetTrack(track = null, resetLeaderboards = false) {
     trees = [];  // Reset degli alberi
     finalTimeOutput.textContent = "⏰1'00\"000'''";
     statusOutput.textContent = '';
+    
+    // Se non viene passato un tracciato, vuota bestTimes
+    if (!track) {
+        bestTimes = [];
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-     if (track) {
-        // Il parametro "track" deve essere un oggetto con proprietà "gates" e "trees"
+    if (track) {
+        // Il parametro "track" è un oggetto con proprietà "gates" e "trees"
         currentTrack = track;
     } else {
-        // Se non viene passato, forziamo la generazione di una nuova pista
         currentTrack = null;
     }
     
-    // Chiamando drawTrack con l’oggetto currentTrack (o null se non esiste) verrà usato il tracciato
     drawTrack(currentTrack);
+    
+    // Aggiorna la leaderboard in modo che rifletta bestTimes (vuoto nel caso di una nuova pista)
+    updateLeaderboard();
 }
 
 
@@ -993,13 +999,13 @@ function loadTrackByName(trackName) {
     };
     
     currentTrackName = foundTrack.trackName;
-    bestTimes = foundTrack.bestTimes || [];
+    bestTimes = foundTrack.bestTimes || []; // Carica bestTimes solo per questa pista
     
-    // Passa l'oggetto completo a resetTrack per ripristinare esattamente la pista
     resetTrack(currentTrack, false);
     updateLeaderboard();
     statusOutput.textContent = `Loaded track "${trackName}"`;
 }
+
 
     function deleteTrackByName(trackName){
       let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
