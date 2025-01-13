@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Impostazione della viewport per mantenere la larghezza fissa del gioco -->
+  <meta name="viewport" content="width=300, initial-scale=1.0"/>
   <title>Ski Track Simulator - Replay Feature</title>
   <style>
     /* ==============================
@@ -79,11 +80,10 @@
       left: 10px;
     }
     #replayButton {
-      /* Bottone Replay: icona ⏯️
-         Posizionato accanto a Same Run */
+      /* Bottone Replay: icona ⏯️, posizionato accanto a Same Run */
       position: absolute;
       bottom: 10px;
-      left: 50px; /* leggermente a destra di sameTrack */
+      left: 50px;
     }
     #differentTrack {
       position: absolute;
@@ -139,7 +139,7 @@
       background-color: #c82333;
     }
 
-    /* Sfruttiamo più spazio per la leaderboard */
+    /* Leaderboard */
     .leaderboard-container {
       display: block; 
       width: 100%;
@@ -197,14 +197,14 @@
     }
 
     #playerNameInput {
-      width: 22%; /* Ridotto del 30% circa */
+      width: 22%;
       min-width: 80px;
       padding: 2px;
     }
 
     #savedTracksSelect {
       padding: 2px; 
-      width: 94px; /* Aumentato del 30% circa */
+      width: 94px;
     }
 
     #loadTrackButton, 
@@ -301,9 +301,12 @@
     }
   </style>
 </head>
-
 <body>
+  <!-- Step 1: Elemento di calibrazione nascosto -->
+  <div id="calibrationTest" style="width:1in; position:absolute; left:-1000px; top:-1000px;"></div>
+  
   <div id="tutorial-root"></div>
+  
   <div class="container">
     <canvas id="canvas"></canvas>
 
@@ -351,10 +354,69 @@
     </div>
   </div>
 
+  <!-- Step 2: Script di calibrazione - deve essere eseguito al load, prima dell'inizializzazione del gioco -->
+  <script>
+    window.addEventListener('load', function() {
+      var calibrationElem = document.getElementById('calibrationTest');
+      var measuredPx = calibrationElem.offsetWidth;  // Dovrebbe essere circa 96px se lo standard viene rispettato
+      var conversionFactor = measuredPx / 96; 
+      // Salva il fattore in una variabile globale, in modo che possa essere utilizzato in tutto il gioco
+      window.conversionFactor = conversionFactor;
+      console.log("Conversion Factor:", conversionFactor);
+    });
+  </script>
+
+  <!-- Step 3: Integrazione della logica di calibrazione nei calcoli del gioco -->
+  <script>
+    // Funzione per calcolare la distanza totale in pixel dalla lista dei punti
+    function calculateDistance(points) {
+      let total = 0;
+      for (let i = 1; i < points.length; i++) {
+        let dx = points[i].x - points[i - 1].x;
+        let dy = points[i].y - points[i - 1].y;
+        total += Math.sqrt(dx * dx + dy * dy);
+      }
+      return total;
+    }
+
+    // Funzione che restituisce la distanza "reale" applicando il fattore di conversione
+    function calculateRealDistance(points) {
+      var distanceInPixels = calculateDistance(points);
+      var factor = window.conversionFactor || 1;
+      return distanceInPixels * factor;
+    }
+
+    // Esempio: modifica della funzione finishRun() in modo da usare la distanza "reale"
+    function finishRun(){
+      drawing = false;
+      const endTime = performance.now();
+      const elapsedTime = endTime - startTime;
+
+      // Calcola la distanza in pixel
+      let totalLength = calculateDistance(points);
+      // Applica il fattore di conversione per ottenere la distanza "reale"
+      const realLength = totalLength * (window.conversionFactor || 1);
+      
+      // Utilizza la distanza "reale" per il calcolo del tempo finale
+      const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
+      finalTimeOutput.textContent = `Final Time: ${formatTime(finalTimeSeconds)}`;
+      statusOutput.textContent = 'Finished!';
+      updateTimes(finalTimeSeconds);
+    }
+
+    // La funzione calculateFinalTime ora usa la distanza "reale"
+    function calculateFinalTime(actualTimeMs, realDistance){
+      const timeInSeconds = actualTimeMs / 1000;
+      const penalty = PENALTY_WEIGHT * (realDistance / PATH_LENGTH_SCALING);
+      return 60 + timeInSeconds + penalty;
+    }
+  </script>
+
+  <!-- Il resto del tuo codice JavaScript rimane invariato -->
   <script>
     /* ==================================
        JAVASCRIPT con funzione Replay
-       ================================== */
+    ================================== */
 
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
@@ -401,18 +463,10 @@
       chronoOverlay.classList.add('hidden');
     });
 
-    // Poiché il campo di gioco ha dimensioni fisse, non serve più ascoltare il ridimensionamento della finestra.
-    // Tuttavia, la funzione resizeCanvas() viene comunque utilizzata per impostare le variabili in base alle dimensioni fisse.
-
     function resizeCanvas() {
-      // Impostiamo le dimensioni fisse secondo il CSS del .container
       canvas.width = 300;
       canvas.height = 520;
-      
-      // Impostiamo il punto di partenza (in questo esempio centrato in orizzontale e a 20px dall'alto)
       startPoint = { x: canvas.width / 2, y: 20 };
-      
-      // Impostiamo l'area di arrivo (il traguardo) in basso
       const finishLineX1 = canvas.width / 2 - 20;
       const finishLineY1 = canvas.height - 30;
       finishRect = {
@@ -448,7 +502,7 @@
 
     function drawFinishArea() {
       const { x, y, width, height } = finishRect;
-      const squareSize = width / 8;  // 8 quadratini orizzontali
+      const squareSize = width / 8;
       const rowCount = Math.floor(height / (width / 8));
       for (let row = 0; row < rowCount; row++) {
           for (let col = 0; col < 8; col++) {
@@ -484,7 +538,7 @@
 
     function generateGates() {
       const gateCount = Math.floor(Math.random() * 5) + 6; // Da 6 a 10 porte
-      const startWithRedRight = Math.random() < 0.5; // Randomizza la prima porta
+      const startWithRedRight = Math.random() < 0.5;
       let isRed = startWithRedRight;
 
       const newGates = [];
@@ -499,7 +553,7 @@
           x, 
           y, 
           color,
-          line: { x1: x, y1: y, x2: x + direction * 100, y2: y }
+          line: { x1: x, y1: y, x2: x + direction * 200, y2: y }
         });
         isRed = !isRed;
       }
@@ -507,35 +561,35 @@
     }
 
     function setModeLabel(gateCount){
-      if(gateCount===6||gateCount===7) {
-        modeLabel.textContent='💾SuperG';
+      if(gateCount===6 || gateCount===7) {
+        modeLabel.textContent = '💾SuperG';
       } else if(gateCount===8) {
-        modeLabel.textContent='💾Gigante';
-      } else if(gateCount===9||gateCount===10) {
-        modeLabel.textContent='💾Speciale';
+        modeLabel.textContent = '💾Gigante';
+      } else if(gateCount===9 || gateCount===10) {
+        modeLabel.textContent = '💾Speciale';
       } else {
-        modeLabel.textContent='';
+        modeLabel.textContent = '';
       }
     }
 
     function resetTrack(track=null, resetLeaderboards=false){
-      drawing=false;
-      points=[];
+      drawing = false;
+      points = [];
       intersectedGates.clear();
-      finalTimeOutput.textContent="Final Time: 1'00\"000'''";
-      statusOutput.textContent='';
+      finalTimeOutput.textContent = "Final Time: 1'00\"000'''";
+      statusOutput.textContent = '';
       if(resetLeaderboards){
-        bestTimes=[];
+        bestTimes = [];
         updateLeaderboard();
       }
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawTrack(track);
     }
 
     // Gestione disegno
     function isNearStartPoint(x, y) {
-      const dist=Math.sqrt((x-startPoint.x)**2 + (y-startPoint.y)**2);
-      return (dist<=20);
+      const dist = Math.sqrt((x - startPoint.x)**2 + (y - startPoint.y)**2);
+      return (dist <= 20);
     }
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -544,7 +598,7 @@
     function handleMouseDown(e){
       const { x, y } = getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent='False start! Try again!';
+        statusOutput.textContent = 'False start! Try again!';
         return;
       }
       drawing = true;
@@ -552,15 +606,15 @@
       startTime = performance.now();
       statusOutput.textContent = '';
       ctx.beginPath();
-      points.push({ x, y, t:0 });
+      points.push({ x, y, t: 0 });
       ctx.moveTo(x, y);
     }
     function handleMouseMove(e){
       if(!drawing) return;
       const { x, y } = getMouseCoords(e);
-      const now = performance.now()-startTime;
-      points.push({ x, y, t:now });
-      ctx.lineTo(x,y);
+      const now = performance.now() - startTime;
+      points.push({ x, y, t: now });
+      ctx.lineTo(x, y);
       ctx.strokeStyle = 'grey';
       ctx.lineWidth = 1.5;
       ctx.stroke();
@@ -568,7 +622,7 @@
     }
     function handleMouseUp(e){
       if(!drawing)return;
-      drawing=false;
+      drawing = false;
     }
 
     // Supporto per Touch
@@ -578,35 +632,35 @@
 
     function handleTouchStart(e){
       e.preventDefault();
-      const { x,y } = getMouseCoords(e);
+      const { x, y } = getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent='You must start from the start point!';
+        statusOutput.textContent = 'You must start from the start point!';
         return;
       }
-      drawing=true;
-      points=[];
-      startTime=performance.now();
-      statusOutput.textContent='';
+      drawing = true;
+      points = [];
+      startTime = performance.now();
+      statusOutput.textContent = '';
       ctx.beginPath();
-      points.push({ x,y,t:0 });
-      ctx.moveTo(x,y);
+      points.push({ x, y, t: 0 });
+      ctx.moveTo(x, y);
     }
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing)return;
-      const { x,y } = getMouseCoords(e);
-      const now = performance.now()-startTime;
-      points.push({ x,y,t:now });
-      ctx.lineTo(x,y);
-      ctx.strokeStyle='grey';
-      ctx.lineWidth=1.5;
+      const { x, y } = getMouseCoords(e);
+      const now = performance.now() - startTime;
+      points.push({ x, y, t: now });
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = 'grey';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       checkIntersections();
     }
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing)return;
-      drawing=false;
+      drawing = false;
     }
 
     function checkIntersections(){
@@ -623,8 +677,8 @@
           if(intersectedGates.size === gates.length){
             finishRun();
           } else {
-            statusOutput.textContent='You missed a gate!';
-            drawing=false;
+            statusOutput.textContent = 'You missed a gate!';
+            drawing = false;
           }
           return;
         }
@@ -637,33 +691,32 @@
          (p1.x > rect.x + rect.width && p2.x > rect.x + rect.width)) return false;
       return true;
     }
-    function linesIntersect(x1,y1,x2,y2,x3,y3,x4,y4){
+    function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4){
       const det = (x2-x1)*(y4-y3) - (y2-y1)*(x4-x3);
       if(det===0)return false;
-      const lambda = ((y4-y3)*(x4-x1)+(x3-x4)*(y4-y1))/det;
-      const gamma  = ((y1-y2)*(x4-x1)+(x2-x1)*(y4-y1))/det;
-      return (0 < lambda && lambda < 1 && 0 < gamma && gamma < 1);
+      const lambda = ((y4-y3)*(x4-x1) + (x3-x4)*(y4-y1)) / det;
+      const gamma  = ((y1-y2)*(x4-x1) + (x2-x1)*(y4-y1)) / det;
+     return (lambda >= 0 && lambda <= 1 && gamma >= 0 && gamma <= 1);
+
     }
 
     function finishRun(){
       drawing = false;
       const endTime = performance.now();
       const elapsedTime = endTime - startTime;
-      let totalLength = 0;
-      for(let i = 1; i < points.length; i++){
-        const dx = points[i].x - points[i-1].x;
-        const dy = points[i].y - points[i-1].y;
-        totalLength += Math.sqrt(dx*dx + dy*dy);
-      }
-      const finalTimeSeconds = calculateFinalTime(elapsedTime, totalLength);
+      // Calcola la distanza totale in pixel
+      let totalLength = calculateDistance(points);
+      // Applica il fattore di conversione (calcolato automaticamente) per ottenere la distanza "reale"
+      const realLength = totalLength * (window.conversionFactor || 1);
+      const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
       finalTimeOutput.textContent = `Final Time: ${formatTime(finalTimeSeconds)}`;
       statusOutput.textContent = 'Finished!';
       updateTimes(finalTimeSeconds);
     }
 
-    function calculateFinalTime(actualTimeMs, pathLength){
-      const timeInSeconds = actualTimeMs/1000;
-      const penalty = PENALTY_WEIGHT * (pathLength / PATH_LENGTH_SCALING);
+    function calculateFinalTime(actualTimeMs, realDistance){
+      const timeInSeconds = actualTimeMs / 1000;
+      const penalty = PENALTY_WEIGHT * (realDistance / PATH_LENGTH_SCALING);
       return 60 + timeInSeconds + penalty;
     }
     function formatTime(seconds){
@@ -674,14 +727,13 @@
 
     /* ======================================
        REPLAY a velocità reale (bottone ⏯️)
-       ====================================== */
+    ====================================== */
     replayButton.addEventListener('click', replayTrajectory);
     function replayTrajectory(){
       if(points.length < 2){
-        statusOutput.textContent="No run to replay!";
+        statusOutput.textContent = "No run to replay!";
         return;
       }
-      // Svuotiamo e ridisegniamo il campo
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawStartPoint();
       drawFinishArea();
@@ -693,8 +745,8 @@
         ctx.beginPath();
         ctx.moveTo(points[i].x, points[i].y);
         ctx.lineTo(points[i+1].x, points[i+1].y);
-        ctx.strokeStyle='grey';
-        ctx.lineWidth=1.5;
+        ctx.strokeStyle = 'grey';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
         const dt = points[i+1].t - points[i].t; 
         i++;
