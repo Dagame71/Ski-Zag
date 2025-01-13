@@ -212,6 +212,15 @@
       font-size: 18px;  
       line-height: 1;
     }
+
+    /* Animazione per lampeggiare il record */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .record {
+      animation: blink 0.5s ease-in-out 3;
+    }
   </style>
   <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
@@ -697,7 +706,6 @@
       const lambda = ((y4-y3)*(x4-x1) + (x3-x4)*(y4-y1)) / det;
       const gamma  = ((y1-y2)*(x4-x1) + (x2-x1)*(y4-y1)) / det;
      return (lambda >= 0 && lambda <= 1 && gamma >= 0 && gamma <= 1);
-
     }
 
     function finishRun(){
@@ -765,6 +773,13 @@
       bestTimes.sort((a, b) => a.time - b.time);
       if(bestTimes.length > 5){
         bestTimes.length = 5;
+      }
+      // Se il tempo ottenuto è il record (ovvero il primo dopo l'ordinamento) aggiungo la classe per far lampeggiare l'elemento
+      if(bestTimes[0].time === timeInSeconds){
+        finalTimeOutput.classList.add('record');
+        setTimeout(() => {
+          finalTimeOutput.classList.remove('record');
+        }, 2000);
       }
       updateLeaderboard();
       autoSaveTrackTimes();
