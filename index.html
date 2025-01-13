@@ -73,7 +73,7 @@
       opacity: 0.7; 
     }
 #modeToggle {
-    font-size: 14px;  
+    font-size: 18px;  
     padding: 5px 8px;
     position: absolute; /* Aggiunto per posizionamento preciso */
     bottom: 5px;       /* Spostato più in basso rispetto al bordo inferiore */
@@ -329,7 +329,7 @@
 
     <!-- Label “SuperG / Gigante / Speciale” -->
     <p id="modeLabel"></p>
-<button id="modeToggle" title="Toggle Difficulty">⛷️Fast</button>
+<button id="modeToggle" title="Toggle Difficulty">🌲</button>
 
     <!-- Bottoni-icona di controllo in basso/alto -->
     <button id="sameTrack" title="Same Run">🔁</button>
@@ -455,7 +455,7 @@ const modeToggleButton = document.getElementById('modeToggle');
 
 modeToggleButton.addEventListener('click', () => {
     hardMode = !hardMode;
-    modeToggleButton.textContent = hardMode ? '🌲Trees' : 'Fast';
+    modeToggleButton.textContent = hardMode ? '⛷️' : '🌲';
     
     // Selezione alberi in base alla modalità
     resetTrack(null, true);  // Genera una nuova pista con o senza alberi
@@ -588,7 +588,7 @@ function drawTrack(track) {
       }
     }
 function drawTrees() {
-    ctx.font = "20px Arial";  // Dimensione dell'icona albero
+    ctx.font = "16px Arial";  // Dimensione dell'icona albero
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -785,8 +785,8 @@ if (!canvas._eventsAttached) {
                 const dist1 = Math.hypot(p1.x - tree.x, p1.y - tree.y);
                 const dist2 = Math.hypot(p2.x - tree.x, p2.y - tree.y);
                 
-                // Ridotto il range di collisione a 15 pixel per renderlo più evidente
-                if (dist1 < 15 || dist2 < 15) {  
+                // Ridotto il range di collisione a 10 pixel per renderlo più evidente
+                if (dist1 < 8 || dist2 < 8) {  
                     statusOutput.textContent = '💥You hit a tree! Try again!';
                     drawing = false;
                     setTimeout(() => resetTrack(currentTrack), 2000); // Reset dopo 2 secondi
@@ -826,7 +826,7 @@ if (!canvas._eventsAttached) {
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < 10) {  
                 drawing = false;
-                statusOutput.textContent = "💥 Collisione con un albero! Manche fallita!";
+                statusOutput.textContent = "💥You hit a tree! Try again!";
                 return true;
             }
         }
