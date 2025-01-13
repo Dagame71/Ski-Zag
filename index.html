@@ -399,7 +399,7 @@
       
       // Utilizza la distanza "reale" per il calcolo del tempo finale
       const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
-      finalTimeOutput.textContent = `Final Time: ${formatTime(finalTimeSeconds)}`;
+      finalTimeOutput.textContent = `⏰ ${formatTime(finalTimeSeconds)}`;
       statusOutput.textContent = 'Finished!';
       updateTimes(finalTimeSeconds);
     }
@@ -576,7 +576,7 @@
       drawing = false;
       points = [];
       intersectedGates.clear();
-      finalTimeOutput.textContent = "Final Time: 1'00\"000'''";
+      finalTimeOutput.textContent = "⏰1'00\"000'''";
       statusOutput.textContent = '';
       if(resetLeaderboards){
         bestTimes = [];
@@ -709,7 +709,7 @@
       // Applica il fattore di conversione (calcolato automaticamente) per ottenere la distanza "reale"
       const realLength = totalLength * (window.conversionFactor || 1);
       const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
-      finalTimeOutput.textContent = `Final Time: ${formatTime(finalTimeSeconds)}`;
+      finalTimeOutput.textContent = `⏰ ${formatTime(finalTimeSeconds)}`;
       statusOutput.textContent = 'Finished!';
       updateTimes(finalTimeSeconds);
     }
