@@ -1159,73 +1159,105 @@ function loadTrackByName(trackName) {
 
     // Funzioni per esportare e importare il tracciato
     function exportTrack() {
-      if (!currentTrack || currentTrack.length === 0) {
-        alert("Non ci sono piste da esportare!");
-        return;
+  if (!currentTrack || !currentTrack.gates || currentTrack.gates.length === 0) {
+    alert("Non ci sono piste da esportare!");
+    return;
+  }
+  const trackData = {
+      trackName: currentTrackName || "Unnamed Track",
+      gates: currentTrack.gates,   // Esporta solo l'array dei gate
+      trees: currentTrack.trees,   // Esporta anche gli alberi
+      bestTimes: bestTimes
+  };
+  const trackDataStr = JSON.stringify(trackData);
+  const blob = new Blob([trackDataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${trackData.trackName}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+
+function importTrack(event) {
+  const fileInput = event.target || document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("Select a file to import!");
+    return;
+  }
+  
+  const defaultTrackName = file.name.replace(/\.json$/, '');
+  const confirmImport = confirm(`Do you want to import the track "${defaultTrackName}"?`);
+  if (!confirmImport) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      const trackData = JSON.parse(event.target.result);
+      
+      // Verifica che la proprietà "gates" esista ed è un array
+      if (!trackData.gates || !Array.isArray(trackData.gates)) {
+        throw new Error("Invalid file: 'gates' property is not an array!");
       }
-      const trackData = {
-        trackName: currentTrackName || "Unnamed Track",
-        gates: currentTrack,
+      
+      // Converte le coordinate degli alberi in numeri, se esistono
+      const importedTrees = trackData.trees
+        ? trackData.trees.map(tree => ({
+            x: Number(tree.x),
+            y: Number(tree.y)
+          }))
+        : [];
+      
+      // Crea l'oggetto currentTrack con le proprietà attese
+      currentTrack = {
+        gates: trackData.gates,
+        trees: importedTrees
+      };
+      
+      currentTrackName = defaultTrackName;
+      bestTimes = trackData.bestTimes || [];
+      
+      // Se la pista importata contiene alberi, imposta hardMode su true
+      hardMode = (currentTrack.trees && currentTrack.trees.length > 0) ? true : false;
+      
+      // Gestione del salvataggio nel localStorage
+      let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
+      const existingTrackIndex = savedTracks.findIndex(t => t.trackName === currentTrackName);
+      const trackToSave = {
+        trackName: currentTrackName,
+        gates: currentTrack.gates,
+        trees: currentTrack.trees,
         bestTimes: bestTimes
       };
-      const trackDataStr = JSON.stringify(trackData);
-      const blob = new Blob([trackDataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${trackData.trackName}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function importTrack(event) {
-      const fileInput = event.target || document.getElementById('fileInput');
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Seleziona un file da importare!");
-        return;
+      
+      if (existingTrackIndex !== -1) {
+        savedTracks[existingTrackIndex] = trackToSave;
+      } else {
+        savedTracks.push(trackToSave);
       }
-      const defaultTrackName = file.name.replace(/\.json$/, '');
-      const confirmImport = confirm(`Vuoi importare la pista "${defaultTrackName}"?`);
-      if (!confirmImport) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          const trackData = JSON.parse(event.target.result);
-          if (!trackData.gates || !Array.isArray(trackData.gates)) {
-            throw new Error("File non valido");
-          }
-          currentTrack = trackData.gates;
-          currentTrackName = defaultTrackName;
-          bestTimes = trackData.bestTimes || [];
-          let savedTracks = JSON.parse(localStorage.getItem('savedTracks')) || [];
-          const existingTrackIndex = savedTracks.findIndex(t => t.trackName === currentTrackName);
-          const trackToSave = {
-            trackName: currentTrackName, 
-            gates: currentTrack, 
-            bestTimes: bestTimes
-          };
-          if (existingTrackIndex !== -1) {
-            savedTracks[existingTrackIndex] = trackToSave;
-          } else {
-            savedTracks.push(trackToSave);
-          }
-          localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
-          resizeCanvas();
-hardMode = false;  // Modalità predefinita: Fast
-          drawTrack(currentTrack);
-          updateLeaderboard();
-          populateSavedTracksList();
-          alert(`Pista "${currentTrackName}" importata e salvata con successo!`);
-          fileInput.value = '';
-        } catch (error) {
-          alert("Errore durante l'importazione: " + error.message);
-        }
-      };
-      reader.readAsText(file);
+      localStorage.setItem('savedTracks', JSON.stringify(savedTracks));
+      
+      // Reimposta il canvas e disegna la pista importata
+      resizeCanvas();
+      drawTrack(currentTrack);
+      updateLeaderboard();
+      populateSavedTracksList();
+      
+      alert(`Track "${currentTrackName}" imported and saved successfully!`);
+      fileInput.value = '';
+    } catch (error) {
+      alert("Error during import: " + error.message);
     }
+  };
+  reader.readAsText(file);
+}
+
+
 
     document.getElementById('exportButton').addEventListener('click', exportTrack);
     document.getElementById('importButton').addEventListener('click', importTrack);
