@@ -454,15 +454,23 @@
 const modeToggleButton = document.getElementById('modeToggle');
 
 modeToggleButton.addEventListener('click', () => {
+    // Inverte la modalità
     hardMode = !hardMode;
     modeToggleButton.textContent = hardMode ? '⛷️' : '🌲';
-    
-    // Selezione alberi in base alla modalità
-    resetTrack(null, true);  // Genera una nuova pista con o senza alberi
-    if (hardMode) {
-        generateTrees(gates); // Solo in modalità difficile
+
+    if (currentTrack) {
+        if (hardMode) {
+            // Modalità difficile: aggiungiamo gli alberi alla pista corrente.
+            trees = []; // azzera eventualmente l'array
+            generateTrees(currentTrack.gates);
+            currentTrack.trees = trees;
+        } else {
+            // Modalità facile: rimuoviamo gli alberi.
+            trees = [];
+            currentTrack.trees = trees;
+        }
+        drawTrack(currentTrack);
     }
-    drawTrack(currentTrack);
 });
 
     const modeLabel            = document.getElementById('modeLabel');
@@ -516,27 +524,20 @@ function drawTrack(track) {
     drawStartPoint();
     drawFinishArea();
 
-    if (!track) {
-        // Genera i gate
-        gates = generateGates();
-        
-        // Se siamo in modalità difficile, generiamo anche gli alberi
-        if (hardMode) {
-            trees = [];  // Assicuriamoci di partire da un array vuoto
-            generateTrees(gates);  // Questa funzione popolerà l'array globale "trees"
-        } else {
-            trees = [];
-        }
-        
-        // Creiamo l'oggetto "track" completo contenente gate e alberi
-        currentTrack = { gates: gates, trees: trees };
-        currentTrackName = null;
-    } else {
-        // Quando viene passato un track, ci aspettiamo che sia un oggetto con le proprietà "gates" e "trees"
-        gates = track.gates;
-        trees = track.trees;
-        currentTrack = track;
-    }
+if (!track) {
+    // Genera i gate
+    gates = generateGates();
+    
+    // Crea la pista **sempre senza alberi** per una new run
+    trees = [];
+    
+    currentTrack = { gates: gates, trees: trees };
+    currentTrackName = null;
+} else {
+    gates = track.gates;
+    trees = track.trees;
+    currentTrack = track;
+}
 
     // Disegna i gate e poi gli alberi
     drawGates(gates);
@@ -1280,7 +1281,7 @@ function importTrack(event) {
             { title: "Benvenuto in Ski-Zag! ⛷️", content: "Impara a giocare e diventa campione 🏆!" },
             { title: "Come Iniziare 🎯", content: "Parti dal box in alto🏠e traccia il tuo percorso con il dito. Devi passare correttamente tutte le porte per completare la discesa tagliando il traguardo🏁!" },
             { title: "Le Porte 🚩", content: "Affronta le porte rosse e blu nell'ordine corretto. Le porte rosse vanno prese da sinistra a destra, quelle blu da destra a sinistra. Velocità e traiettoria più breve concorreranno a definire il tuo tempo finale⏰!" },
-            { title: "Controlli del Gioco 🎮", content: "⛷️Piste veloci\n🌲Piste con gli alberi\n 🔁 Rigioca sulla stessa pista\n✨ Gioca su una nuova pista\n⏯️ Rivedi la discesa\n⏰ Classifica tempi Top 5" },
+            { title: "Controlli del Gioco 🎮", content: "⛷️Pista veloce\n🌲Pista con gli alberi\n 🔁 Rigioca sulla stessa pista\n✨ Gioca su una nuova pista\n⏯️ Rivedi la discesa\n⏰ Classifica tempi Top 5" },
             { title: "Salvataggio e Caricamento 💾", content: "Clicca💾 in alto a sinistra per salvare la pista. Usa i controlli in basso per scrivere il nome del giocatore e per caricare📥 e cancellare🗑️ le piste salvate. Puoi esportare una pista per poi condividere il file cliccando 📤 e importare il file di una pista cliccando 📁." }
         ];
 
