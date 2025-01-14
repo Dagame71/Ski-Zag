@@ -470,8 +470,13 @@ modeToggleButton.addEventListener('click', () => {
             currentTrack.trees = trees;
         }
         drawTrack(currentTrack);
+        
+        // Azzeriamo i top 5 poiché la pista è stata modificata
+        bestTimes = [];
+        updateLeaderboard();
     }
 });
+
 
     const modeLabel            = document.getElementById('modeLabel');
 
@@ -665,9 +670,9 @@ function generateTrees(gates) {
       if(gateCount===6 || gateCount===7) {
         modeLabel.textContent = '💾SuperG';
       } else if(gateCount===8) {
-        modeLabel.textContent = '💾Gigante';
+        modeLabel.textContent = '💾Giant';
       } else if(gateCount===9 || gateCount===10) {
-        modeLabel.textContent = '💾Speciale';
+        modeLabel.textContent = '💾Special';
       } else {
         modeLabel.textContent = '';
       }
@@ -894,8 +899,11 @@ function isNearFinish(x, y, rect, minDistance) {
        REPLAY a velocità reale (bottone ⏯️)
     ====================================== */
     replayButton.addEventListener('click', replayTrajectory);
-    function replayTrajectory(){
-  if(points.length < 2){
+function replayTrajectory(customPoints) {
+  // Se customPoints è definito, usalo altrimenti usa il replay corrente (points)
+  const replayPoints = customPoints && customPoints.length >= 2 ? customPoints : points;
+
+  if(replayPoints.length < 2){
     statusOutput.textContent = "No run to replay!";
     return;
   }
@@ -903,20 +911,20 @@ function isNearFinish(x, y, rect, minDistance) {
   drawStartPoint();
   drawFinishArea();
   drawGates(gates);
-  drawTrees();  // AGGIUNGI QUESTA RIGA
+  drawTrees();
 
   let i = 0;
   function step(){
-    if(i >= points.length-1)return;
+    if(i >= replayPoints.length - 1) return;
     ctx.beginPath();
-    ctx.moveTo(points[i].x, points[i].y);
-    ctx.lineTo(points[i+1].x, points[i+1].y);
+    ctx.moveTo(replayPoints[i].x, replayPoints[i].y);
+    ctx.lineTo(replayPoints[i+1].x, replayPoints[i+1].y);
     ctx.strokeStyle = 'grey';
     ctx.lineWidth = 1.5;
     ctx.stroke();
-    const dt = points[i+1].t - points[i].t; 
+    const dt = replayPoints[i+1].t - replayPoints[i].t;
     i++;
-    if(i < points.length-1){
+    if(i < replayPoints.length - 1){
       setTimeout(step, dt);
     }
   }
@@ -924,34 +932,54 @@ function isNearFinish(x, y, rect, minDistance) {
 }
 
 
+
     // Aggiornamento tempi e bestTimes
-    function updateTimes(timeInSeconds){
-      const nameValue = playerNameInput.value.trim() || "Anonymous";
-      const newResult = { name: nameValue, time: timeInSeconds };
-      bestTimes.push(newResult);
-      bestTimes.sort((a, b) => a.time - b.time);
-      if(bestTimes.length > 5){
-        bestTimes.length = 5;
-      }
-      // Se il tempo ottenuto è il record (ovvero il primo dopo l'ordinamento) aggiungo la classe per far lampeggiare l'elemento
-      if(bestTimes[0].time === timeInSeconds){
-        finalTimeOutput.classList.add('record');
-        setTimeout(() => {
-          finalTimeOutput.classList.remove('record');
-        }, 2000);
-      }
-      updateLeaderboard();
-      autoSaveTrackTimes();
-    }
-    function updateLeaderboard(){
-      const leaderboardList = document.getElementById('leaderboardList');
-      leaderboardList.innerHTML = '';
-      bestTimes.forEach((entry) => {
-        const li = document.createElement('li');
-        li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
-        leaderboardList.appendChild(li);
+   function updateTimes(timeInSeconds){
+  const nameValue = playerNameInput.value.trim() || "Anonymous";
+  // Salviamo un clone dell’array points (per evitare problemi se points viene modificato dopo)
+  const replayData = JSON.parse(JSON.stringify(points));
+  const newResult = { name: nameValue, time: timeInSeconds, replay: replayData };
+
+  bestTimes.push(newResult);
+  bestTimes.sort((a, b) => a.time - b.time);
+  if(bestTimes.length > 5){
+    bestTimes.length = 5;
+  }
+  if(bestTimes[0].time === timeInSeconds){
+    finalTimeOutput.classList.add('record');
+    setTimeout(() => {
+      finalTimeOutput.classList.remove('record');
+    }, 2000);
+  }
+  updateLeaderboard();
+  autoSaveTrackTimes();
+}
+
+function updateLeaderboard(){
+  const leaderboardList = document.getElementById('leaderboardList');
+  leaderboardList.innerHTML = '';
+  bestTimes.forEach((entry, index) => {
+    const li = document.createElement('li');
+    // Se è il record (miglior tempo) includi l'icona del replay dopo il tempo
+    if(index === 0) {
+      li.innerHTML = `${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px;">⏯️</span>`;
+      li.style.fontWeight = 'bold';
+      li.style.cursor = 'pointer';
+      li.title = "Click per guardare il replay del miglior tempo";
+      li.addEventListener('click', () => {
+        // Nascondi l'overlay della classifica
+        document.getElementById('chronoOverlay').classList.add('hidden');
+        // Avvia il replay usando i dati salvati
+        replayTrajectory(entry.replay);
       });
+    } else {
+      li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
     }
+    leaderboardList.appendChild(li);
+  });
+}
+
+
 
     /* Persistenza localStorage */
     function autoSaveTrackTimes(){
@@ -1273,98 +1301,113 @@ function importTrack(event) {
     populateSavedTracksList();
   </script>
  <script type="text/babel">
-    function Tutorial() {
-        const [currentSlide, setCurrentSlide] = React.useState(0);
-        const [showTutorial, setShowTutorial] = React.useState(true);
+  function Tutorial() {
+    const [currentSlide, setCurrentSlide] = React.useState(0);
+    const [showTutorial, setShowTutorial] = React.useState(true);
 
-        const slides = [
-            { title: "Benvenuto in Ski-Zag! ⛷️", content: "Impara a giocare e diventa campione 🏆!" },
-            { title: "Come Iniziare 🎯", content: "Parti dal box in alto🏠e traccia il tuo percorso con il dito. Devi passare correttamente tutte le porte per completare la discesa tagliando il traguardo🏁!" },
-            { title: "Le Porte 🚩", content: "Affronta le porte rosse e blu nell'ordine corretto. Le porte rosse vanno prese da sinistra a destra, quelle blu da destra a sinistra. Velocità e traiettoria più breve concorreranno a definire il tuo tempo finale⏰!" },
-            { title: "Controlli del Gioco 🎮", content: "⛷️Pista veloce\n🌲Pista con gli alberi\n 🔁 Rigioca sulla stessa pista\n✨ Gioca su una nuova pista\n⏯️ Rivedi la discesa\n⏰ Classifica tempi Top 5" },
-            { title: "Salvataggio e Caricamento 💾", content: "Clicca💾 in alto a sinistra per salvare la pista. Usa i controlli in basso per scrivere il nome del giocatore e per caricare📥 e cancellare🗑️ le piste salvate. Puoi esportare una pista per poi condividere il file cliccando 📤 e importare il file di una pista cliccando 📁." }
-        ];
+    const slides = [
+      { 
+        title: "Welcome to Ski-Zag! ⛷️", 
+        content: "Learn how to play and become a champion 🏆!" 
+      },
+      { 
+        title: "Getting Started 🎯", 
+        content: "Start from the top box 🏠 and trace your path with your finger. You must correctly pass through all the gates to complete the descent by crossing the finish line 🏁!" 
+      },
+      { 
+        title: "The Gates 🚩", 
+        content: "Navigate the red and blue gates in the correct order. Red gates must be passed from left to right, while blue ones from right to left. Both speed and the shortest trajectory will determine your final time ⏰!" 
+      },
+      { 
+        title: "Game Controls 🎮", 
+        content: "⛷️ Fast slopes\n🌲 Slopes with trees\n🔁 Replay the same track\n✨ Play on a new track\n⏯️ Watch your descent replay\n⏰ Top 5 leaderboard" 
+      },
+      { 
+        title: "Saving and Loading 💾", 
+        content: "Click the 💾 button in the top left to save the track. Use the controls at the bottom to enter the player's name and to load 📥 or delete 🗑️ saved tracks. You can export a track (to share its file) by clicking 📤 and import a track by clicking 📁." 
+      }
+    ];
 
-        // ✅ Funzione aggiunta per chiudere il tutorial e disegnare la pista
-     function handleCloseTutorial() {
-    setShowTutorial(false);
-    if (typeof onClose === 'function') {
-        onClose();  // ✅ Solo se la prop è passata correttamente
-    }
-}
-
-
-        if (!showTutorial) return null;
-
-        return (
-            <div className="tutorial-overlay">
-                <div className="tutorial-content">
-                    <button 
-                        className="close-button"
-                        onClick={handleCloseTutorial}
-                    >
-                        ×
-                    </button>
-                    
-                    <div className="tutorial-slide">
-                        <h2>{slides[currentSlide].title}</h2>
-                        <p style={{whiteSpace: 'pre-line'}}>{slides[currentSlide].content}</p>
-                    </div>
-
-                    <div className="tutorial-dots">
-                        {slides.map((_, index) => (
-                            <div 
-                                key={index}
-                                className={`dot ${currentSlide === index ? 'active' : ''}`}
-                                onClick={() => setCurrentSlide(index)}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="tutorial-nav">
-                        <button 
-                            className="nav-button"
-                            onClick={() => setCurrentSlide(prev => prev - 1)}
-                            disabled={currentSlide === 0}
-                        >
-                            ←
-                        </button>
-
-                        {currentSlide === slides.length - 1 ? (
-                            <button 
-                                className="nav-button"
-                                onClick={handleCloseTutorial}  
-                            >
-                                Gioca!
-                            </button>
-                        ) : (
-                            <button 
-                                className="skip-button"
-                                onClick={handleCloseTutorial}  
-                            >
-                                Salta
-                            </button>
-                        )}
-
-                        <button 
-                            className="nav-button"
-                            onClick={() => setCurrentSlide(prev => prev + 1)}
-                            disabled={currentSlide === slides.length - 1}
-                        >
-                            →
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
+    // Function to close the tutorial and initialize the track.
+    function handleCloseTutorial() {
+      setShowTutorial(false);
+      if (typeof onClose === 'function') {
+        onClose();
+      }
     }
 
-    // Montaggio del componente React
-    ReactDOM.render(
+    if (!showTutorial) return null;
+
+    return (
+      <div className="tutorial-overlay">
+        <div className="tutorial-content">
+          <button 
+            className="close-button"
+            onClick={handleCloseTutorial}
+          >
+            ×
+          </button>
+          
+          <div className="tutorial-slide">
+            <h2>{slides[currentSlide].title}</h2>
+            <p style={{whiteSpace: 'pre-line'}}>{slides[currentSlide].content}</p>
+          </div>
+
+          <div className="tutorial-dots">
+            {slides.map((_, index) => (
+              <div 
+                key={index}
+                className={`dot ${currentSlide === index ? 'active' : ''}`}
+                onClick={() => setCurrentSlide(index)}
+              />
+            ))}
+          </div>
+
+          <div className="tutorial-nav">
+            <button 
+              className="nav-button"
+              onClick={() => setCurrentSlide(prev => prev - 1)}
+              disabled={currentSlide === 0}
+            >
+              ←
+            </button>
+
+            {currentSlide === slides.length - 1 ? (
+              <button 
+                className="nav-button"
+                onClick={handleCloseTutorial}  
+              >
+                Play!
+              </button>
+            ) : (
+              <button 
+                className="skip-button"
+                onClick={handleCloseTutorial}  
+              >
+                Skip
+              </button>
+            )}
+
+            <button 
+              className="nav-button"
+              onClick={() => setCurrentSlide(prev => prev + 1)}
+              disabled={currentSlide === slides.length - 1}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the Tutorial component
+  ReactDOM.render(
     <Tutorial onClose={() => { resizeCanvas(); drawTrack(); }} />,
     document.getElementById('tutorial-root')
-);
+  );
 </script>
+
 
 <script>
    document.addEventListener('DOMContentLoaded', () => {
