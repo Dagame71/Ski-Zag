@@ -787,34 +787,38 @@ if (!canvas._eventsAttached) {
       drawing = false;
     }
 
-    function checkIntersections() {
+function checkIntersections() {
     for (let i = 1; i < points.length; i++) {
         const p1 = points[i - 1], p2 = points[i];
 
-        // ✅ Controllo collisione con gli alberi
+        // ✅ Controllo collisione con interpolazione per gli alberi
         if (hardMode) {  
             for (const tree of trees) {
-                const dist1 = Math.hypot(p1.x - tree.x, p1.y - tree.y);
-                const dist2 = Math.hypot(p2.x - tree.x, p2.y - tree.y);
-                
-                // Ridotto il range di collisione a 10 pixel per renderlo più evidente
-                if (dist1 < 8 || dist2 < 8) {  
-                    statusOutput.textContent = '💥You hit a tree! Try again!';
-                    drawing = false;
-                    setTimeout(() => resetTrack(currentTrack), 2000); // Reset dopo 2 secondi
-                    return;  // Ferma il controllo
+                // Interpolazione lineare per controllare collisioni lungo il segmento
+                const steps = Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 5); // Maggiore precisione
+                for (let j = 0; j <= steps; j++) {
+                    const interpolatedX = p1.x + (p2.x - p1.x) * (j / steps);
+                    const interpolatedY = p1.y + (p2.y - p1.y) * (j / steps);
+                    const distance = Math.hypot(interpolatedX - tree.x, interpolatedY - tree.y);
+                    
+                    if (distance < 10) {  
+                        statusOutput.textContent = '💥You hit a tree! Try again!';
+                        drawing = false;
+                        setTimeout(() => resetTrack(currentTrack), 2000);
+                        return;  
+                    }
                 }
             }
         }
 
-        // Controllo per i cancelli
+        // ✅ Controllo per i cancelli
         for (const [index, gate] of gates.entries()) {
             if (linesIntersect(p1.x, p1.y, p2.x, p2.y, gate.line.x1, gate.line.y1, gate.line.x2, gate.line.y2)) {
                 intersectedGates.add(index);
             }
         }
 
-        // Controllo se la linea attraversa l'area di arrivo
+        // ✅ Controllo per l'area di arrivo
         if (isSegmentInFinishArea(p1, p2, finishRect)) {
             if (intersectedGates.size === gates.length) {
                 finishRun();
