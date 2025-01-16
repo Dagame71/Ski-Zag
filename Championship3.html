@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=300, initial-scale=1.0"/>
+  <title>Ski Championship</title>
+  <style>
+    /* ==============================
+       BASE STYLES
+    ============================== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      background: #f0f0f0;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Campo di gioco */
+    .container {
+      position: relative;
+      width: 300px;
+      height: 520px;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    /* Bottoni icona */
+    button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+      color: black; 
+    }
+    button:hover {
+      opacity: 0.7; 
+    }
+
+    /* Posizioni dei bottoni rimasti */
+    #sameTrack {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+    }
+    #replayButton {
+      position: absolute;
+      bottom: 10px;
+      left: 50px;
+    }
+    #chronoButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    /* Info in basso */
+    .info-container {
+      margin-top: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #finalTimeOutput {
+      margin: -10px 0;
+      font-weight: bold;
+    }
+    #statusOutput {
+      margin: 15px 0;
+      font-weight: bold;
+      color: red;
+      min-height: 20px; /* per evitare jump layout */
+    }
+
+    /* Animazione record */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .record {
+      animation: blink 0.5s ease-in-out 3;
+    }
+
+    /* Overlay generico (intro, annunci, classifiche, Chrono) */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .overlay-content {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      width: 90%;
+      max-width: 600px; 
+      box-sizing: border-box;
+      position: relative;
+      text-align: center;
+      color: #333;
+    }
+
+    /* CHRONO overlay (Top 5) */
+    #chronoOverlay .overlay-content {
+      max-width: 700px;
+    }
+    #closeOverlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #dc3545;
+      font-size: 14px;
+      padding: 5px 10px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #closeOverlay:hover {
+      background-color: #c82333;
+    }
+
+    /* Leaderboard interno */
+    .leaderboard-container {
+      display: block; 
+      width: 100%;
+      margin-top: 10px;
+    }
+    .leaderboard {
+      width: 80%; 
+      margin: 0 auto;
+    }
+    .leaderboard h2 {
+      text-align: center;
+      margin: 10px 0;
+    }
+    ol {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      list-style: decimal inside;
+      min-height: 100px;
+      padding: 10px;
+      margin: 0;
+    }
+    li {
+      padding: 5px 0;
+    }
+
+    /* SLIDES INTRO e generiche */
+    .intro-overlay {
+      /* stile comune definito in .overlay, aggiungiamo classi extra se serve */
+    }
+    .slide-content {
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .slide-title {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    /* NAV Slides: frecce e "Inizia" */
+    .slides-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+    }
+    .slides-nav .nav-button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .slides-nav .nav-button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    /* Dots slides */
+    .tutorial-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ccc;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .dot.active {
+      background: #007bff;
+    }
+
+    /* TABELLE O POPUP CLASSIFICHE “BELLI” */
+    .champ-table {
+      margin: 15px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 100%;
+      overflow: hidden;
+      text-align: left;
+    }
+    .champ-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .champ-table th, .champ-table td {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .champ-table th {
+      background: #f7f7f7;
+      font-weight: bold;
+    }
+    .champ-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Pulsanti finali in classifica finale (Rigioca | Gioca solitario) */
+    .end-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .end-buttons button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .end-buttons button:hover {
+      background-color: #0056b3;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Facoltativo: calibrazione -->
+  <div id="calibrationTest" style="width:1in; position:absolute; left:-1000px; top:-1000px;"></div>
+
+  <div class="container">
+    <canvas id="canvas"></canvas>
+
+    <!-- Bottoni di controllo -->
+    <button id="sameTrack" title="Same Run">🔁</button>
+    <button id="replayButton" title="Replay">⏯️</button>
+    <button id="chronoButton" title="Chrono">⏰</button>
+
+    <!-- Overlay CHRONO (Top 5) -->
+    <div id="chronoOverlay" class="overlay hidden">
+      <div class="overlay-content">
+        <button id="closeOverlay">X</button>
+        <div class="leaderboard-container">
+          <div class="leaderboard">
+            <h2>Top 5</h2>
+            <ol id="leaderboardList"></ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info in basso -->
+  <div class="info-container">
+    <p id="finalTimeOutput">⏰1'00"000'''</p>
+    <p id="statusOutput"></p>
+  </div>
+
+  <!-- OVERLAY INTRO E SLIDES + TUTTE LE ALTRE -->
+  <div id="slidesOverlay" class="overlay hidden">
+    <div id="slidesContent" class="overlay-content intro-overlay">
+      <!-- Verrà popolato da JS -->
+    </div>
+  </div>
+
+  <!-- OVERLAY ANNUNCI E CLASSIFICHE -->
+  <div id="champOverlay" class="overlay hidden">
+    <div id="champContent" class="overlay-content">
+      <!-- Verrà popolato da JS per annunci di manche/gara, classifiche, ecc. -->
+    </div>
+  </div>
+
+  <script>
+    /* **********************
+       Calibrazione
+    ********************** */
+    window.addEventListener('load', function() {
+      var calibrationElem = document.getElementById('calibrationTest');
+      var measuredPx = calibrationElem.offsetWidth;  
+      var conversionFactor = measuredPx / 96; 
+      window.conversionFactor = conversionFactor;
+    });
+
+
+    /* **********************
+       Variabili globali
+    ********************** */
+    const PATH_LENGTH_SCALING = 500;
+    const PENALTY_WEIGHT      = 0.5;
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+
+    const finalTimeOutput = document.getElementById('finalTimeOutput');
+    const statusOutput    = document.getElementById('statusOutput');
+
+    const sameTrackButton = document.getElementById('sameTrack');
+    const replayButton    = document.getElementById('replayButton');
+    const chronoButton    = document.getElementById('chronoButton');
+    const chronoOverlay   = document.getElementById('chronoOverlay');
+    const closeOverlay    = document.getElementById('closeOverlay');
+
+    /* Overlays per slide introduttive e annunci del campionato */
+    const slidesOverlay = document.getElementById('slidesOverlay');
+    const slidesContent = document.getElementById('slidesContent');
+    const champOverlay  = document.getElementById('champOverlay');
+    const champContent  = document.getElementById('champContent');
+
+    let bestTimes         = [];
+    let currentTrack      = null;
+    let gates            = [];
+    let trees            = [];
+    let pointsPath       = [];
+    let drawing          = false;
+    let startTime        = 0;
+    let intersectedGates = new Set();
+
+    let participants     = [];
+    let championScores   = {};
+    let currentIndex     = 0;
+    let attemptCount     = 0;
+    let raceNumber       = 1;
+    let runNumber        = 1;
+    const CHAMPION_POINTS = [9, 6, 4, 2, 1];
+
+    // 3 piste: 1=8 gates (Giant), 2=10 gates (Special), 3=6 gates (SuperG)
+    let hardMode = true;
+
+    let slidesIntro = [];
+    let currentSlideIndex = 0;
+
+    /* **********************
+       Setup Canvas
+    ********************** */
+    let startPoint = { x: 150, y: 20 };
+    let finishRect = { x: 130, y: 490, width: 40, height: 10 };
+
+    function resizeCanvas() {
+      canvas.width = 300;
+      canvas.height = 520;
+      startPoint = { x: canvas.width / 2, y: 20 };
+      finishRect = {
+        x: (canvas.width / 2) - 20,
+        y: canvas.height - 30,
+        width: 40,
+        height: 10
+      };
+    }
+
+    function clearCanvas(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    /* **********************
+       Generazione Piste
+    ********************** */
+    function createTrackForRace(raceNum) {
+      let gateCount = 8;
+      if(raceNum === 2) gateCount = 10; // Special
+      if(raceNum === 3) gateCount = 6;  // SuperG
+      const newGates = generateGates(gateCount);
+      const newTrees = generateTrees(newGates);
+      return { gates: newGates, trees: newTrees };
+    }
+
+    function generateGates(gateCount) {
+      const startWithRedRight = Math.random() < 0.5;
+      let isRed = startWithRedRight;
+      let newGates = [];
+      for (let i=0; i<gateCount; i++){
+        const direction = isRed ? 1 : -1;
+        const x = isRed
+          ? Math.random() * (canvas.width/2 - 20) + canvas.width/2
+          : Math.random() * (canvas.width/2 - 20) + 20;
+        const y = 60 + i * ((canvas.height - 120) / gateCount);
+        const color = isRed ? 'red' : 'blue';
+        newGates.push({
+          x, 
+          y, 
+          color,
+          line: { x1: x, y1: y, x2: x + direction*200, y2: y }
+        });
+        isRed = !isRed;
+      }
+      return newGates;
+    }
+
+    function generateTrees(gatesArray) {
+      const treeCount = Math.floor(Math.random() * 3) + 6; 
+      const minDistanceFromGate = 50;  
+      const minDistanceBetweenTrees = 30; 
+      const minDistanceFromFinish = 50;  
+      const minDistanceFromStart = 20;   
+      const margin = 15; 
+      let newTrees = [];
+      while(newTrees.length < treeCount){
+        const treeX = margin + Math.random()*(canvas.width - 2*margin);
+        const treeY = margin + Math.random()*(canvas.height - 2*margin);
+
+        const tooCloseToGate = gatesArray.some(gate => {
+          const dist = Math.hypot(treeX - gate.x, treeY - gate.y);
+          return dist < minDistanceFromGate;
+        });
+        const tooCloseToOtherTrees = newTrees.some(tree => {
+          const dist = Math.hypot(treeX - tree.x, treeY - tree.y);
+          return dist < minDistanceBetweenTrees;
+        });
+        const tooCloseToFinish = isNearFinish(treeX, treeY, finishRect, minDistanceFromFinish);
+        const tooCloseToStart = Math.hypot(treeX - startPoint.x, treeY - startPoint.y) < minDistanceFromStart;
+
+        if(!tooCloseToGate && !tooCloseToOtherTrees && !tooCloseToFinish && !tooCloseToStart){
+          newTrees.push({ x: treeX, y: treeY });
+        }
+      }
+      return newTrees;
+    }
+
+    /* **********************
+       Disegno Pista
+    ********************** */
+    function drawTrack(track){
+      clearCanvas();
+      gates = track.gates;
+      trees = track.trees;
+      drawStartPoint();
+      drawFinishArea();
+      drawGates(gates);
+      drawTrees(trees);
+    }
+
+    function drawStartPoint(){
+      ctx.font = '18px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';  
+      ctx.fillText('🏠', startPoint.x, startPoint.y);
+    }
+    function drawFinishArea(){
+      const { x, y, width, height } = finishRect;
+      const squareSize = width/8;
+      const rowCount = Math.floor(height / (width/8));
+      for(let row=0; row<rowCount; row++){
+        for(let col=0; col<8; col++){
+          ctx.fillStyle = (row+col)%2 === 0? 'black' : '#F0F0F0';
+          ctx.fillRect(x + col*squareSize, y + row*squareSize, squareSize, squareSize);
+        }
+      }
+    }
+    function drawGates(gatesArray){
+      gatesArray.forEach(gate => {
+        const {x, y, color, line} = gate;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if(color==='red'){
+          ctx.moveTo(x-5, y-5);
+          ctx.lineTo(x+5, y);
+          ctx.lineTo(x-5, y+5);
+        } else {
+          ctx.moveTo(x+5, y-5);
+          ctx.lineTo(x-5, y);
+          ctx.lineTo(x+5, y+5);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle='transparent';
+        ctx.beginPath();
+        ctx.moveTo(line.x1, line.y1);
+        ctx.lineTo(line.x2, line.y2);
+        ctx.stroke();
+      });
+    }
+    function drawTrees(treesArray){
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      treesArray.forEach(tree => {
+        ctx.fillText("🌲", tree.x, tree.y);
+      });
+    }
+
+    /* **********************
+       Eventi Mouse/Touch
+    ********************** */
+    if(!canvas._eventsAttached){
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mouseup',   handleMouseUp);
+      canvas.addEventListener('touchstart', handleTouchStart);
+      canvas.addEventListener('touchmove',  handleTouchMove);
+      canvas.addEventListener('touchend',   handleTouchEnd);
+      canvas._eventsAttached = true;
+    }
+
+    function getMouseCoords(e){
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+    function isNearStartPoint(x, y){
+      const dist = Math.hypot(x - startPoint.x, y - startPoint.y);
+      return (dist <= 20);
+    }
+
+    function handleMouseDown(e){
+      const {x, y} = getMouseCoords(e);
+      if(!isNearStartPoint(x,y)){
+        statusOutput.textContent = 'False start! Try again!';
+        return;
+      }
+      drawing = true;
+      pointsPath = [];
+      startTime = performance.now();
+      statusOutput.textContent = '';
+      ctx.beginPath();
+      pointsPath.push({ x, y, t: 0 });
+      ctx.moveTo(x, y);
+    }
+    function handleMouseMove(e){
+      if(!drawing) return;
+      const {x, y} = getMouseCoords(e);
+      const now = performance.now() - startTime;
+      pointsPath.push({x, y, t: now});
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = 'grey';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      checkIntersections();
+    }
+    function handleMouseUp(e){
+      if(!drawing)return;
+      drawing = false;
+    }
+
+    function handleTouchStart(e){
+      e.preventDefault();
+      const {x, y} = getMouseCoords(e);
+      if(!isNearStartPoint(x,y)){
+        statusOutput.textContent = 'You must start from the start point!';
+        return;
+      }
+      drawing = true;
+      pointsPath = [];
+      startTime = performance.now();
+      statusOutput.textContent = '';
+      ctx.beginPath();
+      pointsPath.push({ x, y, t: 0 });
+      ctx.moveTo(x, y);
+    }
+    function handleTouchMove(e){
+      e.preventDefault();
+      if(!drawing)return;
+      const {x, y} = getMouseCoords(e);
+      const now = performance.now() - startTime;
+      pointsPath.push({x, y, t: now});
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = 'grey';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      checkIntersections();
+    }
+    function handleTouchEnd(e){
+      e.preventDefault();
+      if(!drawing)return;
+      drawing = false;
+    }
+
+    /* **********************
+       Check Intersections
+    ********************** */
+    function checkIntersections(){
+      for(let i=1; i<pointsPath.length; i++){
+        const p1 = pointsPath[i-1], p2 = pointsPath[i];
+
+        // Controllo alberi
+        if(hardMode){
+          for(const tree of trees){
+            const steps = Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y)/5);
+            for(let j=0; j<=steps; j++){
+              const ix = p1.x + (p2.x - p1.x)*(j/steps);
+              const iy = p1.y + (p2.y - p1.y)*(j/steps);
+              const dist = Math.hypot(ix - tree.x, iy - tree.y);
+              if(dist < 10){
+                failAttempt("You hit a tree!");
+                return;
+              }
+            }
+          }
+        }
+
+        // Controllo cancelli
+        for(const [index, gate] of gates.entries()){
+          if(linesIntersect(p1.x, p1.y, p2.x, p2.y, gate.line.x1, gate.line.y1, gate.line.x2, gate.line.y2)){
+            intersectedGates.add(index);
+          }
+        }
+
+        // Controllo arrivo
+        if(isSegmentInFinishArea(p1, p2, finishRect)){
+          if(intersectedGates.size === gates.length){
+            finishRun();
+          } else {
+            failAttempt("You missed a gate!");
+          }
+          return;
+        }
+      }
+    }
+
+    function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4){
+      const det = (x2 - x1)*(y4 - y3) - (y2 - y1)*(x4 - x3);
+      if(det===0) return false;
+      const lambda = ((y4-y3)*(x4-x1) + (x3-x4)*(y4-y1))/det;
+      const gamma  = ((y1-y2)*(x4-x1) + (x2-x1)*(y4-y1))/det;
+      return (lambda>=0 && lambda<=1 && gamma>=0 && gamma<=1);
+    }
+    function isSegmentInFinishArea(p1, p2, rect){
+      if((p1.y < rect.y && p2.y < rect.y) ||
+         (p1.y > rect.y+rect.height && p2.y>rect.y+rect.height)) return false;
+      if((p1.x < rect.x && p2.x < rect.x) ||
+         (p1.x > rect.x+rect.width && p2.x>rect.x+rect.width)) return false;
+      return true;
+    }
+    function isNearFinish(x, y, rect, minD){
+      return (
+        x >= rect.x - minD &&
+        x <= rect.x + rect.width + minD &&
+        y >= rect.y - minD &&
+        y <= rect.y + rect.height + minD
+      );
+    }
+
+    /* **********************
+       Tentativi
+    ********************** */
+    function failAttempt(msg){
+      drawing = false;
+      statusOutput.textContent = msg;
+      attemptCount++;
+      setTimeout(() => nextParticipant(), 1200);
+    }
+    function finishRun(){
+      drawing = false;
+      const endTime = performance.now();
+      const elapsedTime = endTime - startTime;
+      const distPx = calculateDistance(pointsPath);
+      const realLength = distPx * (window.conversionFactor || 1);
+      const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
+
+      finalTimeOutput.textContent = `⏰ ${formatTime(finalTimeSeconds)}`;
+      statusOutput.textContent    = 'Finished!';
+
+      updateTimes(finalTimeSeconds);
+
+      attemptCount++;
+      setTimeout(() => nextParticipant(), 1000);
+    }
+
+    function calculateDistance(points){
+      let total = 0;
+      for(let i=1; i<points.length; i++){
+        let dx = points[i].x - points[i-1].x;
+        let dy = points[i].y - points[i-1].y;
+        total += Math.hypot(dx, dy);
+      }
+      return total;
+    }
+    function calculateFinalTime(ms, realDist){
+      const timeInS = ms/1000;
+      const penalty = PENALTY_WEIGHT * (realDist / PATH_LENGTH_SCALING);
+      return 60 + timeInS + penalty;
+    }
+    function formatTime(sec){
+      const m = Math.floor(sec/60);
+      const r = (sec % 60).toFixed(3);
+      return `${m}'${r.replace('.', '"')}'''`;
+    }
+
+    /* **********************
+       Gestione TOP 5
+    ********************** */
+    function updateTimes(timeS){
+      const nameValue = participants[currentIndex];
+      const replayData = JSON.parse(JSON.stringify(pointsPath));
+      const newResult = { name: nameValue, time: timeS, replay: replayData };
+
+      bestTimes.push(newResult);
+      bestTimes.sort((a,b)=> a.time - b.time);
+      if(bestTimes.length>5) bestTimes.length=5;
+
+      if(bestTimes[0].time === timeS){
+        finalTimeOutput.classList.add('record');
+        setTimeout(()=>finalTimeOutput.classList.remove('record'),2000);
+      }
+      updateLeaderboard();
+    }
+
+    chronoButton.addEventListener('click', ()=> {
+      chronoOverlay.classList.remove('hidden');
+    });
+    closeOverlay.addEventListener('click', ()=> {
+      chronoOverlay.classList.add('hidden');
+    });
+
+    function updateLeaderboard(){
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = '';
+      bestTimes.forEach((entry, index) => {
+        const li = document.createElement('li');
+        if(index===0){
+          li.innerHTML = `${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px;">⏯️</span>`;
+          li.style.fontWeight = 'bold';
+          li.style.cursor = 'pointer';
+          li.title = "Click to watch the best replay";
+          li.addEventListener('click', ()=>{
+            chronoOverlay.classList.add('hidden');
+            replayTrajectory(entry.replay);
+          });
+        } else {
+          li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
+        }
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    /* **********************
+       REPLAY
+    ********************** */
+    replayButton.addEventListener('click', ()=> {
+      replayTrajectory();
+    });
+
+    function replayTrajectory(customPoints){
+      const replayPoints = customPoints && customPoints.length>=2 ? customPoints : pointsPath;
+      if(replayPoints.length<2){
+        statusOutput.textContent = "No run to replay!";
+        return;
+      }
+      clearCanvas();
+      drawStartPoint();
+      drawFinishArea();
+      drawGates(gates);
+      drawTrees(trees);
+
+      let i=0;
+      function step(){
+        if(i>=replayPoints.length-1) return;
+        ctx.beginPath();
+        ctx.moveTo(replayPoints[i].x, replayPoints[i].y);
+        ctx.lineTo(replayPoints[i+1].x, replayPoints[i+1].y);
+        ctx.strokeStyle='grey';
+        ctx.lineWidth=1.5;
+        ctx.stroke();
+        const dt = replayPoints[i+1].t - replayPoints[i].t;
+        i++;
+        if(i<replayPoints.length-1) {
+          setTimeout(step, dt);
+        }
+      }
+      setTimeout(step, 0);
+    }
+
+    /* **********************
+       Gestione Tasti
+    ********************** */
+    sameTrackButton.addEventListener('click', ()=>{
+      resetTrack(currentTrack);
+    });
+
+    function resetTrack(track){
+      drawing=false;
+      pointsPath=[];
+      intersectedGates.clear();
+      finalTimeOutput.textContent = `⏰1'00"000'''`;
+      statusOutput.textContent='';
+      clearCanvas();
+      if(track) drawTrack(track);
+    }
+
+    /* **********************
+       Logica Campionato
+    ********************** */
+    function nextParticipant(){
+      if(attemptCount>=3){
+        // passa al prossimo giocatore
+        attemptCount=0;
+        currentIndex++;
+        if(currentIndex>=participants.length){
+          // fine manche
+          if(runNumber===1){
+            // passiamo alla seconda manche
+            runNumber=2;
+            currentIndex=0;
+            showPopup(`Inizia la SECONDA manche della gara #${raceNumber}!`, ()=>{
+              resetTrack(currentTrack);
+              callParticipant();
+            });
+          } else {
+            // fine gara
+            endRace();
+          }
+        } else {
+          resetTrack(currentTrack);
+          callParticipant();
+        }
+      } else {
+        // altro tentativo stesso giocatore
+        resetTrack(currentTrack);
+        callParticipant();
+      }
+    }
+
+    function callParticipant(){
+      // Aggiunta N. TENTATIVO
+      let attemptLabel = `${attemptCount+1}`;
+      statusOutput.textContent = `Gioca: ${participants[currentIndex]} (Gara ${raceNumber}, Manche ${runNumber}/${attemptLabel})`;
+    }
+
+    function endRace(){
+      // Assegna punti top5
+      const sortedTimes = [...bestTimes].sort((a,b)=>a.time-b.time);
+      for(let i=0; i<5; i++){
+        if(i<sortedTimes.length){
+          const entry = sortedTimes[i];
+          championScores[entry.name] += CHAMPION_POINTS[i];
+        }
+      }
+      // Mostra classifica di gara
+      showRaceResults();
+    }
+
+    function showRaceResults(){
+      // Creiamo una mini tabella “bella”
+      const sortedPlayers = Object.keys(championScores)
+        .sort((a,b)=> championScores[b]-championScores[a]);
+      let html = `
+        <h2>Classifica Gara #${raceNumber}</h2>
+        <div class="champ-table">
+        <table>
+          <tr><th>Giocatore</th><th>Punti Totali</th></tr>
+      `;
+      sortedPlayers.forEach(name=>{
+        html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
+      });
+      html += `</table></div>`;
+
+      // Se non è la terza gara, “Prossima gara!”, altrimenti “Classifica finale!”
+      let btnLabel = "Prossima gara!";
+      let action = ()=>{
+        champOverlay.classList.add('hidden');
+        raceNumber++;
+        // invertire l'ordine di partenza
+        participants = sortedPlayers.slice().reverse();
+        setupRace();
+      };
+      if(raceNumber>=3){
+        btnLabel = "Classifica finale!";
+        action = showFinalResults;
+      }
+
+      let buttonHTML = `<button class="nav-button">${btnLabel}</button>`;
+      champContent.innerHTML = html;
+      champContent.innerHTML += buttonHTML;
+
+      // Ascoltatore
+      champContent.querySelector('.nav-button').addEventListener('click', action);
+
+      champOverlay.classList.remove('hidden');
+    }
+
+    function showFinalResults(){
+      let sortedPlayers = Object.keys(championScores)
+        .sort((a,b)=>championScores[b]-championScores[a]);
+      const winner = sortedPlayers[0];
+
+      let html = `
+        <h2>Classifica Finale</h2>
+        <div class="champ-table">
+          <table>
+            <tr><th>Giocatore</th><th>Punti</th></tr>
+      `;
+      sortedPlayers.forEach(name=>{
+        html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
+      });
+      html += `</table></div>`;
+      html += `<h3>Vince ${winner}!!!</h3>`;
+
+      // Due bottoni: Rigioca e Gioca solitario
+      html += `
+      <div class="end-buttons">
+        <button id="btnReplayChamp">Rigioca</button>
+        <button id="btnSolo">Gioca solitario</button>
+      </div>
+      `;
+      champContent.innerHTML = html;
+
+      // Rigioca
+      champContent.querySelector('#btnReplayChamp').addEventListener('click', ()=>{
+        champOverlay.classList.add('hidden');
+        slidesOverlay.classList.remove('hidden');
+        currentSlideIndex = 0;
+        renderSlide(); // re-show the intro
+      });
+
+      // Gioca solitario (placeholder)
+   champContent.querySelector('#btnSolo').addEventListener('click', () => {
+  window.location.href = 'index.html';
+});
+
+      champOverlay.classList.remove('hidden');
+    }
+
+    function setupRace(){
+      currentTrack = createTrackForRace(raceNumber);
+      resizeCanvas();
+      drawTrack(currentTrack);
+      bestTimes = [];
+      updateLeaderboard();
+      currentIndex=0;
+      attemptCount=0;
+      runNumber=1;
+      callParticipant();
+    }
+
+    /* **********************
+       Funzioni overlay “carine”
+    ********************** */
+    function showPopup(message, onOk){
+      // Apertura overlay stile champOverlay
+      champContent.innerHTML = `
+        <h2>Attenzione</h2>
+        <p class="slide-content">${message}</p>
+        <button class="nav-button">OK</button>
+      `;
+      champOverlay.classList.remove('hidden');
+      champContent.querySelector('.nav-button').addEventListener('click', ()=>{
+        champOverlay.classList.add('hidden');
+        onOk && onOk();
+      });
+    }
+
+    /* **********************
+       INTRO Slides
+    ********************** */
+    slidesIntro = [
+      {
+        title: "Benvenuto nel Campionato!",
+        content: `
+          Inserisci i nomi dei partecipanti (min 2, max 6).<br>
+          <div id="playersInputContainer"></div>
+          <button id="addPlayerBtn" style="margin-right:8px;">Aggiungi Giocatore</button>
+          <button id="removePlayerBtn">Rimuovi Giocatore</button>
+        `,
+      },
+      {
+        title: "Info Gare",
+        content: `
+          Ci si sfiderà in 3 gare distinte (Giant, Special, SuperG).<br>
+          Ogni gara ha 2 manche, e in ciascuna manche ogni partecipante fa 3 tentativi consecutivi.
+        `,
+      },
+      {
+        title: "Punteggi Top 5",
+        content: `
+          Alla fine di ogni gara, i primi 5 migliori tempi ricevono punti (9, 6, 4, 2, 1).
+        `,
+      },
+      {
+        title: "Vittoria Finale",
+        content: `
+          Alla fine della 3ª gara, chi ha più punti vince il campionato!<br>
+          Buon divertimento!
+        `
+      }
+    ];
+
+    function renderSlide(){
+      slidesOverlay.classList.remove('hidden');
+      const slide = slidesIntro[currentSlideIndex];
+      slidesContent.innerHTML = `
+        <h2 class="slide-title">${slide.title}</h2>
+        <p class="slide-content">${slide.content}</p>
+        <div class="tutorial-dots"></div>
+        <div class="slides-nav">
+          <button class="nav-button" id="btnPrev">←</button>
+          <button class="nav-button" id="btnStartNow">Inizia</button>
+          <button class="nav-button" id="btnNext">→</button>
+        </div>
+      `;
+      // Pallini
+      const dotsContainer = slidesContent.querySelector('.tutorial-dots');
+      slidesIntro.forEach((s, i)=>{
+        let d = document.createElement('div');
+        d.className = "dot" + (i===currentSlideIndex?" active":"");
+        d.addEventListener('click', ()=> {
+          currentSlideIndex = i;
+          renderSlide();
+        });
+        dotsContainer.appendChild(d);
+      });
+
+      // Gestione bottoni
+      const btnPrev = slidesContent.querySelector('#btnPrev');
+      btnPrev.disabled = (currentSlideIndex===0);
+      btnPrev.addEventListener('click', ()=> {
+        if(currentSlideIndex>0){
+          currentSlideIndex--;
+          renderSlide();
+        }
+      });
+
+      // Bottone “Inizia” –> startChampion immediato (se partecipanti ok)
+      slidesContent.querySelector('#btnStartNow').addEventListener('click', ()=>{
+        if(!checkParticipantsValidity()){
+          return;
+        }
+        startChampionship();
+      });
+
+      // Freccia →
+      const btnNext = slidesContent.querySelector('#btnNext');
+      // Disabilitiamo se siamo all’ultima slide (non ha più senso “→”)
+      btnNext.disabled = (currentSlideIndex === slidesIntro.length-1);
+      btnNext.addEventListener('click', nextSlideSlide);
+
+      // Se è la prima slide -> render input
+      if(currentSlideIndex===0){
+        renderPlayersInput();
+      }
+    }
+
+    function nextSlideSlide(){
+      // Se siamo all'ultima slide, potremmo avviare in automatico,  
+      // ma meglio lasciar premere "Inizia" 
+      if(currentSlideIndex >= slidesIntro.length-1){
+        // ultima slide: restiamo lì 
+        return;
+      }
+      currentSlideIndex++;
+      renderSlide();
+    }
+
+    function renderPlayersInput(){
+      const container = slidesContent.querySelector('#playersInputContainer');
+      container.innerHTML="";
+      for(let i=0; i<2; i++){
+        addPlayerField(container);
+      }
+      // Tasti
+      slidesContent.querySelector('#addPlayerBtn').addEventListener('click', ()=>{
+        addPlayerField(container);
+      });
+      slidesContent.querySelector('#removePlayerBtn').addEventListener('click', ()=>{
+        const fields = container.querySelectorAll('.player-name-input');
+        if(fields.length>2){
+          fields[fields.length-1].parentNode.remove();
+        }
+      });
+    }
+
+    function addPlayerField(container){
+      let div = document.createElement('div');
+      div.innerHTML = `<input type="text" class="player-name-input" placeholder="Nome giocatore" style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;" />`;
+      container.appendChild(div);
+    }
+
+    function checkParticipantsValidity(){
+      // Controlla se i nomi giocatori sono ok
+      participants=[];
+      const inputs = slidesContent.querySelectorAll('.player-name-input');
+      inputs.forEach(inp=>{
+        let val = inp.value.trim();
+        if(val) participants.push(val);
+      });
+      if(participants.length<2){
+        alert("Almeno 2 partecipanti!");
+        return false;
+      }
+      if(participants.length>6){
+        alert("Massimo 6 partecipanti!");
+        return false;
+      }
+      return true;
+    }
+
+    function startChampionship(){
+      // Se non ci sono partecipanti validi -> stop
+      if(!checkParticipantsValidity()) return;
+
+      // ok
+      championScores={};
+      participants.forEach(p=> championScores[p]=0);
+
+      slidesOverlay.classList.add('hidden');
+      raceNumber=1;
+      runNumber=1;
+      setupRace();
+    }
+
+    /* **********************
+       Start
+    ********************** */
+    document.addEventListener('DOMContentLoaded', ()=>{
+      resizeCanvas();
+      renderSlide(); // Mostriamo la prima slide
+    });
+  </script>
+</body>
+</html>
