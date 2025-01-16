@@ -78,6 +78,10 @@
       top: 10px;
       right: 10px;
     }
+#addPlayerBtn, 
+#removePlayerBtn {
+  font-size: 12px; /* o il valore che preferisci */
+}
 
     /* Info in basso */
     .info-container {
@@ -857,7 +861,7 @@
           if(runNumber===1){
             runNumber=2;
             currentIndex=0;
-            showPopup(`Inizia la SECONDA manche della gara #${raceNumber}!`, ()=>{
+            showPopup(`Starting the 2nd run of race #${raceNumber}!`, ()=>{
               resetTrack(currentTrack);
               callParticipant();
             });
@@ -878,7 +882,8 @@
 
     function callParticipant() {
       let attemptLabel = attemptCount + 1; 
-      statusOutput.textContent = `Gioca ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
+statusOutput.innerHTML = `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
+
     }
 
     function endRace(){
@@ -895,29 +900,29 @@
     }
 
     function showRaceResults(){
-      // 1) “Tempi finali (Top 5)” con nome e tempo
+      // 1) “Final Times (Top 5)” con nome e tempo
       let sortedTimes = [...bestTimes].sort((a,b)=> a.time - b.time);
 
       let html = `
         <h2>Tempi finali (Top 5)</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Giocatore</th><th>Tempo</th></tr>
+            <tr><th>Player</th><th>Tempo</th></tr>
       `;
       sortedTimes.forEach(entry => {
         html += `<tr><td>${entry.name}</td><td>${formatTime(entry.time)}</td></tr>`;
       });
       html += `</table></div>`;
 
-      // 2) “Classifica Gara” con punteggio
+      // 2) “Race Standings” con punteggio
       const sortedPlayers = Object.keys(championScores)
         .sort((a,b)=> championScores[b]-championScores[a]);
 
       html += `
-        <h2>Classifica Gara #${raceNumber}</h2>
+        <h2>Race Standings #${raceNumber}</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Giocatore</th><th>Punti Totali</th></tr>
+            <tr><th>Player</th><th>Total Points</th></tr>
       `;
       sortedPlayers.forEach(name => {
         html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
@@ -925,7 +930,7 @@
       html += `</table></div>`;
 
       // Bottone di proseguimento
-      let btnLabel = "Prossima gara!";
+      let btnLabel = "Next Race!";
       let action = ()=>{
         champOverlay.classList.add('hidden');
         raceNumber++;
@@ -934,7 +939,7 @@
         setupRace();
       };
       if(raceNumber>=3){
-        btnLabel = "Classifica finale!";
+        btnLabel = "Final Standings!";
         action = showFinalResults;
       }
 
@@ -951,22 +956,22 @@
       const winner = sortedPlayers[0];
 
       let html = `
-        <h2>Classifica Finale</h2>
+        <h2>Final Standings</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Giocatore</th><th>Punti</th></tr>
+            <tr><th>Player</th><th>Punti</th></tr>
       `;
       sortedPlayers.forEach(name=>{
         html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
       });
       html += `</table></div>`;
-      html += `<h3>Vince ${winner}!!!</h3>`;
+      html += `<h3>Wins ${winner}!!!</h3>`;
 
       // Due bottoni: Rigioca e Gioca solitario
       html += `
       <div class="end-buttons">
-        <button id="btnReplayChamp">Rigioca</button>
-        <button id="btnSolo">Gioca solitario</button>
+        <button id="btnReplayChamp">Play Again!</button>
+        <button id="btnSolo">Play Solo</button>
       </div>
       `;
       champContent.innerHTML = html;
@@ -1005,7 +1010,7 @@
     function showPopup(message, onOk){
       // Apertura overlay stile champOverlay
       champContent.innerHTML = `
-        <h2>Attenzione</h2>
+        <h2>Attention</h2>
         <p class="slide-content">${message}</p>
         <button class="nav-button">OK</button>
       `;
@@ -1021,32 +1026,30 @@
     ********************** */
     slidesIntro = [
       {
-        title: "Benvenuto nel Campionato!",
+        title: "Ski-Zag Championship!",
         content: `
-          Inserisci i nomi dei partecipanti (min 2, max 6).<br>
+          Enter the players!<br>
           <div id="playersInputContainer"></div>
-          <button id="addPlayerBtn" style="margin-right:8px;">Aggiungi Giocatore</button>
-          <button id="removePlayerBtn">Rimuovi Giocatore</button>
+          <button id="addPlayerBtn" style="margin-right:8px;">Add Player</button>
+          <button id="removePlayerBtn">Remove Player</button>
         `,
       },
       {
-        title: "Info Gare",
+        title: "Race Info",
         content: `
-          Ci si sfiderà in 3 gare distinte (Giant, Special, SuperG).<br>
-          Ogni gara ha 2 manche, e in ciascuna manche ogni partecipante fa 3 tentativi consecutivi.
+          There will be 3 distinct races (Giant, Special, SuperG). Each race has 2 runs (manches), and in each run every participant has 3 consecutive attempts.
         `,
       },
       {
-        title: "Punteggi Top 5",
+        title: "Top 5 Scoring",
         content: `
-          Alla fine di ogni gara, i primi 5 migliori tempi ricevono punti (9, 6, 4, 2, 1).
+          At the end of each race, the top 5 best times are awarded points (9, 6, 4, 2, 1).
         `,
       },
       {
-        title: "Vittoria Finale",
+        title: "Final Victory",
         content: `
-          Alla fine della 3ª gara, chi ha più punti vince il campionato!<br>
-          Buon divertimento!
+          At the end of the 3rd race, whoever has the most points wins the championship! Have fun!!
         `
       }
     ];
@@ -1060,7 +1063,7 @@
         <div class="tutorial-dots"></div>
         <div class="slides-nav">
           <button class="nav-button" id="btnPrev">←</button>
-          <button class="nav-button" id="btnStartNow">Inizia</button>
+          <button class="nav-button" id="btnStartNow">Start!</button>
           <button class="nav-button" id="btnNext">→</button>
         </div>
       `;
