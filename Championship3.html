@@ -78,10 +78,12 @@
       top: 10px;
       right: 10px;
     }
-#addPlayerBtn, 
-#removePlayerBtn {
-  font-size: 12px; /* o il valore che preferisci */
-}
+
+    /* Esempio: rimpiccioliamo font dei bottoni Aggiungi/Rimuovi Giocatore */
+    #addPlayerBtn, 
+    #removePlayerBtn {
+      font-size: 12px;
+    }
 
     /* Info in basso */
     .info-container {
@@ -395,8 +397,12 @@
     // 3 piste: 1=8 gates (Giant), 2=10 gates (Special), 3=6 gates (SuperG)
     let hardMode = true;
 
-    let slidesIntro = [];
+    let slidesIntro       = [];
     let currentSlideIndex = 0;
+
+    // Aggiungiamo una variabile “didFinishOrFailThisRun” 
+    // per sapere se la run è già finita/fallita
+    let didFinishOrFailThisRun = false;
 
     /* **********************
        Setup Canvas
@@ -586,7 +592,11 @@
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x, y);
+
+      // Azzera la flag: non abbiamo ancora finito/fallito questa run
+      didFinishOrFailThisRun = false;
     }
+
     function handleMouseMove(e){
       if(!drawing) return;
       const {x, y} = getMouseCoords(e);
@@ -598,9 +608,16 @@
       ctx.stroke();
       checkIntersections();
     }
+
     function handleMouseUp(e){
-      if(!drawing)return;
+      // Se non stavamo disegnando, ritorno
+      if(!drawing) return;
       drawing = false;
+
+      // Se la run non è già finita/fallita, consideriamo questo un tentativo interrotto
+      if(!didFinishOrFailThisRun){
+        failAttempt("Run interrupted!");
+      }
     }
 
     function handleTouchStart(e){
@@ -617,7 +634,10 @@
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x, y);
+
+      didFinishOrFailThisRun = false;
     }
+
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing)return;
@@ -630,10 +650,15 @@
       ctx.stroke();
       checkIntersections();
     }
+
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing)return;
       drawing = false;
+
+      if(!didFinishOrFailThisRun){
+        failAttempt("Run interrupted!");
+      }
     }
 
     /* **********************
@@ -706,12 +731,14 @@
     ********************** */
     function failAttempt(msg){
       drawing = false;
+      didFinishOrFailThisRun = true;  // Contrassegniamo run come “finita/fallita”
       statusOutput.textContent = msg;
       attemptCount++;
       setTimeout(() => nextParticipant(), 1200);
     }
     function finishRun(){
       drawing = false;
+      didFinishOrFailThisRun = true; // Contrassegniamo run come conclusa
       const endTime = performance.now();
       const elapsedTime = endTime - startTime;
       const distPx = calculateDistance(pointsPath);
@@ -853,9 +880,11 @@
     ********************** */
     function nextParticipant(){
       if(attemptCount>=3){
-        // passa al prossimo giocatore
+        // Il giocatore corrente ha finito i 3 tentativi
         attemptCount=0;
         currentIndex++;
+        
+        // Se TUTTI i giocatori hanno finito questa manche
         if(currentIndex>=participants.length){
           // fine manche
           if(runNumber===1){
@@ -870,11 +899,15 @@
             endRace();
           }
         } else {
-          resetTrack(currentTrack);
-          callParticipant();
+          // Annuncio con popup chi è il prossimo
+          const nextName = participants[currentIndex];
+          showPopup(`Now it's ${nextName}'s turn!`, ()=>{
+            resetTrack(currentTrack);
+            callParticipant();
+          });
         }
       } else {
-        // altro tentativo stesso giocatore
+        // Ha ancora tentativi lo stesso giocatore
         resetTrack(currentTrack);
         callParticipant();
       }
@@ -882,8 +915,7 @@
 
     function callParticipant() {
       let attemptLabel = attemptCount + 1; 
-statusOutput.innerHTML = `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
-
+      statusOutput.innerHTML = `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
     }
 
     function endRace(){
@@ -1089,7 +1121,7 @@ statusOutput.innerHTML = `Play <span style="color:black;">${participants[current
         }
       });
 
-      // Bottone “Inizia” –> startChampion immediato (se partecipanti ok)
+      // Bottone “Start!” –> startChampion immediato (se partecipanti ok)
       slidesContent.querySelector('#btnStartNow').addEventListener('click', ()=>{
         if(!checkParticipantsValidity()){
           return;
@@ -1137,7 +1169,7 @@ statusOutput.innerHTML = `Play <span style="color:black;">${participants[current
 
     function addPlayerField(container){
       let div = document.createElement('div');
-      div.innerHTML = `<input type="text" class="player-name-input" placeholder="Nome giocatore" style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;" />`;
+      div.innerHTML = `<input type="text" class="player-name-input" placeholder="Player name" style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;" />`;
       container.appendChild(div);
     }
 
@@ -1149,11 +1181,11 @@ statusOutput.innerHTML = `Play <span style="color:black;">${participants[current
         if(val) participants.push(val);
       });
       if(participants.length<2){
-        alert("Almeno 2 partecipanti!");
+        alert("At least 2 participants!");
         return false;
       }
       if(participants.length>6){
-        alert("Massimo 6 partecipanti!");
+        alert("Max 6 participants!");
         return false;
       }
       return true;
