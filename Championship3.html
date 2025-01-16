@@ -68,11 +68,11 @@
       bottom: 10px;
       left: 50px;
     }
-#quit {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-}
+    #quit {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+    }
     #chronoButton {
       position: absolute;
       top: 10px;
@@ -300,7 +300,7 @@
     <button id="sameTrack" title="Same Run">🔁</button>
     <button id="replayButton" title="Replay">⏯️</button>
     <button id="chronoButton" title="Chrono">⏰</button>
-<button id="quit" onclick="location.href='index.html'">⚠️</button>
+    <button id="quit" onclick="location.href='index.html'">⚠️</button>
 
     <!-- Overlay CHRONO (Top 5) -->
     <div id="chronoOverlay" class="overlay hidden">
@@ -346,7 +346,6 @@
       var conversionFactor = measuredPx / 96; 
       window.conversionFactor = conversionFactor;
     });
-
 
     /* **********************
        Variabili globali
@@ -856,7 +855,6 @@
         if(currentIndex>=participants.length){
           // fine manche
           if(runNumber===1){
-            // passiamo alla seconda manche
             runNumber=2;
             currentIndex=0;
             showPopup(`Inizia la SECONDA manche della gara #${raceNumber}!`, ()=>{
@@ -878,14 +876,13 @@
       }
     }
 
- function callParticipant() {
-  let attemptLabel = attemptCount + 1; 
-  statusOutput.textContent = `Gioca ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
-}
-
+    function callParticipant() {
+      let attemptLabel = attemptCount + 1; 
+      statusOutput.textContent = `Gioca ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
+    }
 
     function endRace(){
-      // Assegna punti top5
+      // Assegna i punti top5
       const sortedTimes = [...bestTimes].sort((a,b)=>a.time-b.time);
       for(let i=0; i<5; i++){
         if(i<sortedTimes.length){
@@ -898,21 +895,36 @@
     }
 
     function showRaceResults(){
-      // Creiamo una mini tabella “bella”
+      // 1) “Tempi finali (Top 5)” con nome e tempo
+      let sortedTimes = [...bestTimes].sort((a,b)=> a.time - b.time);
+
+      let html = `
+        <h2>Tempi finali (Top 5)</h2>
+        <div class="champ-table">
+          <table>
+            <tr><th>Giocatore</th><th>Tempo</th></tr>
+      `;
+      sortedTimes.forEach(entry => {
+        html += `<tr><td>${entry.name}</td><td>${formatTime(entry.time)}</td></tr>`;
+      });
+      html += `</table></div>`;
+
+      // 2) “Classifica Gara” con punteggio
       const sortedPlayers = Object.keys(championScores)
         .sort((a,b)=> championScores[b]-championScores[a]);
-      let html = `
+
+      html += `
         <h2>Classifica Gara #${raceNumber}</h2>
         <div class="champ-table">
-        <table>
-          <tr><th>Giocatore</th><th>Punti Totali</th></tr>
+          <table>
+            <tr><th>Giocatore</th><th>Punti Totali</th></tr>
       `;
-      sortedPlayers.forEach(name=>{
+      sortedPlayers.forEach(name => {
         html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
       });
       html += `</table></div>`;
 
-      // Se non è la terza gara, “Prossima gara!”, altrimenti “Classifica finale!”
+      // Bottone di proseguimento
       let btnLabel = "Prossima gara!";
       let action = ()=>{
         champOverlay.classList.add('hidden');
@@ -926,11 +938,8 @@
         action = showFinalResults;
       }
 
-      let buttonHTML = `<button class="nav-button">${btnLabel}</button>`;
+      html += `<button class="nav-button">${btnLabel}</button>`;
       champContent.innerHTML = html;
-      champContent.innerHTML += buttonHTML;
-
-      // Ascoltatore
       champContent.querySelector('.nav-button').addEventListener('click', action);
 
       champOverlay.classList.remove('hidden');
@@ -971,9 +980,9 @@
       });
 
       // Gioca solitario (placeholder)
-   champContent.querySelector('#btnSolo').addEventListener('click', () => {
-  window.location.href = 'index.html';
-});
+      champContent.querySelector('#btnSolo').addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
 
       champOverlay.classList.remove('hidden');
     }
@@ -1098,10 +1107,7 @@
     }
 
     function nextSlideSlide(){
-      // Se siamo all'ultima slide, potremmo avviare in automatico,  
-      // ma meglio lasciar premere "Inizia" 
       if(currentSlideIndex >= slidesIntro.length-1){
-        // ultima slide: restiamo lì 
         return;
       }
       currentSlideIndex++;
@@ -1133,7 +1139,6 @@
     }
 
     function checkParticipantsValidity(){
-      // Controlla se i nomi giocatori sono ok
       participants=[];
       const inputs = slidesContent.querySelectorAll('.player-name-input');
       inputs.forEach(inp=>{
@@ -1152,10 +1157,7 @@
     }
 
     function startChampionship(){
-      // Se non ci sono partecipanti validi -> stop
       if(!checkParticipantsValidity()) return;
-
-      // ok
       championScores={};
       participants.forEach(p=> championScores[p]=0);
 
