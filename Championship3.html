@@ -872,11 +872,11 @@
       }
     }
 
-    function callParticipant(){
-      // Aggiunta N. TENTATIVO
-      let attemptLabel = `${attemptCount+1}`;
-      statusOutput.textContent = `Gioca: ${participants[currentIndex]} (Gara ${raceNumber}, Manche ${runNumber}/${attemptLabel})`;
-    }
+ function callParticipant() {
+  let attemptLabel = attemptCount + 1; 
+  statusOutput.textContent = `Gioca ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
+}
+
 
     function endRace(){
       // Assegna punti top5
