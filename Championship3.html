@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=300, initial-scale=1.0"/>
   <title>Ski Championship</title>
   <style>
-    /* ==============================
-       BASE STYLES
-    ============================== */
+    /* (stili invariati) */
     html, body {
       margin: 0;
       padding: 0;
@@ -20,8 +18,6 @@
       flex-direction: column;
       align-items: center;
     }
-
-    /* Campo di gioco */
     .container {
       position: relative;
       width: 300px;
@@ -35,57 +31,27 @@
     }
     canvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       cursor: crosshair;
     }
-
-    /* Bottoni icona */
     button {
       border: none;
       background: none;
       cursor: pointer;
       font-size: 18px;
-      line-height: 1;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       color: black; 
     }
-    button:hover {
-      opacity: 0.7; 
-    }
+    button:hover { opacity: 0.7; }
 
-    /* Posizioni dei bottoni rimasti */
-    #sameTrack {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-    }
-    #replayButton {
-      position: absolute;
-      bottom: 10px;
-      left: 50px;
-    }
-    #quit {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-    }
-    #chronoButton {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-    }
+    #sameTrack { position: absolute; bottom: 10px; left: 10px; }
+    #replayButton { position: absolute; bottom: 10px; left: 50px; }
+    #quit { position: absolute; bottom: 10px; right: 10px; }
+    #chronoButton { position: absolute; top: 10px; right: 10px; }
 
-    /* Esempio: rimpiccioliamo font dei bottoni Aggiungi/Rimuovi Giocatore */
-    #addPlayerBtn, 
-    #removePlayerBtn {
-      font-size: 12px;
-    }
+    #addPlayerBtn, #removePlayerBtn { font-size: 12px; }
 
-    /* Info in basso */
     .info-container {
       margin-top: 13px;
       display: flex;
@@ -93,33 +59,19 @@
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput {
-      margin: -10px 0;
-      font-weight: bold;
-    }
-    #statusOutput {
-      margin: 15px 0;
-      font-weight: bold;
-      color: red;
-      min-height: 20px; /* per evitare jump layout */
-    }
+    #finalTimeOutput { margin: -10px 0; font-weight: bold; }
+    #statusOutput { margin: 15px 0; font-weight: bold; color: red; min-height: 20px; }
 
-    /* Animazione record */
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
-    .record {
-      animation: blink 0.5s ease-in-out 3;
-    }
+    .record { animation: blink 0.5s ease-in-out 3; }
 
-    /* Overlay generico (intro, annunci, classifiche, Chrono) */
     .overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.7);
       z-index: 9999;
       display: flex;
@@ -131,11 +83,7 @@
       from { opacity: 0; }
       to   { opacity: 1; }
     }
-
-    .hidden {
-      display: none;
-    }
-
+    .hidden { display: none; }
     .overlay-content {
       background-color: #fff;
       border-radius: 12px;
@@ -147,146 +95,79 @@
       text-align: center;
       color: #333;
     }
-
-    /* CHRONO overlay (Top 5) */
-    #chronoOverlay .overlay-content {
-      max-width: 700px;
-    }
+    #chronoOverlay .overlay-content { max-width: 700px; }
     #closeOverlay {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      position: absolute; top: 10px; left: 10px;
       background-color: #dc3545;
-      font-size: 14px;
-      padding: 5px 10px;
-      color: white;
-      border: none;
-      border-radius: 5px;
+      font-size: 14px; padding: 5px 10px;
+      color: white; border: none; border-radius: 5px;
       cursor: pointer;
     }
-    #closeOverlay:hover {
-      background-color: #c82333;
-    }
+    #closeOverlay:hover { background-color: #c82333; }
 
-    /* Leaderboard interno */
-    .leaderboard-container {
-      display: block; 
-      width: 100%;
-      margin-top: 10px;
-    }
-    .leaderboard {
-      width: 80%; 
-      margin: 0 auto;
-    }
-    .leaderboard h2 {
-      text-align: center;
-      margin: 10px 0;
-    }
+    .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
+    .leaderboard { width: 80%; margin: 0 auto; }
+    .leaderboard h2 { text-align: center; margin: 10px 0; }
     ol {
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      list-style: decimal inside;
-      min-height: 100px;
-      padding: 10px;
-      margin: 0;
+      border: 1px solid #ccc; border-radius: 5px;
+      list-style: decimal inside; min-height: 100px;
+      padding: 10px; margin: 0;
     }
-    li {
-      padding: 5px 0;
-    }
+    li { padding: 5px 0; }
 
-    /* SLIDES INTRO e generiche */
-    .intro-overlay {
-      /* stile comune definito in .overlay, aggiungiamo classi extra se serve */
-    }
-    .slide-content {
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
-    .slide-title {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 22px;
-    }
+    .intro-overlay { }
+    .slide-content { margin-bottom: 20px; line-height: 1.4; }
+    .slide-title { margin-top: 0; margin-bottom: 10px; font-size: 22px; }
 
-    /* NAV Slides: frecce e "Inizia" */
     .slides-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 15px;
+      display: flex; justify-content: space-between;
+      align-items: center; margin-top: 15px;
     }
     .slides-nav .nav-button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 14px;
-      cursor: pointer;
+      background: #007bff; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 8px 14px; font-size: 14px; cursor: pointer;
     }
     .slides-nav .nav-button:disabled {
-      background: #999;
-      cursor: not-allowed;
+      background: #999; cursor: not-allowed;
     }
-
-    /* Dots slides */
     .tutorial-dots {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
+      display: flex; justify-content: center; gap: 8px;
       margin: 10px 0;
     }
     .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ccc;
-      cursor: pointer;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #ccc; cursor: pointer;
       transition: background 0.3s;
     }
-    .dot.active {
-      background: #007bff;
-    }
+    .dot.active { background: #007bff; }
 
-    /* TABELLE O POPUP CLASSIFICHE “BELLI” */
     .champ-table {
-      margin: 15px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      width: 100%;
-      overflow: hidden;
+      margin: 15px 0; border: 1px solid #ccc;
+      border-radius: 8px; width: 100%; overflow: hidden;
       text-align: left;
     }
     .champ-table table {
-      width: 100%;
-      border-collapse: collapse;
+      width: 100%; border-collapse: collapse;
     }
     .champ-table th, .champ-table td {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
+      padding: 8px; border-bottom: 1px solid #eee;
     }
     .champ-table th {
-      background: #f7f7f7;
-      font-weight: bold;
+      background: #f7f7f7; font-weight: bold;
     }
     .champ-table tr:last-child td {
       border-bottom: none;
     }
 
-    /* Pulsanti finali in classifica finale (Rigioca | Gioca solitario) */
     .end-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
+      display: flex; justify-content: center; gap: 10px;
       margin-top: 20px;
     }
     .end-buttons button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 14px;
+      background: #007bff; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 8px 14px; font-size: 14px;
       cursor: pointer;
     }
     .end-buttons button:hover {
@@ -328,57 +209,49 @@
     <p id="statusOutput"></p>
   </div>
 
-  <!-- OVERLAY INTRO E SLIDES + TUTTE LE ALTRE -->
+  <!-- OVERLAY INTRO E SLIDES -->
   <div id="slidesOverlay" class="overlay hidden">
-    <div id="slidesContent" class="overlay-content intro-overlay">
-      <!-- Verrà popolato da JS -->
-    </div>
+    <div id="slidesContent" class="overlay-content intro-overlay"></div>
   </div>
 
   <!-- OVERLAY ANNUNCI E CLASSIFICHE -->
   <div id="champOverlay" class="overlay hidden">
-    <div id="champContent" class="overlay-content">
-      <!-- Verrà popolato da JS per annunci di manche/gara, classifiche, ecc. -->
-    </div>
+    <div id="champContent" class="overlay-content"></div>
   </div>
 
   <script>
-    /* **********************
-       Calibrazione
-    ********************** */
-    window.addEventListener('load', function() {
-      var calibrationElem = document.getElementById('calibrationTest');
-      var measuredPx = calibrationElem.offsetWidth;  
-      var conversionFactor = measuredPx / 96; 
-      window.conversionFactor = conversionFactor;
+    /* ==============================================
+       Fix 1: Salvataggio nomi su più slide
+       Fix 2: Ultimo run salvato in lastCompleteRun
+              per un replay immediato
+    ============================================== */
+
+    /* Calibrazione */
+    window.addEventListener('load', ()=>{
+      const cal = document.getElementById('calibrationTest');
+      window.conversionFactor = cal.offsetWidth / 96;
     });
 
-    /* **********************
-       Variabili globali
-    ********************** */
+    /* Variabili globali */
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
 
-    const canvas = document.getElementById('canvas');
-    const ctx    = canvas.getContext('2d');
+    const canvas         = document.getElementById('canvas');
+    const ctx            = canvas.getContext('2d');
+    const finalTimeOutput= document.getElementById('finalTimeOutput');
+    const statusOutput   = document.getElementById('statusOutput');
+    const sameTrackButton= document.getElementById('sameTrack');
+    const replayButton   = document.getElementById('replayButton');
+    const chronoButton   = document.getElementById('chronoButton');
+    const chronoOverlay  = document.getElementById('chronoOverlay');
+    const closeOverlay   = document.getElementById('closeOverlay');
+    const slidesOverlay  = document.getElementById('slidesOverlay');
+    const slidesContent  = document.getElementById('slidesContent');
+    const champOverlay   = document.getElementById('champOverlay');
+    const champContent   = document.getElementById('champContent');
 
-    const finalTimeOutput = document.getElementById('finalTimeOutput');
-    const statusOutput    = document.getElementById('statusOutput');
-
-    const sameTrackButton = document.getElementById('sameTrack');
-    const replayButton    = document.getElementById('replayButton');
-    const chronoButton    = document.getElementById('chronoButton');
-    const chronoOverlay   = document.getElementById('chronoOverlay');
-    const closeOverlay    = document.getElementById('closeOverlay');
-
-    /* Overlays per slide introduttive e annunci del campionato */
-    const slidesOverlay = document.getElementById('slidesOverlay');
-    const slidesContent = document.getElementById('slidesContent');
-    const champOverlay  = document.getElementById('champOverlay');
-    const champContent  = document.getElementById('champContent');
-
-    let bestTimes         = [];
-    let currentTrack      = null;
+    let bestTimes        = [];
+    let currentTrack     = null;
     let gates            = [];
     let trees            = [];
     let pointsPath       = [];
@@ -392,229 +265,190 @@
     let attemptCount     = 0;
     let raceNumber       = 1;
     let runNumber        = 1;
-    const CHAMPION_POINTS = [9, 6, 4, 2, 1];
+    const CHAMPION_POINTS= [9,7,5,3,1];
 
-    // 3 piste: 1=8 gates (Giant), 2=10 gates (Special), 3=6 gates (SuperG)
-    let hardMode = true;
-
-    let slidesIntro       = [];
-    let currentSlideIndex = 0;
-
-    // Aggiungiamo una variabile “didFinishOrFailThisRun” 
-    // per sapere se la run è già finita/fallita
+    let hardMode         = true;
+    let slidesIntro      = [];
+    let currentSlideIndex= 0;
     let didFinishOrFailThisRun = false;
 
-    /* **********************
-       Setup Canvas
-    ********************** */
-    let startPoint = { x: 150, y: 20 };
-    let finishRect = { x: 130, y: 490, width: 40, height: 10 };
+    /* Ricordiamo l’ultimo test in statusOutput */
+    let lastStatusMessage = '';
 
-    function resizeCanvas() {
+    /* (NEW) Salviamo la run completata per replay immediato */
+    let lastCompleteRun   = null;
+
+    /* Setup canvas */
+    let startPoint = { x:150, y:20 };
+    let finishRect = { x:130, y:490, width:40, height:10 };
+
+    function resizeCanvas(){
       canvas.width = 300;
-      canvas.height = 520;
-      startPoint = { x: canvas.width / 2, y: 20 };
-      finishRect = {
-        x: (canvas.width / 2) - 20,
-        y: canvas.height - 30,
-        width: 40,
-        height: 10
-      };
+      canvas.height= 520;
+      startPoint={x: canvas.width/2, y:20};
+      finishRect={x: (canvas.width/2)-20, y: canvas.height-30, width:40, height:10};
     }
-
     function clearCanvas(){
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
     }
 
-    /* **********************
-       Generazione Piste
-    ********************** */
-    function createTrackForRace(raceNum) {
-      let gateCount = 8;
-      if(raceNum === 2) gateCount = 10; // Special
-      if(raceNum === 3) gateCount = 6;  // SuperG
-      const newGates = generateGates(gateCount);
-      const newTrees = generateTrees(newGates);
-      return { gates: newGates, trees: newTrees };
+    /* Generazione piste */
+    function createTrackForRace(rn){
+      let gc=8;
+      if(rn===2) gc=10;
+      if(rn===3) gc=6;
+      const g= generateGates(gc);
+      const t= generateTrees(g);
+      return { gates:g, trees:t };
     }
-
-    function generateGates(gateCount) {
-      const startWithRedRight = Math.random() < 0.5;
-      let isRed = startWithRedRight;
-      let newGates = [];
-      for (let i=0; i<gateCount; i++){
-        const direction = isRed ? 1 : -1;
-        const x = isRed
-          ? Math.random() * (canvas.width/2 - 20) + canvas.width/2
-          : Math.random() * (canvas.width/2 - 20) + 20;
-        const y = 60 + i * ((canvas.height - 120) / gateCount);
-        const color = isRed ? 'red' : 'blue';
-        newGates.push({
-          x, 
-          y, 
-          color,
-          line: { x1: x, y1: y, x2: x + direction*200, y2: y }
+    function generateGates(count){
+      const startWithRed = (Math.random()<0.5);
+      let isRed = startWithRed;
+      let arr   = [];
+      for(let i=0; i<count; i++){
+        const dir = isRed?1:-1;
+        const x   = isRed 
+          ? Math.random()*(canvas.width/2-20)+ canvas.width/2
+          : Math.random()*(canvas.width/2-20)+ 20;
+        const y   = 60 + i*((canvas.height-120)/count);
+        const color= isRed?'red':'blue';
+        arr.push({
+          x,y,color,
+          line:{ x1:x, y1:y, x2:x+dir*200, y2:y }
         });
-        isRed = !isRed;
+        isRed=!isRed;
       }
-      return newGates;
+      return arr;
     }
+    function generateTrees(gArr){
+      const treeCount= Math.floor(Math.random()*3)+6;
+      let arr=[];
+      const margin=15;
+      const minGate=50, minTree=30, minFinish=50, minStart=20;
+      while(arr.length<treeCount){
+        const tx= margin + Math.random()*(canvas.width-2*margin);
+        const ty= margin + Math.random()*(canvas.height-2*margin);
 
-    function generateTrees(gatesArray) {
-      const treeCount = Math.floor(Math.random() * 3) + 6; 
-      const minDistanceFromGate = 50;  
-      const minDistanceBetweenTrees = 30; 
-      const minDistanceFromFinish = 50;  
-      const minDistanceFromStart = 20;   
-      const margin = 15; 
-      let newTrees = [];
-      while(newTrees.length < treeCount){
-        const treeX = margin + Math.random()*(canvas.width - 2*margin);
-        const treeY = margin + Math.random()*(canvas.height - 2*margin);
+        const closeGate = gArr.some(g=> (Math.hypot(tx-g.x,ty-g.y)<minGate));
+        const closeTrees= arr.some(t=> (Math.hypot(tx-t.x,ty-t.y)<minTree));
+        const closeFinish= isNearFinish(tx,ty,finishRect,minFinish);
+        const closeStart = (Math.hypot(tx-startPoint.x,ty-startPoint.y)<minStart);
 
-        const tooCloseToGate = gatesArray.some(gate => {
-          const dist = Math.hypot(treeX - gate.x, treeY - gate.y);
-          return dist < minDistanceFromGate;
-        });
-        const tooCloseToOtherTrees = newTrees.some(tree => {
-          const dist = Math.hypot(treeX - tree.x, treeY - tree.y);
-          return dist < minDistanceBetweenTrees;
-        });
-        const tooCloseToFinish = isNearFinish(treeX, treeY, finishRect, minDistanceFromFinish);
-        const tooCloseToStart = Math.hypot(treeX - startPoint.x, treeY - startPoint.y) < minDistanceFromStart;
-
-        if(!tooCloseToGate && !tooCloseToOtherTrees && !tooCloseToFinish && !tooCloseToStart){
-          newTrees.push({ x: treeX, y: treeY });
+        if(!closeGate && !closeTrees && !closeFinish && !closeStart){
+          arr.push({x:tx,y:ty});
         }
       }
-      return newTrees;
+      return arr;
     }
 
-    /* **********************
-       Disegno Pista
-    ********************** */
+    /* Disegno pista */
     function drawTrack(track){
       clearCanvas();
-      gates = track.gates;
-      trees = track.trees;
+      gates= track.gates;
+      trees= track.trees;
       drawStartPoint();
       drawFinishArea();
       drawGates(gates);
       drawTrees(trees);
     }
-
     function drawStartPoint(){
-      ctx.font = '18px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';  
+      ctx.font='18px Arial';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
       ctx.fillText('🏠', startPoint.x, startPoint.y);
     }
     function drawFinishArea(){
-      const { x, y, width, height } = finishRect;
-      const squareSize = width/8;
-      const rowCount = Math.floor(height / (width/8));
+      const{x,y,width,height}=finishRect;
+      const sq=width/8;
+      const rowCount=Math.floor(height/(width/8));
       for(let row=0; row<rowCount; row++){
         for(let col=0; col<8; col++){
-          ctx.fillStyle = (row+col)%2 === 0? 'black' : '#F0F0F0';
-          ctx.fillRect(x + col*squareSize, y + row*squareSize, squareSize, squareSize);
+          ctx.fillStyle=((row+col)%2===0)?'black':'#F0F0F0';
+          ctx.fillRect(x+col*sq, y+row*sq, sq, sq);
         }
       }
     }
-    function drawGates(gatesArray){
-      gatesArray.forEach(gate => {
-        const {x, y, color, line} = gate;
-        ctx.fillStyle = color;
+    function drawGates(gArr){
+      gArr.forEach(g=>{
+        ctx.fillStyle= g.color;
         ctx.beginPath();
-        if(color==='red'){
-          ctx.moveTo(x-5, y-5);
-          ctx.lineTo(x+5, y);
-          ctx.lineTo(x-5, y+5);
+        if(g.color==='red'){
+          ctx.moveTo(g.x-5,g.y-5);
+          ctx.lineTo(g.x+5,g.y);
+          ctx.lineTo(g.x-5,g.y+5);
         } else {
-          ctx.moveTo(x+5, y-5);
-          ctx.lineTo(x-5, y);
-          ctx.lineTo(x+5, y+5);
+          ctx.moveTo(g.x+5,g.y-5);
+          ctx.lineTo(g.x-5,g.y);
+          ctx.lineTo(g.x+5,g.y+5);
         }
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle='transparent';
         ctx.beginPath();
-        ctx.moveTo(line.x1, line.y1);
-        ctx.lineTo(line.x2, line.y2);
+        ctx.moveTo(g.line.x1,g.line.y1);
+        ctx.lineTo(g.line.x2,g.line.y2);
         ctx.stroke();
       });
     }
-    function drawTrees(treesArray){
-      ctx.font = '16px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      treesArray.forEach(tree => {
-        ctx.fillText("🌲", tree.x, tree.y);
+    function drawTrees(tArr){
+      ctx.font='16px Arial';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      tArr.forEach(t=>{
+        ctx.fillText("🌲", t.x,t.y);
       });
     }
 
-    /* **********************
-       Eventi Mouse/Touch
-    ********************** */
+    /* Eventi mouse/touch */
     if(!canvas._eventsAttached){
       canvas.addEventListener('mousedown', handleMouseDown);
       canvas.addEventListener('mousemove', handleMouseMove);
       canvas.addEventListener('mouseup',   handleMouseUp);
-      canvas.addEventListener('touchstart', handleTouchStart);
-      canvas.addEventListener('touchmove',  handleTouchMove);
-      canvas.addEventListener('touchend',   handleTouchEnd);
-      canvas._eventsAttached = true;
+      canvas.addEventListener('touchstart',handleTouchStart);
+      canvas.addEventListener('touchmove', handleTouchMove);
+      canvas.addEventListener('touchend',  handleTouchEnd);
+      canvas._eventsAttached=true;
     }
-
     function getMouseCoords(e){
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
+      const rect= canvas.getBoundingClientRect();
+      const cx = (e.touches)? e.touches[0].clientX : e.clientX;
+      const cy = (e.touches)? e.touches[0].clientY : e.clientY;
+      return {x:cx-rect.left, y:cy-rect.top};
     }
-    function isNearStartPoint(x, y){
-      const dist = Math.hypot(x - startPoint.x, y - startPoint.y);
-      return (dist <= 20);
+    function isNearStartPoint(x,y){
+      return (Math.hypot(x-startPoint.x,y-startPoint.y)<=20);
     }
 
     function handleMouseDown(e){
-      const {x, y} = getMouseCoords(e);
+      const {x,y}= getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent = 'False start! Try again!';
+        statusOutput.textContent='False start! Try again!';
         return;
       }
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      statusOutput.textContent = '';
+      drawing=true;
+      pointsPath=[];
+      startTime= performance.now();
+      statusOutput.textContent='';
+      lastStatusMessage='';
       ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x, y);
-
-      // Azzera la flag: non abbiamo ancora finito/fallito questa run
-      didFinishOrFailThisRun = false;
+      pointsPath.push({x,y,t:0});
+      ctx.moveTo(x,y);
+      didFinishOrFailThisRun=false;
     }
-
     function handleMouseMove(e){
-      if(!drawing) return;
-      const {x, y} = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      pointsPath.push({x, y, t: now});
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = 'grey';
-      ctx.lineWidth = 1.5;
+      if(!drawing)return;
+      const{ x,y }= getMouseCoords(e);
+      const now = performance.now()-startTime;
+      pointsPath.push({x,y,t:now});
+      ctx.lineTo(x,y);
+      ctx.strokeStyle='grey';
+      ctx.lineWidth=1.5;
       ctx.stroke();
       checkIntersections();
     }
-
     function handleMouseUp(e){
-      // Se non stavamo disegnando, ritorno
-      if(!drawing) return;
-      drawing = false;
-
-      // Se la run non è già finita/fallita, consideriamo questo un tentativo interrotto
+      if(!drawing)return;
+      drawing=false;
       if(!didFinishOrFailThisRun){
         failAttempt("Run interrupted!");
       }
@@ -622,78 +456,66 @@
 
     function handleTouchStart(e){
       e.preventDefault();
-      const {x, y} = getMouseCoords(e);
+      const{ x,y }= getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent = 'You must start from the start point!';
+        statusOutput.textContent='You must start from the start point!';
         return;
       }
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      statusOutput.textContent = '';
+      drawing=true;
+      pointsPath=[];
+      startTime= performance.now();
+      statusOutput.textContent='';
+      lastStatusMessage='';
       ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x, y);
-
-      didFinishOrFailThisRun = false;
+      pointsPath.push({x,y,t:0});
+      ctx.moveTo(x,y);
+      didFinishOrFailThisRun=false;
     }
-
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing)return;
-      const {x, y} = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      pointsPath.push({x, y, t: now});
-      ctx.lineTo(x, y);
-      ctx.strokeStyle = 'grey';
-      ctx.lineWidth = 1.5;
+      const{ x,y }= getMouseCoords(e);
+      const now= performance.now()-startTime;
+      pointsPath.push({x,y,t:now});
+      ctx.lineTo(x,y);
+      ctx.strokeStyle='grey';
+      ctx.lineWidth=1.5;
       ctx.stroke();
       checkIntersections();
     }
-
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing)return;
-      drawing = false;
-
+      drawing=false;
       if(!didFinishOrFailThisRun){
         failAttempt("Run interrupted!");
       }
     }
 
-    /* **********************
-       Check Intersections
-    ********************** */
     function checkIntersections(){
       for(let i=1; i<pointsPath.length; i++){
-        const p1 = pointsPath[i-1], p2 = pointsPath[i];
-
-        // Controllo alberi
+        const p1= pointsPath[i-1], p2= pointsPath[i];
         if(hardMode){
           for(const tree of trees){
-            const steps = Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y)/5);
-            for(let j=0; j<=steps; j++){
-              const ix = p1.x + (p2.x - p1.x)*(j/steps);
-              const iy = p1.y + (p2.y - p1.y)*(j/steps);
-              const dist = Math.hypot(ix - tree.x, iy - tree.y);
-              if(dist < 10){
+            const steps=Math.ceil(Math.hypot(p2.x-p1.x,p2.y-p1.y)/5);
+            for(let j=0;j<=steps;j++){
+              const ix= p1.x+(p2.x-p1.x)*(j/steps);
+              const iy= p1.y+(p2.y-p1.y)*(j/steps);
+              const dist=Math.hypot(ix-tree.x, iy-tree.y);
+              if(dist<10){
                 failAttempt("You hit a tree!");
                 return;
               }
             }
           }
         }
-
-        // Controllo cancelli
-        for(const [index, gate] of gates.entries()){
-          if(linesIntersect(p1.x, p1.y, p2.x, p2.y, gate.line.x1, gate.line.y1, gate.line.x2, gate.line.y2)){
-            intersectedGates.add(index);
+        for(const [idx,gate] of gates.entries()){
+          if(linesIntersect(p1.x,p1.y,p2.x,p2.y,gate.line.x1,gate.line.y1,gate.line.x2,gate.line.y2)){
+            intersectedGates.add(idx);
           }
         }
-
-        // Controllo arrivo
-        if(isSegmentInFinishArea(p1, p2, finishRect)){
-          if(intersectedGates.size === gates.length){
+        if(isSegmentInFinishArea(p1,p2,finishRect)){
+          if(intersectedGates.size===gates.length){
             finishRun();
           } else {
             failAttempt("You missed a gate!");
@@ -702,138 +524,144 @@
         }
       }
     }
-
-    function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4){
-      const det = (x2 - x1)*(y4 - y3) - (y2 - y1)*(x4 - x3);
-      if(det===0) return false;
-      const lambda = ((y4-y3)*(x4-x1) + (x3-x4)*(y4-y1))/det;
-      const gamma  = ((y1-y2)*(x4-x1) + (x2-x1)*(y4-y1))/det;
-      return (lambda>=0 && lambda<=1 && gamma>=0 && gamma<=1);
+    function linesIntersect(x1,y1,x2,y2,x3,y3,x4,y4){
+      const det=(x2-x1)*(y4-y3)-(y2-y1)*(x4-x3);
+      if(det===0)return false;
+      const lambda=((y4-y3)*(x4-x1)+(x3-x4)*(y4-y1))/det;
+      const gamma=((y1-y2)*(x4-x1)+(x2-x1)*(y4-y1))/det;
+      return(lambda>=0&&lambda<=1&&gamma>=0&&gamma<=1);
     }
-    function isSegmentInFinishArea(p1, p2, rect){
-      if((p1.y < rect.y && p2.y < rect.y) ||
-         (p1.y > rect.y+rect.height && p2.y>rect.y+rect.height)) return false;
-      if((p1.x < rect.x && p2.x < rect.x) ||
-         (p1.x > rect.x+rect.width && p2.x>rect.x+rect.width)) return false;
+    function isSegmentInFinishArea(p1,p2,rect){
+      if((p1.y<rect.y && p2.y<rect.y) ||
+         (p1.y>rect.y+rect.height && p2.y>rect.y+rect.height))return false;
+      if((p1.x<rect.x && p2.x<rect.x) ||
+         (p1.x>rect.x+rect.width && p2.x>rect.x+rect.width))return false;
       return true;
     }
-    function isNearFinish(x, y, rect, minD){
-      return (
-        x >= rect.x - minD &&
-        x <= rect.x + rect.width + minD &&
-        y >= rect.y - minD &&
-        y <= rect.y + rect.height + minD
+    function isNearFinish(x,y,rect,minD){
+      return(
+        x>=rect.x-minD && x<=rect.x+rect.width+minD &&
+        y>=rect.y-minD && y<=rect.y+rect.height+minD
       );
     }
 
-    /* **********************
-       Tentativi
-    ********************** */
+    /* TENTATIVI */
     function failAttempt(msg){
-      drawing = false;
-      didFinishOrFailThisRun = true;  // Contrassegniamo run come “finita/fallita”
-      statusOutput.textContent = msg;
+      drawing=false;
+      didFinishOrFailThisRun=true;
+      statusOutput.textContent= msg;
+      lastStatusMessage= msg;
       attemptCount++;
-      setTimeout(() => nextParticipant(), 1200);
+      // Non salviamo run incompleta in lastCompleteRun
+      setTimeout(()=> nextParticipant(),1200);
     }
     function finishRun(){
-      drawing = false;
-      didFinishOrFailThisRun = true; // Contrassegniamo run come conclusa
-      const endTime = performance.now();
-      const elapsedTime = endTime - startTime;
-      const distPx = calculateDistance(pointsPath);
-      const realLength = distPx * (window.conversionFactor || 1);
-      const finalTimeSeconds = calculateFinalTime(elapsedTime, realLength);
+      drawing=false;
+      didFinishOrFailThisRun=true;
+      const endTime= performance.now();
+      const elapsedTime= endTime- startTime;
+      const distPx= calculateDistance(pointsPath);
+      const realLength= distPx*(window.conversionFactor||1);
+      const finalTime= calculateFinalTime(elapsedTime, realLength);
 
-      finalTimeOutput.textContent = `⏰ ${formatTime(finalTimeSeconds)}`;
-      statusOutput.textContent    = 'Finished!';
+      finalTimeOutput.textContent=`⏰ ${formatTime(finalTime)}`;
+      statusOutput.textContent='Finished!';
+      lastStatusMessage='Finished!';
 
-      updateTimes(finalTimeSeconds);
+      // (NEW) Salviamo la run completata in lastCompleteRun
+      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
 
+      updateTimes(finalTime);
       attemptCount++;
-      setTimeout(() => nextParticipant(), 1000);
+      setTimeout(()=> nextParticipant(),1000);
     }
-
-    function calculateDistance(points){
-      let total = 0;
-      for(let i=1; i<points.length; i++){
-        let dx = points[i].x - points[i-1].x;
-        let dy = points[i].y - points[i-1].y;
-        total += Math.hypot(dx, dy);
+    function calculateDistance(arr){
+      let tot=0;
+      for(let i=1; i<arr.length; i++){
+        let dx=arr[i].x-arr[i-1].x;
+        let dy=arr[i].y-arr[i-1].y;
+        tot+=Math.hypot(dx,dy);
       }
-      return total;
+      return tot;
     }
-    function calculateFinalTime(ms, realDist){
-      const timeInS = ms/1000;
-      const penalty = PENALTY_WEIGHT * (realDist / PATH_LENGTH_SCALING);
-      return 60 + timeInS + penalty;
+    function calculateFinalTime(ms,dist){
+      const s= ms/1000;
+      const penalty= PENALTY_WEIGHT*(dist/ PATH_LENGTH_SCALING);
+      return 60+s+penalty;
     }
     function formatTime(sec){
-      const m = Math.floor(sec/60);
-      const r = (sec % 60).toFixed(3);
+      const m=Math.floor(sec/60);
+      const r=(sec%60).toFixed(3);
       return `${m}'${r.replace('.', '"')}'''`;
     }
 
-    /* **********************
-       Gestione TOP 5
-    ********************** */
-    function updateTimes(timeS){
-      const nameValue = participants[currentIndex];
-      const replayData = JSON.parse(JSON.stringify(pointsPath));
-      const newResult = { name: nameValue, time: timeS, replay: replayData };
+    /* TOP 5 */
+    function updateTimes(t){
+      const nameValue= participants[currentIndex];
+      const replayData= JSON.parse(JSON.stringify(pointsPath));
+      const newResult= { name:nameValue, time:t, replay:replayData };
 
       bestTimes.push(newResult);
-      bestTimes.sort((a,b)=> a.time - b.time);
+      bestTimes.sort((a,b)=>a.time-b.time);
       if(bestTimes.length>5) bestTimes.length=5;
 
-      if(bestTimes[0].time === timeS){
+      if(bestTimes[0].time===t){
         finalTimeOutput.classList.add('record');
-        setTimeout(()=>finalTimeOutput.classList.remove('record'),2000);
+        setTimeout(()=> finalTimeOutput.classList.remove('record'),2000);
       }
       updateLeaderboard();
     }
-
-    chronoButton.addEventListener('click', ()=> {
+    chronoButton.addEventListener('click',()=>{
       chronoOverlay.classList.remove('hidden');
     });
-    closeOverlay.addEventListener('click', ()=> {
+    closeOverlay.addEventListener('click',()=>{
       chronoOverlay.classList.add('hidden');
     });
-
     function updateLeaderboard(){
-      const leaderboardList = document.getElementById('leaderboardList');
-      leaderboardList.innerHTML = '';
-      bestTimes.forEach((entry, index) => {
-        const li = document.createElement('li');
-        if(index===0){
-          li.innerHTML = `${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px;">⏯️</span>`;
-          li.style.fontWeight = 'bold';
-          li.style.cursor = 'pointer';
-          li.title = "Click to watch the best replay";
-          li.addEventListener('click', ()=>{
+      const lb= document.getElementById('leaderboardList');
+      lb.innerHTML='';
+      bestTimes.forEach((entry,i)=>{
+        const li=document.createElement('li');
+        if(i===0){
+          li.innerHTML=`${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px;">⏯️</span>`;
+          li.style.fontWeight='bold';
+          li.style.cursor='pointer';
+          li.title="Click to watch the best replay";
+          li.addEventListener('click',()=>{
             chronoOverlay.classList.add('hidden');
             replayTrajectory(entry.replay);
           });
         } else {
-          li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
+          li.textContent= `${entry.name} - ${formatTime(entry.time)}`;
         }
-        leaderboardList.appendChild(li);
+        lb.appendChild(li);
       });
     }
 
-    /* **********************
-       REPLAY
-    ********************** */
-    replayButton.addEventListener('click', ()=> {
-      replayTrajectory();
+    /* REPLAY con chiusura auto */
+    replayButton.addEventListener('click',()=>{
+      // Se non passiamo customPoints,
+      // usiamo la lastCompleteRun se presente
+      // altrimenti pointsPath
+      if(lastCompleteRun && lastCompleteRun.length>=2){
+        replayTrajectory(lastCompleteRun);
+      } else {
+        replayTrajectory();
+      }
     });
-
     function replayTrajectory(customPoints){
-      const replayPoints = customPoints && customPoints.length>=2 ? customPoints : pointsPath;
-      if(replayPoints.length<2){
-        statusOutput.textContent = "No run to replay!";
+      // Se customPoints e' definito, usalo
+      // altrimenti fallback su pointsPath
+      const rp = (customPoints && customPoints.length>=2)
+        ? customPoints : pointsPath;
+
+      if(!rp || rp.length<2){
+        statusOutput.textContent="No run to replay!";
+        lastStatusMessage="No run to replay!";
         return;
       }
+      lastStatusMessage= statusOutput.innerHTML;
+
       clearCanvas();
       drawStartPoint();
       drawFinishArea();
@@ -842,193 +670,175 @@
 
       let i=0;
       function step(){
-        if(i>=replayPoints.length-1) return;
+        if(i>=rp.length-1){
+          setTimeout(()=>{
+            clearCanvas();
+            if(currentTrack) drawTrack(currentTrack);
+            restoreStatusOutput();
+          },500);
+          return;
+        }
         ctx.beginPath();
-        ctx.moveTo(replayPoints[i].x, replayPoints[i].y);
-        ctx.lineTo(replayPoints[i+1].x, replayPoints[i+1].y);
+        ctx.moveTo(rp[i].x, rp[i].y);
+        ctx.lineTo(rp[i+1].x, rp[i+1].y);
         ctx.strokeStyle='grey';
         ctx.lineWidth=1.5;
         ctx.stroke();
-        const dt = replayPoints[i+1].t - replayPoints[i].t;
+        const dt= rp[i+1].t- rp[i].t;
         i++;
-        if(i<replayPoints.length-1) {
+        if(i< rp.length-1){
+          setTimeout(step, dt);
+        } else {
           setTimeout(step, dt);
         }
       }
-      setTimeout(step, 0);
+      setTimeout(step,0);
     }
 
-    /* **********************
-       Gestione Tasti
-    ********************** */
-    sameTrackButton.addEventListener('click', ()=>{
+    /* Tasti */
+    sameTrackButton.addEventListener('click',()=>{
       resetTrack(currentTrack);
+      // Per mantenere "Play [nome]"
+      callParticipant();
     });
-
     function resetTrack(track){
       drawing=false;
       pointsPath=[];
       intersectedGates.clear();
-      finalTimeOutput.textContent = `⏰1'00"000'''`;
-      statusOutput.textContent='';
+      finalTimeOutput.textContent=`⏰1'00"000'''`;
+      statusOutput.innerHTML='';
+      lastStatusMessage='';
       clearCanvas();
       if(track) drawTrack(track);
     }
 
-    /* **********************
-       Logica Campionato
-    ********************** */
+    /* Logica campionato */
     function nextParticipant(){
       if(attemptCount>=3){
-        // Il giocatore corrente ha finito i 3 tentativi
         attemptCount=0;
         currentIndex++;
-        
-        // Se TUTTI i giocatori hanno finito questa manche
-        if(currentIndex>=participants.length){
-          // fine manche
+        if(currentIndex>= participants.length){
           if(runNumber===1){
             runNumber=2;
             currentIndex=0;
-            showPopup(`Starting the 2nd run of race #${raceNumber}!`, ()=>{
+            showPopup(`Starting the 2nd manche of race #${raceNumber}!`,()=>{
               resetTrack(currentTrack);
               callParticipant();
             });
           } else {
-            // fine gara
             endRace();
           }
         } else {
-          // Annuncio con popup chi è il prossimo
-          const nextName = participants[currentIndex];
-          showPopup(`Now it's ${nextName}'s turn!`, ()=>{
+          const nxt=participants[currentIndex];
+          showPopup(`Now it's ${nxt}'s turn!`,()=>{
             resetTrack(currentTrack);
             callParticipant();
           });
         }
       } else {
-        // Ha ancora tentativi lo stesso giocatore
         resetTrack(currentTrack);
         callParticipant();
       }
     }
-
-    function callParticipant() {
-      let attemptLabel = attemptCount + 1; 
-      statusOutput.innerHTML = `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${attemptLabel})`;
+    function callParticipant(){
+      let att= attemptCount+1;
+      let msg= `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${att})`;
+      statusOutput.innerHTML= msg;
+      lastStatusMessage= msg;
     }
 
     function endRace(){
-      // Assegna i punti top5
-      const sortedTimes = [...bestTimes].sort((a,b)=>a.time-b.time);
-      for(let i=0; i<5; i++){
-        if(i<sortedTimes.length){
-          const entry = sortedTimes[i];
-          championScores[entry.name] += CHAMPION_POINTS[i];
+      const sorted=[...bestTimes].sort((a,b)=> a.time-b.time);
+      for(let i=0;i<5;i++){
+        if(i< sorted.length){
+          championScores[ sorted[i].name ] += CHAMPION_POINTS[i];
         }
       }
-      // Mostra classifica di gara
       showRaceResults();
     }
-
     function showRaceResults(){
-      // 1) “Final Times (Top 5)” con nome e tempo
-      let sortedTimes = [...bestTimes].sort((a,b)=> a.time - b.time);
-
-      let html = `
-        <h2>Tempi finali (Top 5)</h2>
-        <div class="champ-table">
-          <table>
-            <tr><th>Player</th><th>Tempo</th></tr>
+      let sortedTimes=[...bestTimes].sort((a,b)=> a.time-b.time);
+      let html=`
+      <h2>Tempi finali (Top 5)</h2>
+      <div class="champ-table">
+        <table>
+          <tr><th>Player</th><th>Tempo</th></tr>
       `;
-      sortedTimes.forEach(entry => {
-        html += `<tr><td>${entry.name}</td><td>${formatTime(entry.time)}</td></tr>`;
+      sortedTimes.forEach(e=>{
+        html+= `<tr><td>${e.name}</td><td>${formatTime(e.time)}</td></tr>`;
       });
-      html += `</table></div>`;
+      html+= `</table></div>`;
 
-      // 2) “Race Standings” con punteggio
-      const sortedPlayers = Object.keys(championScores)
-        .sort((a,b)=> championScores[b]-championScores[a]);
-
-      html += `
-        <h2>Race Standings #${raceNumber}</h2>
-        <div class="champ-table">
-          <table>
-            <tr><th>Player</th><th>Total Points</th></tr>
+      const sortedPlayers= Object.keys(championScores)
+        .sort((a,b)=>championScores[b]-championScores[a]);
+      html+=`
+      <h2>Race Standings #${raceNumber}</h2>
+      <div class="champ-table">
+        <table>
+          <tr><th>Player</th><th>Total Points</th></tr>
       `;
-      sortedPlayers.forEach(name => {
-        html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
+      sortedPlayers.forEach(name=>{
+        html+= `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
       });
-      html += `</table></div>`;
+      html+= `</table></div>`;
 
-      // Bottone di proseguimento
-      let btnLabel = "Next Race!";
-      let action = ()=>{
+      let btnLabel="Next Race!";
+      let action= ()=>{
         champOverlay.classList.add('hidden');
         raceNumber++;
         // invertire l'ordine di partenza
-        participants = sortedPlayers.slice().reverse();
+        participants= sortedPlayers.slice().reverse();
         setupRace();
       };
       if(raceNumber>=3){
-        btnLabel = "Final Standings!";
-        action = showFinalResults;
+        btnLabel="Final Standings!";
+        action= showFinalResults;
       }
-
-      html += `<button class="nav-button">${btnLabel}</button>`;
-      champContent.innerHTML = html;
-      champContent.querySelector('.nav-button').addEventListener('click', action);
-
+      html+= `<button class="nav-button">${btnLabel}</button>`;
+      champContent.innerHTML= html;
+      champContent.querySelector('.nav-button').addEventListener('click',action);
       champOverlay.classList.remove('hidden');
     }
-
     function showFinalResults(){
-      let sortedPlayers = Object.keys(championScores)
-        .sort((a,b)=>championScores[b]-championScores[a]);
-      const winner = sortedPlayers[0];
-
-      let html = `
-        <h2>Final Standings</h2>
-        <div class="champ-table">
-          <table>
-            <tr><th>Player</th><th>Punti</th></tr>
+      let sortedPlayers= Object.keys(championScores)
+        .sort((a,b)=> championScores[b]-championScores[a]);
+      const winner= sortedPlayers[0];
+      let html=`
+      <h2>Final Standings</h2>
+      <div class="champ-table">
+        <table>
+          <tr><th>Player</th><th>Punti</th></tr>
       `;
-      sortedPlayers.forEach(name=>{
-        html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
+      sortedPlayers.forEach(n=>{
+        html+= `<tr><td>${n}</td><td>${championScores[n]}</td></tr>`;
       });
-      html += `</table></div>`;
-      html += `<h3>Wins ${winner}!!!</h3>`;
-
-      // Due bottoni: Rigioca e Gioca solitario
-      html += `
+      html+= `</table></div>`;
+      html+= `<h3>Wins ${winner}!!!</h3>`;
+      html+= `
       <div class="end-buttons">
         <button id="btnReplayChamp">Play Again!</button>
         <button id="btnSolo">Play Solo</button>
       </div>
       `;
-      champContent.innerHTML = html;
+      champContent.innerHTML= html;
 
-      // Rigioca
-      champContent.querySelector('#btnReplayChamp').addEventListener('click', ()=>{
+      champContent.querySelector('#btnReplayChamp').addEventListener('click',()=>{
         champOverlay.classList.add('hidden');
         slidesOverlay.classList.remove('hidden');
-        currentSlideIndex = 0;
-        renderSlide(); // re-show the intro
+        currentSlideIndex=0;
+        renderSlide();
       });
-
-      // Gioca solitario (placeholder)
-      champContent.querySelector('#btnSolo').addEventListener('click', () => {
-        window.location.href = 'index.html';
+      champContent.querySelector('#btnSolo').addEventListener('click',()=>{
+        window.location.href='index.html';
       });
-
       champOverlay.classList.remove('hidden');
     }
 
     function setupRace(){
-      currentTrack = createTrackForRace(raceNumber);
+      currentTrack= createTrackForRace(raceNumber);
       resizeCanvas();
       drawTrack(currentTrack);
-      bestTimes = [];
+      bestTimes=[];
       updateLeaderboard();
       currentIndex=0;
       attemptCount=0;
@@ -1036,60 +846,58 @@
       callParticipant();
     }
 
-    /* **********************
-       Funzioni overlay “carine”
-    ********************** */
-    function showPopup(message, onOk){
-      // Apertura overlay stile champOverlay
-      champContent.innerHTML = `
-        <h2>Attention</h2>
-        <p class="slide-content">${message}</p>
-        <button class="nav-button">OK</button>
+    /* Popup generico */
+    function showPopup(message,onOk){
+      champContent.innerHTML=`
+      <h2>Attention</h2>
+      <p class="slide-content">${message}</p>
+      <button class="nav-button">OK</button>
       `;
       champOverlay.classList.remove('hidden');
-      champContent.querySelector('.nav-button').addEventListener('click', ()=>{
+      champContent.querySelector('.nav-button').addEventListener('click',()=>{
         champOverlay.classList.add('hidden');
-        onOk && onOk();
+        if(onOk) onOk();
+        restoreStatusOutput();
       });
     }
 
-    /* **********************
-       INTRO Slides
-    ********************** */
-    slidesIntro = [
+    /* SLIDES INTRO */
+    slidesIntro=[
       {
-        title: "Ski-Zag Championship!",
-        content: `
+        title:"Ski-Zag Championship!⛷️",
+        content:`
           Enter the players!<br>
           <div id="playersInputContainer"></div>
           <button id="addPlayerBtn" style="margin-right:8px;">Add Player</button>
           <button id="removePlayerBtn">Remove Player</button>
-        `,
+        `
       },
       {
-        title: "Race Info",
-        content: `
+        title:"Race Info 🏁",
+        content:`
           There will be 3 distinct races (Giant, Special, SuperG). Each race has 2 runs (manches), and in each run every participant has 3 consecutive attempts.
-        `,
+        `
       },
       {
-        title: "Top 5 Scoring",
-        content: `
-          At the end of each race, the top 5 best times are awarded points (9, 6, 4, 2, 1).
-        `,
+        title:"Top 5 Scoring ⏰",
+        content:`
+          At the end of each race, the top 5 best times are awarded points (9, 7, 5, 3, 1).
+        `
       },
       {
-        title: "Final Victory",
-        content: `
+        title:"Final Victory🏆",
+        content:`
           At the end of the 3rd race, whoever has the most points wins the championship! Have fun!!
         `
       }
     ];
 
+    let draftParticipants=[];
+
     function renderSlide(){
       slidesOverlay.classList.remove('hidden');
-      const slide = slidesIntro[currentSlideIndex];
-      slidesContent.innerHTML = `
+      const slide= slidesIntro[currentSlideIndex];
+      slidesContent.innerHTML=`
         <h2 class="slide-title">${slide.title}</h2>
         <p class="slide-content">${slide.content}</p>
         <div class="tutorial-dots"></div>
@@ -1099,115 +907,136 @@
           <button class="nav-button" id="btnNext">→</button>
         </div>
       `;
-      // Pallini
-      const dotsContainer = slidesContent.querySelector('.tutorial-dots');
-      slidesIntro.forEach((s, i)=>{
-        let d = document.createElement('div');
-        d.className = "dot" + (i===currentSlideIndex?" active":"");
-        d.addEventListener('click', ()=> {
-          currentSlideIndex = i;
+      const dotsC= slidesContent.querySelector('.tutorial-dots');
+      slidesIntro.forEach((s,i)=>{
+        const d=document.createElement('div');
+        d.className="dot"+(i===currentSlideIndex?" active":"");
+        d.addEventListener('click',()=>{
+          // Salva sempre prima di cambiare slide
+          syncDraftParticipants();
+          currentSlideIndex=i;
           renderSlide();
         });
-        dotsContainer.appendChild(d);
+        dotsC.appendChild(d);
       });
 
-      // Gestione bottoni
-      const btnPrev = slidesContent.querySelector('#btnPrev');
-      btnPrev.disabled = (currentSlideIndex===0);
-      btnPrev.addEventListener('click', ()=> {
+      const btnPrev= slidesContent.querySelector('#btnPrev');
+      btnPrev.disabled=(currentSlideIndex===0);
+      btnPrev.addEventListener('click',()=>{
         if(currentSlideIndex>0){
+          syncDraftParticipants();
           currentSlideIndex--;
           renderSlide();
         }
       });
 
-      // Bottone “Start!” –> startChampion immediato (se partecipanti ok)
-      slidesContent.querySelector('#btnStartNow').addEventListener('click', ()=>{
-        if(!checkParticipantsValidity()){
-          return;
-        }
+      slidesContent.querySelector('#btnStartNow').addEventListener('click',()=>{
+        syncDraftParticipants();
+        if(!checkDraftNames())return;
+        acceptDraftParticipants();
         startChampionship();
       });
 
-      // Freccia →
-      const btnNext = slidesContent.querySelector('#btnNext');
-      // Disabilitiamo se siamo all’ultima slide (non ha più senso “→”)
-      btnNext.disabled = (currentSlideIndex === slidesIntro.length-1);
-      btnNext.addEventListener('click', nextSlideSlide);
+      const btnNext= slidesContent.querySelector('#btnNext');
+      btnNext.disabled=(currentSlideIndex===slidesIntro.length-1);
+      btnNext.addEventListener('click',()=>{
+        if(currentSlideIndex<slidesIntro.length-1){
+          syncDraftParticipants();
+          currentSlideIndex++;
+          renderSlide();
+        }
+      });
 
-      // Se è la prima slide -> render input
+      // Se siamo alla slide 0, mostra input
       if(currentSlideIndex===0){
         renderPlayersInput();
       }
     }
 
-    function nextSlideSlide(){
-      if(currentSlideIndex >= slidesIntro.length-1){
-        return;
-      }
-      currentSlideIndex++;
-      renderSlide();
-    }
-
     function renderPlayersInput(){
-      const container = slidesContent.querySelector('#playersInputContainer');
-      container.innerHTML="";
-      for(let i=0; i<2; i++){
-        addPlayerField(container);
+      const cont= slidesContent.querySelector('#playersInputContainer');
+      cont.innerHTML='';
+      // Inizializziamo se <2
+      if(draftParticipants.length<2){
+        draftParticipants=['',''];
       }
-      // Tasti
-      slidesContent.querySelector('#addPlayerBtn').addEventListener('click', ()=>{
-        addPlayerField(container);
+      draftParticipants.forEach(n=>{
+        addPlayerField(cont,n);
       });
-      slidesContent.querySelector('#removePlayerBtn').addEventListener('click', ()=>{
-        const fields = container.querySelectorAll('.player-name-input');
-        if(fields.length>2){
-          fields[fields.length-1].parentNode.remove();
+
+      slidesContent.querySelector('#addPlayerBtn').addEventListener('click',()=>{
+        syncDraftParticipants();
+        if(draftParticipants.length<6){
+          draftParticipants.push('');
+          renderSlide();
+        } else {
+          alert("Max 6 participants!");
+        }
+      });
+      slidesContent.querySelector('#removePlayerBtn').addEventListener('click',()=>{
+        syncDraftParticipants();
+        if(draftParticipants.length>2){
+          draftParticipants.pop();
+          renderSlide();
         }
       });
     }
-
-    function addPlayerField(container){
-      let div = document.createElement('div');
-      div.innerHTML = `<input type="text" class="player-name-input" placeholder="Player name" style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;" />`;
-      container.appendChild(div);
+    function addPlayerField(container,def=''){
+      const d=document.createElement('div');
+      d.innerHTML=`
+        <input type="text" class="player-name-input"
+         placeholder="Player name"
+         style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;"
+         value="${def}"
+        />
+      `;
+      container.appendChild(d);
     }
-
-    function checkParticipantsValidity(){
-      participants=[];
-      const inputs = slidesContent.querySelectorAll('.player-name-input');
+    function syncDraftParticipants(){
+      // Se la slide 0 non e' attiva, non cancelliamo i nomi
+      // (oppure controlliamo se ci sono input)
+      const inputs= slidesContent.querySelectorAll('.player-name-input');
+      if(inputs.length===0) return; 
+      // Altrimenti, leggiamo i campi
+      draftParticipants=[];
       inputs.forEach(inp=>{
-        let val = inp.value.trim();
-        if(val) participants.push(val);
+        const val= inp.value.trim();
+        if(val) draftParticipants.push(val);
       });
-      if(participants.length<2){
+    }
+    function checkDraftNames(){
+      if(draftParticipants.length<2){
         alert("At least 2 participants!");
         return false;
       }
-      if(participants.length>6){
+      if(draftParticipants.length>6){
         alert("Max 6 participants!");
+        return false;
+      }
+      const duplicates= draftParticipants.some((nm,idx)=>
+        draftParticipants.indexOf(nm)!==idx
+      );
+      if(duplicates){
+        alert("Names must be unique!");
         return false;
       }
       return true;
     }
-
+    function acceptDraftParticipants(){
+      participants=[...draftParticipants];
+    }
     function startChampionship(){
-      if(!checkParticipantsValidity()) return;
       championScores={};
       participants.forEach(p=> championScores[p]=0);
-
       slidesOverlay.classList.add('hidden');
       raceNumber=1;
       runNumber=1;
       setupRace();
     }
 
-    /* **********************
-       Start
-    ********************** */
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded',()=>{
       resizeCanvas();
-      renderSlide(); // Mostriamo la prima slide
+      renderSlide();
     });
   </script>
 </body>
