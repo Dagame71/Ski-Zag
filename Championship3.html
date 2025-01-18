@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <!-- Disabilita pinch-to-zoom / doppio tap -->
   <meta name="viewport"
-      content="width=300, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        content="width=300, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 
   <title>Ski Championship</title>
   <style>
@@ -20,25 +21,28 @@
       flex-direction: column;
       align-items: center;
     }
-  .container {
-  position: relative;
-  width: 300px;
-  height: 520px;
-  background: #fff url("sfondo.png") no-repeat center center;
-  background-size: cover;
 
-  border: 2px solid #e9effb;
-  border-radius: 10px;
-  margin-top: 20px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
+    .container {
+      position: relative;
+      width: 300px;
+      height: 520px;
+      /* Sfondo immagine */
+      background: #fff url("sfondo.png") no-repeat center center;
+      background-size: cover;
+
+      border: 2px solid #e9effb;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
     canvas {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       cursor: crosshair;
     }
+
     button {
       border: none;
       background: none;
@@ -49,12 +53,35 @@
     }
     button:hover { opacity: 0.7; }
 
-    #sameTrack { position: absolute; bottom: 10px; left: 10px; }
-    #replayButton { position: absolute; bottom: 10px; left: 50px; }
-    #quit { position: absolute; bottom: 10px; right: 10px; }
-    #chronoButton { position: absolute; top: 10px; right: 10px; }
+    /* Bottoni */
+    #sameTrack {
+      position: absolute; bottom: 10px; left: 10px;
+    }
+    #replayButton {
+      position: absolute; bottom: 10px; left: 50px;
+    }
+    #quit {
+      position: absolute; bottom: 10px; right: 10px;
+    }
+    #chronoButton {
+      position: absolute; top: 10px; right: 10px;
+    }
 
-    #addPlayerBtn, #removePlayerBtn { font-size: 12px; }
+    /* Nuovo bottone BLIND */
+    #blindToggle {
+      font-size: 18px;
+    padding: 5px 8px;
+    position: absolute;
+    bottom: 5px;
+    left: 100px; /* Posizionato a sinistra del bottone alberi */
+    transform: translateX(-50%);
+    cursor: pointer;
+}
+
+
+    #addPlayerBtn, #removePlayerBtn {
+      font-size: 12px;
+    }
 
     .info-container {
       margin-top: 13px;
@@ -63,14 +90,24 @@
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput { margin: -10px 0; font-weight: bold; }
-    #statusOutput { margin: 15px 0; font-weight: bold; color: red; min-height: 20px; }
+    #finalTimeOutput {
+      margin: -10px 0;
+      font-weight: bold;
+    }
+    #statusOutput {
+      margin: 15px 0;
+      font-weight: bold;
+      color: red;
+      min-height: 20px;
+    }
 
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
+      50%      { opacity: 0; }
     }
-    .record { animation: blink 0.5s ease-in-out 3; }
+    .record {
+      animation: blink 0.5s ease-in-out 3;
+    }
 
     .overlay {
       position: fixed;
@@ -87,19 +124,23 @@
       from { opacity: 0; }
       to   { opacity: 1; }
     }
-    .hidden { display: none; }
+    .hidden {
+      display: none;
+    }
     .overlay-content {
       background-color: #fff;
       border-radius: 12px;
       padding: 20px;
       width: 90%;
-      max-width: 600px; 
+      max-width: 600px;
       box-sizing: border-box;
       position: relative;
       text-align: center;
       color: #333;
     }
-    #chronoOverlay .overlay-content { max-width: 700px; }
+    #chronoOverlay .overlay-content {
+      max-width: 700px;
+    }
     #closeOverlay {
       position: absolute; top: 10px; left: 10px;
       background-color: #dc3545;
@@ -107,11 +148,19 @@
       color: white; border: none; border-radius: 5px;
       cursor: pointer;
     }
-    #closeOverlay:hover { background-color: #c82333; }
+    #closeOverlay:hover {
+      background-color: #c82333;
+    }
 
-    .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
-    .leaderboard { width: 80%; margin: 0 auto; }
-    .leaderboard h2 { text-align: center; margin: 10px 0; }
+    .leaderboard-container {
+      display: block; width: 100%; margin-top: 10px;
+    }
+    .leaderboard {
+      width: 80%; margin: 0 auto;
+    }
+    .leaderboard h2 {
+      text-align: center; margin: 10px 0;
+    }
     ol {
       border: 1px solid #ccc; border-radius: 5px;
       list-style: decimal inside; min-height: 100px;
@@ -120,8 +169,12 @@
     li { padding: 5px 0; }
 
     .intro-overlay { }
-    .slide-content { margin-bottom: 20px; line-height: 1.4; }
-    .slide-title { margin-top: 0; margin-bottom: 10px; font-size: 22px; }
+    .slide-content {
+      margin-bottom: 20px; line-height: 1.4;
+    }
+    .slide-title {
+      margin-top: 0; margin-bottom: 10px; font-size: 22px;
+    }
 
     .slides-nav {
       display: flex; justify-content: space-between;
@@ -144,7 +197,9 @@
       background: #ccc; cursor: pointer;
       transition: background 0.3s;
     }
-    .dot.active { background: #007bff; }
+    .dot.active {
+      background: #007bff;
+    }
 
     .champ-table {
       margin: 15px 0; border: 1px solid #ccc;
@@ -177,7 +232,6 @@
     .end-buttons button:hover {
       background-color: #0056b3;
     }
-
   </style>
 </head>
 <body>
@@ -192,6 +246,9 @@
     <button id="replayButton" title="Replay">⏯️</button>
     <button id="chronoButton" title="Chrono">⏰</button>
     <button id="quit" onclick="location.href='index.html'">⚠️</button>
+
+    <!-- (NEW) Bottone per Blind Mode -->
+    <button id="blindToggle" title="Toggle Blind Mode">👁️</button>
 
     <!-- Overlay CHRONO (Top 5) -->
     <div id="chronoOverlay" class="overlay hidden">
@@ -225,12 +282,12 @@
 
   <script>
     /* ==============================================
-       Fix 1: Salvataggio nomi su più slide
-       Fix 2: Ultimo run salvato in lastCompleteRun
-              per un replay immediato
-    ============================================== */
+       Modalità Blind:
+       - Nuova var isBlind +3 pt se la run in top5
+         E icone: 👁️ / 🙈
+    =============================================== */
 
-    /* Calibrazione */
+    // Calibrazione
     window.addEventListener('load', ()=>{
       const cal = document.getElementById('calibrationTest');
       window.conversionFactor = cal.offsetWidth / 96;
@@ -254,6 +311,12 @@
     const champOverlay   = document.getElementById('champOverlay');
     const champContent   = document.getElementById('champContent');
 
+    // (NEW) bottone Blind
+    const blindToggleButton = document.getElementById('blindToggle');
+
+    // (NEW) Stato blind
+    let isBlind = false;
+
     let bestTimes        = [];
     let currentTrack     = null;
     let gates            = [];
@@ -276,11 +339,20 @@
     let currentSlideIndex= 0;
     let didFinishOrFailThisRun = false;
 
-    /* Ricordiamo l’ultimo test in statusOutput */
     let lastStatusMessage = '';
-
-    /* (NEW) Salviamo la run completata per replay immediato */
     let lastCompleteRun   = null;
+
+    // (NEW) Toggle Blind Mode
+    blindToggleButton.addEventListener('click', ()=>{
+      isBlind = !isBlind;
+      if(isBlind){
+        // Occhio chiuso
+        blindToggleButton.textContent = '🙈';
+      } else {
+        // Occhio aperto
+        blindToggleButton.textContent = '👁️';
+      }
+    });
 
     /* Setup canvas */
     let startPoint = { x:150, y:20 };
@@ -444,10 +516,14 @@
       const{ x,y }= getMouseCoords(e);
       const now = performance.now()-startTime;
       pointsPath.push({x,y,t:now});
-      ctx.lineTo(x,y);
-      ctx.strokeStyle='grey';
-      ctx.lineWidth=1.5;
-      ctx.stroke();
+
+      // (NEW) Se isBlind, NON disegniamo la traccia
+      if(!isBlind){
+        ctx.lineTo(x,y);
+        ctx.strokeStyle='grey';
+        ctx.lineWidth=1.5;
+        ctx.stroke();
+      }
       checkIntersections();
     }
     function handleMouseUp(e){
@@ -481,10 +557,14 @@
       const{ x,y }= getMouseCoords(e);
       const now= performance.now()-startTime;
       pointsPath.push({x,y,t:now});
-      ctx.lineTo(x,y);
-      ctx.strokeStyle='grey';
-      ctx.lineWidth=1.5;
-      ctx.stroke();
+
+      // (NEW) Se isBlind, NON disegniamo la traccia
+      if(!isBlind){
+        ctx.lineTo(x,y);
+        ctx.strokeStyle='grey';
+        ctx.lineWidth=1.5;
+        ctx.stroke();
+      }
       checkIntersections();
     }
     function handleTouchEnd(e){
@@ -572,7 +652,7 @@
       statusOutput.textContent='Finished!';
       lastStatusMessage='Finished!';
 
-      // (NEW) Salviamo la run completata in lastCompleteRun
+      // Salviamo la run completata
       lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
 
       updateTimes(finalTime);
@@ -603,7 +683,14 @@
     function updateTimes(t){
       const nameValue= participants[currentIndex];
       const replayData= JSON.parse(JSON.stringify(pointsPath));
-      const newResult= { name:nameValue, time:t, replay:replayData };
+
+      // (NEW) Salviamo anche se era Blind
+      const newResult= { 
+        name: nameValue, 
+        time: t, 
+        replay: replayData,
+        blind: isBlind
+      };
 
       bestTimes.push(newResult);
       bestTimes.sort((a,b)=>a.time-b.time);
@@ -615,12 +702,14 @@
       }
       updateLeaderboard();
     }
+
     chronoButton.addEventListener('click',()=>{
       chronoOverlay.classList.remove('hidden');
     });
     closeOverlay.addEventListener('click',()=>{
       chronoOverlay.classList.add('hidden');
     });
+
     function updateLeaderboard(){
       const lb= document.getElementById('leaderboardList');
       lb.innerHTML='';
@@ -644,9 +733,6 @@
 
     /* REPLAY con chiusura auto */
     replayButton.addEventListener('click',()=>{
-      // Se non passiamo customPoints,
-      // usiamo la lastCompleteRun se presente
-      // altrimenti pointsPath
       if(lastCompleteRun && lastCompleteRun.length>=2){
         replayTrajectory(lastCompleteRun);
       } else {
@@ -654,8 +740,6 @@
       }
     });
     function replayTrajectory(customPoints){
-      // Se customPoints e' definito, usalo
-      // altrimenti fallback su pointsPath
       const rp = (customPoints && customPoints.length>=2)
         ? customPoints : pointsPath;
 
@@ -702,7 +786,6 @@
     /* Tasti */
     sameTrackButton.addEventListener('click',()=>{
       resetTrack(currentTrack);
-      // Per mantenere "Play [nome]"
       callParticipant();
     });
     function resetTrack(track){
@@ -744,6 +827,7 @@
         callParticipant();
       }
     }
+
     function callParticipant(){
       let att= attemptCount+1;
       let msg= `Play <span style="color:black;">${participants[currentIndex]}</span> (G${raceNumber}/M${runNumber}/R${att})`;
@@ -755,7 +839,13 @@
       const sorted=[...bestTimes].sort((a,b)=> a.time-b.time);
       for(let i=0;i<5;i++){
         if(i< sorted.length){
-          championScores[ sorted[i].name ] += CHAMPION_POINTS[i];
+          const entry = sorted[i];
+          // Assegniamo i punti base
+          championScores[ entry.name ] += CHAMPION_POINTS[i];
+          // (NEW) Se la run era Blind, +3
+          if(entry.blind){
+            championScores[ entry.name ] += 3;
+          }
         }
       }
       showRaceResults();
@@ -790,7 +880,7 @@
       let action= ()=>{
         champOverlay.classList.add('hidden');
         raceNumber++;
-        // invertire l'ordine di partenza
+        // invertiamo l'ordine di partenza
         participants= sortedPlayers.slice().reverse();
         setupRace();
       };
@@ -803,9 +893,10 @@
       champContent.querySelector('.nav-button').addEventListener('click',action);
       champOverlay.classList.remove('hidden');
     }
+
     function showFinalResults(){
       let sortedPlayers= Object.keys(championScores)
-        .sort((a,b)=> championScores[b]-championScores[a]);
+        .sort((a,b)=>championScores[b]-championScores[a]);
       const winner= sortedPlayers[0];
       let html=`
       <h2>Final Standings</h2>
@@ -916,7 +1007,6 @@
         const d=document.createElement('div');
         d.className="dot"+(i===currentSlideIndex?" active":"");
         d.addEventListener('click',()=>{
-          // Salva sempre prima di cambiare slide
           syncDraftParticipants();
           currentSlideIndex=i;
           renderSlide();
@@ -951,7 +1041,6 @@
         }
       });
 
-      // Se siamo alla slide 0, mostra input
       if(currentSlideIndex===0){
         renderPlayersInput();
       }
@@ -960,7 +1049,6 @@
     function renderPlayersInput(){
       const cont= slidesContent.querySelector('#playersInputContainer');
       cont.innerHTML='';
-      // Inizializziamo se <2
       if(draftParticipants.length<2){
         draftParticipants=['',''];
       }
@@ -997,11 +1085,8 @@
       container.appendChild(d);
     }
     function syncDraftParticipants(){
-      // Se la slide 0 non e' attiva, non cancelliamo i nomi
-      // (oppure controlliamo se ci sono input)
       const inputs= slidesContent.querySelectorAll('.player-name-input');
       if(inputs.length===0) return; 
-      // Altrimenti, leggiamo i campi
       draftParticipants=[];
       inputs.forEach(inp=>{
         const val= inp.value.trim();
