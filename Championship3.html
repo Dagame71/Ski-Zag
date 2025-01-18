@@ -72,7 +72,7 @@
       font-size: 18px;
     padding: 5px 8px;
     position: absolute;
-    bottom: 5px;
+    bottom: 0px;
     left: 100px; /* Posizionato a sinistra del bottone alberi */
     transform: translateX(-50%);
     cursor: pointer;
@@ -248,7 +248,9 @@
     <button id="quit" onclick="location.href='index.html'">⚠️</button>
 
     <!-- (NEW) Bottone per Blind Mode -->
-    <button id="blindToggle" title="Toggle Blind Mode">👁️</button>
+    <button id="blindToggle" title="Toggle Blind Mode">
+  <img id="blindIcon" src="view.png" alt="View Mode" style="width:24px; height:24px;">
+</button>
 
     <!-- Overlay CHRONO (Top 5) -->
     <div id="chronoOverlay" class="overlay hidden">
@@ -343,16 +345,22 @@
     let lastCompleteRun   = null;
 let falseStartCount = 0;
     // (NEW) Toggle Blind Mode
-    blindToggleButton.addEventListener('click', ()=>{
-      isBlind = !isBlind;
-      if(isBlind){
-        // Occhio chiuso
-        blindToggleButton.textContent = '❌';
-      } else {
-        // Occhio aperto
-        blindToggleButton.textContent = '👁️';
-      }
-    });
+// (NEW) Toggle Blind Mode
+blindToggleButton.addEventListener('click', () => {
+  isBlind = !isBlind;
+  const blindIcon = document.getElementById('blindIcon');
+
+  if (isBlind) {
+    // Cambia immagine a "hide.png"
+    blindIcon.src = 'hide.png';
+    blindIcon.alt = 'Hide Mode';
+  } else {
+    // Cambia immagine a "view.png"
+    blindIcon.src = 'view.png';
+    blindIcon.alt = 'View Mode';
+  }
+});
+
 
     /* Setup canvas */
     let startPoint = { x:150, y:20 };
