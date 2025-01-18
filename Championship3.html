@@ -735,10 +735,10 @@ function handleMouseMove(e) {
     const ny = dx / length;
 
     // Posizioni delle linee di ombra e luce
-    const shadowX = p2.x + nx * 0.1;
-    const shadowY = p2.y + ny * 0.1;
-    const lightX = p2.x - nx * 0.1;
-    const lightY = p2.y - ny * 0.1;
+    const shadowX = p2.x + nx * 1;
+    const shadowY = p2.y + ny * 1;
+    const lightX = p2.x - nx * 1;
+    const lightY = p2.y - ny * 1;
 
     // Disegna la scia principale
     ctx.beginPath();
