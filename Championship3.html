@@ -341,7 +341,7 @@
 
     let lastStatusMessage = '';
     let lastCompleteRun   = null;
-
+let falseStartCount = 0;
     // (NEW) Toggle Blind Mode
     blindToggleButton.addEventListener('click', ()=>{
       isBlind = !isBlind;
@@ -497,11 +497,20 @@
 
     function handleMouseDown(e){
       const {x,y}= getMouseCoords(e);
-      if(!isNearStartPoint(x,y)){
-        statusOutput.textContent='False start! Try again!';
-        return;
-      }
-      drawing=true;
+      if (!isNearStartPoint(x, y)) {
+  statusOutput.textContent = 'False start! Try again!';
+  falseStartCount++;
+
+  // Se ci sono stati tre "False start" consecutivi
+  if (falseStartCount >= 3) {
+    statusOutput.textContent = 'Run failed due to consecutive false starts!';
+    failAttempt("Run failed due to false starts.");
+    falseStartCount = 0; // Resetta il contatore per la prossima run
+  }
+  return;
+}
+  falseStartCount = 0; // Resetta il contatore per i "False start"    
+drawing=true;
       pointsPath=[];
       startTime= performance.now();
       statusOutput.textContent='';
@@ -734,13 +743,14 @@
     }
 
     /* REPLAY con chiusura auto */
-    replayButton.addEventListener('click',()=>{
-      if(lastCompleteRun && lastCompleteRun.length>=2){
-        replayTrajectory(lastCompleteRun);
-      } else {
-        replayTrajectory();
-      }
-    });
+replayButton.addEventListener('click', () => {
+  if (lastCompleteRun && lastCompleteRun.length >= 2) {
+    replayTrajectory(lastCompleteRun); // Riproduce l'ultima run completata
+  } else {
+    statusOutput.textContent = "No run to replay! Complete a run first.";
+  }
+});
+
     function replayTrajectory(customPoints){
       const rp = (customPoints && customPoints.length>=2)
         ? customPoints : pointsPath;
