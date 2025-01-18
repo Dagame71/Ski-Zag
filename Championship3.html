@@ -27,7 +27,7 @@
       width: 300px;
       height: 520px;
       /* Sfondo immagine */
-      background: #fff url("sfondo.png") no-repeat center center;
+      background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
 
       border: 2px solid #e9effb;
@@ -520,8 +520,8 @@
       // (NEW) Se isBlind, NON disegniamo la traccia
       if(!isBlind){
         ctx.lineTo(x,y);
-        ctx.strokeStyle='grey';
-        ctx.lineWidth=1.5;
+        ctx.strokeStyle='white';
+        ctx.lineWidth=2;
         ctx.stroke();
       }
       checkIntersections();
@@ -713,22 +713,24 @@
     function updateLeaderboard(){
       const lb= document.getElementById('leaderboardList');
       lb.innerHTML='';
-      bestTimes.forEach((entry,i)=>{
-        const li=document.createElement('li');
-        if(i===0){
-          li.innerHTML=`${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px;">⏯️</span>`;
-          li.style.fontWeight='bold';
-          li.style.cursor='pointer';
-          li.title="Click to watch the best replay";
-          li.addEventListener('click',()=>{
-            chronoOverlay.classList.add('hidden');
-            replayTrajectory(entry.replay);
-          });
-        } else {
-          li.textContent= `${entry.name} - ${formatTime(entry.time)}`;
-        }
-        lb.appendChild(li);
-      });
+      bestTimes.forEach((entry, i) => {
+  const li = document.createElement('li');
+  const blindMark = entry.blind ? ' (B)' : ''; // Aggiunge " (B)" se è stato Blind
+  if (i === 0) {
+    li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:18px;">⏯️</span>`;
+    li.style.fontWeight = 'bold';
+    li.style.cursor = 'pointer';
+    li.title = "Click to watch the best replay";
+    li.addEventListener('click', () => {
+      chronoOverlay.classList.add('hidden');
+      replayTrajectory(entry.replay);
+    });
+  } else {
+    li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
+  }
+  lb.appendChild(li);
+});
+
     }
 
     /* REPLAY con chiusura auto */
@@ -769,8 +771,8 @@
         ctx.beginPath();
         ctx.moveTo(rp[i].x, rp[i].y);
         ctx.lineTo(rp[i+1].x, rp[i+1].y);
-        ctx.strokeStyle='grey';
-        ctx.lineWidth=1.5;
+        ctx.strokeStyle='white';
+        ctx.lineWidth=2;
         ctx.stroke();
         const dt= rp[i+1].t- rp[i].t;
         i++;
@@ -858,9 +860,10 @@
         <table>
           <tr><th>Player</th><th>Tempo</th></tr>
       `;
-      sortedTimes.forEach(e=>{
-        html+= `<tr><td>${e.name}</td><td>${formatTime(e.time)}</td></tr>`;
-      });
+    sortedTimes.forEach(e => {
+  const blindMark = e.blind ? ' (B)' : ''; // Aggiunge " (B)" se il tempo è stato realizzato in modalità Blind
+  html += `<tr><td>${e.name}</td><td>${formatTime(e.time)}${blindMark}</td></tr>`;
+});
       html+= `</table></div>`;
 
       const sortedPlayers= Object.keys(championScores)
@@ -871,9 +874,10 @@
         <table>
           <tr><th>Player</th><th>Total Points</th></tr>
       `;
-      sortedPlayers.forEach(name=>{
-        html+= `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
-      });
+sortedPlayers.forEach(name => {
+  const cleanName = name.replace(' (B)', ''); // Rimuove eventuali " (B)" dai nomi
+  html += `<tr><td>${cleanName}</td><td>${championScores[name]}</td></tr>`;
+});
       html+= `</table></div>`;
 
       let btnLabel="Next Race!";
