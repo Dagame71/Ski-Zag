@@ -439,17 +439,59 @@
       ctx.moveTo(x,y);
       didFinishOrFailThisRun=false;
     }
-    function handleMouseMove(e){
-      if(!drawing)return;
-      const{ x,y }= getMouseCoords(e);
-      const now = performance.now()-startTime;
-      pointsPath.push({x,y,t:now});
-      ctx.lineTo(x,y);
-      ctx.strokeStyle='grey';
-      ctx.lineWidth=1.5;
-      ctx.stroke();
-      checkIntersections();
-    }
+function handleMouseMove(e) {
+  if (!drawing) return;
+  const { x, y } = getMouseCoords(e);
+  const now = performance.now() - startTime;
+
+  // Salva i punti della scia
+  pointsPath.push({ x, y, t: now });
+
+  // Disegna la scia principale
+  ctx.lineTo(x, y);
+  ctx.strokeStyle = '#f8fcfe';
+  ctx.lineWidth = 1; // Scia principale più visibile
+  ctx.stroke();
+
+  // Calcola la direzione della scia per aggiungere l'effetto di profondità
+  if (pointsPath.length > 1) {
+    const prev = pointsPath[pointsPath.length - 2];
+    const dx = x - prev.x;
+    const dy = y - prev.y;
+    const length = Math.hypot(dx, dy);
+
+    // Normale al vettore per ottenere direzioni perpendicolari
+    const nx = -dy / length;
+    const ny = dx / length;
+
+    // Posizioni delle linee di ombra e luce
+    const shadowX = x + nx * 3;
+    const shadowY = y + ny * 3;
+    const lightX = x - nx * 3;
+    const lightY = y - ny * 3;
+
+    // Disegna l'ombra (lato scuro)
+    ctx.beginPath();
+    ctx.moveTo(prev.x + nx * 3, prev.y + ny * 3);
+    ctx.lineTo(shadowX, shadowY);
+    ctx.strokeStyle = '#d7e1f8'; // Ombra grigia
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+
+    // Disegna la luce (lato chiaro)
+    ctx.beginPath();
+    ctx.moveTo(prev.x - nx * 3, prev.y - ny * 3);
+    ctx.lineTo(lightX, lightY);
+    ctx.strokeStyle = '#ffffff'; // Luce bianca
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+  }
+
+  // Verifica collisioni o intersezioni
+  checkIntersections();
+}
+
+
     function handleMouseUp(e){
       if(!drawing)return;
       drawing=false;
@@ -482,7 +524,7 @@
       const now= performance.now()-startTime;
       pointsPath.push({x,y,t:now});
       ctx.lineTo(x,y);
-      ctx.strokeStyle='grey';
+      ctx.strokeStyle='white';
       ctx.lineWidth=1.5;
       ctx.stroke();
       checkIntersections();
@@ -653,51 +695,84 @@
         replayTrajectory();
       }
     });
-    function replayTrajectory(customPoints){
-      // Se customPoints e' definito, usalo
-      // altrimenti fallback su pointsPath
-      const rp = (customPoints && customPoints.length>=2)
-        ? customPoints : pointsPath;
+   function replayTrajectory(customPoints) {
+  const rp = (customPoints && customPoints.length >= 2) ? customPoints : pointsPath;
 
-      if(!rp || rp.length<2){
-        statusOutput.textContent="No run to replay!";
-        lastStatusMessage="No run to replay!";
-        return;
-      }
-      lastStatusMessage= statusOutput.innerHTML;
+  if (!rp || rp.length < 2) {
+    statusOutput.textContent = "No run to replay!";
+    lastStatusMessage = "No run to replay!";
+    return;
+  }
 
-      clearCanvas();
-      drawStartPoint();
-      drawFinishArea();
-      drawGates(gates);
-      drawTrees(trees);
+  lastStatusMessage = statusOutput.innerHTML;
 
-      let i=0;
-      function step(){
-        if(i>=rp.length-1){
-          setTimeout(()=>{
-            clearCanvas();
-            if(currentTrack) drawTrack(currentTrack);
-            restoreStatusOutput();
-          },500);
-          return;
-        }
-        ctx.beginPath();
-        ctx.moveTo(rp[i].x, rp[i].y);
-        ctx.lineTo(rp[i+1].x, rp[i+1].y);
-        ctx.strokeStyle='grey';
-        ctx.lineWidth=1.5;
-        ctx.stroke();
-        const dt= rp[i+1].t- rp[i].t;
-        i++;
-        if(i< rp.length-1){
-          setTimeout(step, dt);
-        } else {
-          setTimeout(step, dt);
-        }
-      }
-      setTimeout(step,0);
+  clearCanvas();
+  drawStartPoint();
+  drawFinishArea();
+  drawGates(gates);
+  drawTrees(trees);
+
+  let i = 0;
+
+  function step() {
+    if (i >= rp.length - 1) {
+      setTimeout(() => {
+        clearCanvas();
+        if (currentTrack) drawTrack(currentTrack);
+        restoreStatusOutput();
+      }, 500);
+      return;
     }
+
+    const p1 = rp[i];
+    const p2 = rp[i + 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const length = Math.hypot(dx, dy);
+
+    // Normale al vettore per ottenere direzioni perpendicolari
+    const nx = -dy / length;
+    const ny = dx / length;
+
+    // Posizioni delle linee di ombra e luce
+    const shadowX = p2.x + nx * 0.1;
+    const shadowY = p2.y + ny * 0.1;
+    const lightX = p2.x - nx * 0.1;
+    const lightY = p2.y - ny * 0.1;
+
+    // Disegna la scia principale
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = '#edeefb'; // Scia principale chiara
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Disegna l'ombra (lato scuro)
+    ctx.beginPath();
+    ctx.moveTo(p1.x + nx * 3, p1.y + ny * 3);
+    ctx.lineTo(shadowX, shadowY);
+    ctx.strokeStyle = '#c2cbf1'; // Colore dell'ombra
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Disegna la luce (lato chiaro)
+    ctx.beginPath();
+    ctx.moveTo(p1.x - nx * 3, p1.y - ny * 3);
+    ctx.lineTo(lightX, lightY);
+    ctx.strokeStyle = '#ffffff'; // Colore della luce
+    ctx.lineWidth = 0.3;
+    ctx.stroke();
+
+    // Passa al prossimo punto
+    const dt = rp[i + 1].t - rp[i].t;
+    i++;
+    setTimeout(step, dt);
+  }
+
+  setTimeout(step, 0);
+}
+
 
     /* Tasti */
     sameTrackButton.addEventListener('click',()=>{
