@@ -790,34 +790,57 @@ function failAttempt(msg) {
     }
 
     chronoButton.addEventListener('click',()=>{
-      chronoOverlay.classList.remove('hidden');
+   updateLeaderboard(); // Aggiorna la lista dei migliori 5 tempi 
+ updatePointsLeaderboard();  
+chronoOverlay.classList.remove('hidden');
     });
     closeOverlay.addEventListener('click',()=>{
       chronoOverlay.classList.add('hidden');
     });
 
-    function updateLeaderboard(){
-      const lb= document.getElementById('leaderboardList');
-      lb.innerHTML='';
-      bestTimes.forEach((entry, i) => {
-  const li = document.createElement('li');
-  const blindMark = entry.blind ? ' (B)' : ''; // Aggiunge " (B)" se è stato Blind
-  if (i === 0) {
-    li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:18px;">⏯️</span>`;
-    li.style.fontWeight = 'bold';
-    li.style.cursor = 'pointer';
-    li.title = "Click to watch the best replay";
-    li.addEventListener('click', () => {
-      chronoOverlay.classList.add('hidden');
-      replayTrajectory(entry.replay);
-    });
-  } else {
-    li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
-  }
-  lb.appendChild(li);
-});
-
+function updateLeaderboard() {
+  const lb = document.getElementById('leaderboardList');
+  lb.innerHTML = ''; // Cancella i contenuti precedenti
+  bestTimes.forEach((entry, i) => {
+    const li = document.createElement('li');
+    const blindMark = entry.blind ? ' (B)' : ''; // Indica modalità Blind
+    if (i === 0) {
+      li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:18px;">⏯️</span>`;
+      li.style.fontWeight = 'bold';
+      li.style.cursor = 'pointer';
+      li.title = "Click to watch the best replay";
+      li.addEventListener('click', () => {
+        chronoOverlay.classList.add('hidden');
+        replayTrajectory(entry.replay);
+      });
+    } else {
+      li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
     }
+    lb.appendChild(li);
+  });
+}
+function updatePointsLeaderboard() {
+  const tableBody = document.getElementById('pointsLeaderboardBody');
+  tableBody.innerHTML = ''; // Cancella i contenuti precedenti
+
+  // Ordina i giocatori in base ai punti
+  const sortedPlayers = Object.keys(championScores).sort((a, b) => championScores[b] - championScores[a]);
+
+  // Aggiungi ogni giocatore con i suoi punti
+  sortedPlayers.forEach(player => {
+    const row = document.createElement('tr');
+    const nameCell = document.createElement('td');
+    const pointsCell = document.createElement('td');
+
+    nameCell.textContent = player;
+    pointsCell.textContent = championScores[player];
+
+    row.appendChild(nameCell);
+    row.appendChild(pointsCell);
+    tableBody.appendChild(row);
+  });
+}
+
 
     /* REPLAY con chiusura auto */
 replayButton.addEventListener('click', () => {
