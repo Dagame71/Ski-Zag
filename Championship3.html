@@ -266,6 +266,28 @@
             <ol id="leaderboardList"></ol>
           </div>
         </div>
+
+<!-- Nuova sezione Classifica Punti -->
+<div class="leaderboard-container">
+  <div class="leaderboard">
+    <h2>Classifica Punti</h2>
+    <div class="champ-table">
+      <table id="pointsLeaderboardTable">
+        <!-- I dati verranno aggiunti dinamicamente -->
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Punti</th>
+          </tr>
+        </thead>
+        <tbody id="pointsLeaderboardBody">
+          <!-- Qui verranno inserite le righe della classifica -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
       </div>
     </div>
   </div>
@@ -369,6 +391,18 @@ blindToggleButton.addEventListener('click', () => {
     /* Setup canvas */
     let startPoint = { x:150, y:20 };
     let finishRect = { x:130, y:490, width:40, height:10 };
+// Caricamento delle icone SVG per le porte
+const gateIcons = {
+  red: new Image(),
+  blue: new Image(),
+};
+gateIcons.red.src = "red_gate.svg"; // Sostituisci con il percorso del file SVG per la porta rossa
+gateIcons.blue.src = "blue_gate.svg"; // Sostituisci con il percorso del file SVG per la porta blu
+
+// Assicurati che le icone siano pronte prima di disegnare
+gateIcons.red.onload = gateIcons.blue.onload = () => {
+  if (currentTrack) drawTrack(currentTrack);
+};
 
     function resizeCanvas(){
       canvas.width = 300;
@@ -389,25 +423,33 @@ blindToggleButton.addEventListener('click', () => {
       const t= generateTrees(g);
       return { gates:g, trees:t };
     }
-    function generateGates(count){
-      const startWithRed = (Math.random()<0.5);
-      let isRed = startWithRed;
-      let arr   = [];
-      for(let i=0; i<count; i++){
-        const dir = isRed?1:-1;
-        const x   = isRed 
-          ? Math.random()*(canvas.width/2-20)+ canvas.width/2
-          : Math.random()*(canvas.width/2-20)+ 20;
-        const y   = 60 + i*((canvas.height-120)/count);
-        const color= isRed?'red':'blue';
-        arr.push({
-          x,y,color,
-          line:{ x1:x, y1:y, x2:x+dir*200, y2:y }
-        });
-        isRed=!isRed;
-      }
-      return arr;
-    }
+   function generateGates(count) {
+  const startWithRed = (Math.random() < 0.5);
+  let isRed = startWithRed;
+  let arr = [];
+  for (let i = 0; i < count; i++) {
+    const dir = isRed ? 1 : -1;
+
+    // Raddoppio della distanza minima laterale (orizzontale)
+    const x = isRed
+      ? Math.random() * (canvas.width / 2 - 40) + canvas.width / 2 // Porta rossa
+      : Math.random() * (canvas.width / 2 - 40) + 40;              // Porta blu
+
+    // Mantieni invariata la distanza verticale
+    const y = 60 + i * ((canvas.height - 120) / count);
+
+    const color = isRed ? 'red' : 'blue';
+    arr.push({
+      x,
+      y,
+      color,
+      line: { x1: x, y1: y, x2: x + dir * 200, y2: y }
+    });
+    isRed = !isRed;
+  }
+  return arr;
+}
+
     function generateTrees(gArr){
       const treeCount= Math.floor(Math.random()*3)+6;
       let arr=[];
@@ -456,36 +498,36 @@ blindToggleButton.addEventListener('click', () => {
         }
       }
     }
-    function drawGates(gArr){
-      gArr.forEach(g=>{
-        ctx.fillStyle= g.color;
-        ctx.beginPath();
-        if(g.color==='red'){
-          ctx.moveTo(g.x-5,g.y-5);
-          ctx.lineTo(g.x+5,g.y);
-          ctx.lineTo(g.x-5,g.y+5);
-        } else {
-          ctx.moveTo(g.x+5,g.y-5);
-          ctx.lineTo(g.x-5,g.y);
-          ctx.lineTo(g.x+5,g.y+5);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle='transparent';
-        ctx.beginPath();
-        ctx.moveTo(g.line.x1,g.line.y1);
-        ctx.lineTo(g.line.x2,g.line.y2);
-        ctx.stroke();
-      });
-    }
-    function drawTrees(tArr){
-      ctx.font='16px Arial';
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      tArr.forEach(t=>{
-        ctx.fillText("🌲", t.x,t.y);
-      });
-    }
+    function drawGates(gArr) {
+  gArr.forEach(g => {
+    const icon = g.color === "red" ? gateIcons.red : gateIcons.blue;
+    const iconWidth = 16; // Larghezza dell'icona SVG
+    const iconHeight = 16; // Altezza dell'icona SVG
+
+    // Disegna l'icona SVG centrata sulle coordinate della porta
+    ctx.drawImage(icon, g.x - iconWidth / 2, g.y - iconHeight / 2, iconWidth, iconHeight);
+
+    // Disegna la linea di controllo per la porta (parte dal centro verso l'esterno)
+    ctx.strokeStyle = "transparent";
+    ctx.beginPath();
+    ctx.moveTo(g.line.x1, g.line.y1);
+    ctx.lineTo(g.line.x2, g.line.y2);
+    ctx.stroke();
+  });
+}
+
+    function drawTrees(tArr) {
+  const treeImg = new Image(); // Creiamo un'immagine
+  treeImg.src = './tree.svg'; // Percorso del file SVG
+
+  treeImg.onload = () => { // Quando l'immagine è caricata
+    tArr.forEach(t => {
+      // Centra e scala l'immagine in base alle dimensioni del file
+      ctx.drawImage(treeImg, t.x - 6, t.y - 20, 12, 20); // 12x20 dimensioni effettive
+    });
+  };
+}
+
 
     /* Eventi mouse/touch */
     if(!canvas._eventsAttached){
@@ -541,7 +583,7 @@ drawing=true;
       // (NEW) Se isBlind, NON disegniamo la traccia
       if(!isBlind){
         ctx.lineTo(x,y);
-        ctx.strokeStyle='white';
+        ctx.strokeStyle='#a4b8eb';
         ctx.lineWidth=2;
         ctx.stroke();
       }
@@ -582,7 +624,7 @@ drawing=true;
       // (NEW) Se isBlind, NON disegniamo la traccia
       if(!isBlind){
         ctx.lineTo(x,y);
-        ctx.strokeStyle='white';
+        ctx.strokeStyle='#a4b8eb';
         ctx.lineWidth=2;
         ctx.stroke();
       }
@@ -651,35 +693,58 @@ drawing=true;
     }
 
     /* TENTATIVI */
-    function failAttempt(msg){
-      drawing=false;
-      didFinishOrFailThisRun=true;
-      statusOutput.textContent= msg;
-      lastStatusMessage= msg;
-      attemptCount++;
-      // Non salviamo run incompleta in lastCompleteRun
-      setTimeout(()=> nextParticipant(),1200);
-    }
-    function finishRun(){
-      drawing=false;
-      didFinishOrFailThisRun=true;
-      const endTime= performance.now();
-      const elapsedTime= endTime- startTime;
-      const distPx= calculateDistance(pointsPath);
-      const realLength= distPx*(window.conversionFactor||1);
-      const finalTime= calculateFinalTime(elapsedTime, realLength);
+function failAttempt(msg) {
+  drawing = false;
+  didFinishOrFailThisRun = true;
+  statusOutput.textContent = msg;
+  lastStatusMessage = msg;
+  attemptCount++;
 
-      finalTimeOutput.textContent=`⏰ ${formatTime(finalTime)}`;
-      statusOutput.textContent='Finished!';
-      lastStatusMessage='Finished!';
+  // Se la modalità Blind è attiva, penalizziamo il giocatore
+  if (isBlind) {
+    participants.forEach((participant, index) => {
+      // +3 a tutti gli avversari
+      if (index !== currentIndex) {
+        championScores[participant] += 3;
+      }
+    });
 
-      // Salviamo la run completata
-      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+    // Aggiungi un messaggio di penalità per chiarezza
+    statusOutput.textContent = `${msg} Blind failed! Penalty!`;
+  }
 
-      updateTimes(finalTime);
-      attemptCount++;
-      setTimeout(()=> nextParticipant(),1000);
-    }
+  // Resetta la modalità Blind
+  resetBlindMode();
+
+  setTimeout(() => nextParticipant(), 1200);
+}
+
+
+  function finishRun() {
+  drawing = false;
+  didFinishOrFailThisRun = true;
+  const endTime = performance.now();
+  const elapsedTime = endTime - startTime;
+  const distPx = calculateDistance(pointsPath);
+  const realLength = distPx * (window.conversionFactor || 1);
+  const finalTime = calculateFinalTime(elapsedTime, realLength);
+
+  finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}`;
+  statusOutput.textContent = 'Finished!';
+  lastStatusMessage = 'Finished!';
+
+  // Salviamo la run completata
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+
+  updateTimes(finalTime);
+  attemptCount++;
+
+  // Resetta la modalità Blind
+  resetBlindMode();
+
+  setTimeout(() => nextParticipant(), 1000);
+}
+
     function calculateDistance(arr){
       let tot=0;
       for(let i=1; i<arr.length; i++){
@@ -772,7 +837,9 @@ replayButton.addEventListener('click', () => {
         lastStatusMessage="No run to replay!";
         return;
       }
-      lastStatusMessage= statusOutput.innerHTML;
+        // Resetta la modalità Blind per sicurezza
+  resetBlindMode();
+lastStatusMessage= statusOutput.innerHTML;
 
       clearCanvas();
       drawStartPoint();
@@ -793,7 +860,7 @@ replayButton.addEventListener('click', () => {
         ctx.beginPath();
         ctx.moveTo(rp[i].x, rp[i].y);
         ctx.lineTo(rp[i+1].x, rp[i+1].y);
-        ctx.strokeStyle='white';
+        ctx.strokeStyle='#a4b8eb';
         ctx.lineWidth=2;
         ctx.stroke();
         const dt= rp[i+1].t- rp[i].t;
@@ -812,19 +879,32 @@ replayButton.addEventListener('click', () => {
       resetTrack(currentTrack);
       callParticipant();
     });
-    function resetTrack(track){
-      drawing=false;
-      pointsPath=[];
-      intersectedGates.clear();
-      finalTimeOutput.textContent=`⏰1'00"000'''`;
-      statusOutput.innerHTML='';
-      lastStatusMessage='';
-      clearCanvas();
-      if(track) drawTrack(track);
-    }
+function resetTrack(track) {
+  drawing = false;
+  pointsPath = [];
+  intersectedGates.clear();
+  finalTimeOutput.textContent = `⏰1'00"000'''`;
+  statusOutput.innerHTML = '';
+  lastStatusMessage = '';
+
+  // Resetta la modalità Blind
+  resetBlindMode();
+
+  clearCanvas();
+  if (track) drawTrack(track);
+}
+
+function resetBlindMode() {
+  isBlind = false; // Resetta lo stato a "non-blind"
+  const blindIcon = document.getElementById('blindIcon');
+  blindIcon.src = 'view.png'; // Ripristina l'immagine del pulsante
+  blindIcon.alt = 'View Mode'; // Aggiorna l'attributo alt
+}
 
     /* Logica campionato */
     function nextParticipant(){
+  // Resetta la modalità Blind prima di passare al prossimo
+  resetBlindMode();
       if(attemptCount>=3){
         attemptCount=0;
         currentIndex++;
@@ -874,51 +954,54 @@ replayButton.addEventListener('click', () => {
       }
       showRaceResults();
     }
-    function showRaceResults(){
-      let sortedTimes=[...bestTimes].sort((a,b)=> a.time-b.time);
-      let html=`
-      <h2>Tempi finali (Top 5)</h2>
-      <div class="champ-table">
-        <table>
-          <tr><th>Player</th><th>Tempo</th></tr>
-      `;
-    sortedTimes.forEach(e => {
-  const blindMark = e.blind ? ' (B)' : ''; // Aggiunge " (B)" se il tempo è stato realizzato in modalità Blind
-  html += `<tr><td>${e.name}</td><td>${formatTime(e.time)}${blindMark}</td></tr>`;
-});
-      html+= `</table></div>`;
+function showRaceResults() {
+  let sortedTimes = [...bestTimes].sort((a, b) => a.time - b.time);
+  let html = `
+    <h2>Tempi finali (Top 5)</h2>
+    <div class="champ-table">
+      <table>
+        <tr><th>Player</th><th>Tempo</th></tr>
+  `;
+  sortedTimes.forEach(e => {
+    const blindMark = e.blind ? ' (B)' : ''; // Aggiunge " (B)" se il tempo è stato realizzato in modalità Blind
+    html += `<tr><td>${e.name}</td><td>${formatTime(e.time)}${blindMark}</td></tr>`;
+  });
+  html += `</table></div>`;
 
-      const sortedPlayers= Object.keys(championScores)
-        .sort((a,b)=>championScores[b]-championScores[a]);
-      html+=`
-      <h2>Race Standings #${raceNumber}</h2>
-      <div class="champ-table">
-        <table>
-          <tr><th>Player</th><th>Total Points</th></tr>
-      `;
-sortedPlayers.forEach(name => {
-  const cleanName = name.replace(' (B)', ''); // Rimuove eventuali " (B)" dai nomi
-  html += `<tr><td>${cleanName}</td><td>${championScores[name]}</td></tr>`;
-});
-      html+= `</table></div>`;
+  // Ordiniamo i giocatori in base ai punti finali (inclusi bonus da Blind fallite)
+  const sortedPlayers = Object.keys(championScores)
+    .sort((a, b) => championScores[b] - championScores[a]);
 
-      let btnLabel="Next Race!";
-      let action= ()=>{
-        champOverlay.classList.add('hidden');
-        raceNumber++;
-        // invertiamo l'ordine di partenza
-        participants= sortedPlayers.slice().reverse();
-        setupRace();
-      };
-      if(raceNumber>=3){
-        btnLabel="Final Standings!";
-        action= showFinalResults;
-      }
-      html+= `<button class="nav-button">${btnLabel}</button>`;
-      champContent.innerHTML= html;
-      champContent.querySelector('.nav-button').addEventListener('click',action);
-      champOverlay.classList.remove('hidden');
-    }
+  // Calcoliamo i punti extra per ogni blind fallita (già fatto nella fase di corsa)
+  html += `
+    <h2>Race Standings #${raceNumber}</h2>
+    <div class="champ-table">
+      <table>
+        <tr><th>Player</th><th>Total Points</th></tr>
+  `;
+  sortedPlayers.forEach(name => {
+    html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
+  });
+  html += `</table></div>`;
+
+  let btnLabel = "Next Race!";
+  let action = () => {
+    champOverlay.classList.add('hidden');
+    raceNumber++;
+    // invertiamo l'ordine di partenza
+    participants = sortedPlayers.slice().reverse();
+    setupRace();
+  };
+  if (raceNumber >= 3) {
+    btnLabel = "Final Standings!";
+    action = showFinalResults;
+  }
+  html += `<button class="nav-button">${btnLabel}</button>`;
+  champContent.innerHTML = html;
+  champContent.querySelector('.nav-button').addEventListener('click', action);
+  champOverlay.classList.remove('hidden');
+}
+
 
     function showFinalResults(){
       let sortedPlayers= Object.keys(championScores)
@@ -1149,10 +1232,14 @@ sortedPlayers.forEach(name => {
       setupRace();
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      resizeCanvas();
-      renderSlide();
-    });
+  document.addEventListener('DOMContentLoaded', () => {
+  resizeCanvas();
+  renderSlide();
+
+  // Assicurati che la modalità Blind sia disattivata all'inizio
+  resetBlindMode();
+});
+
   </script>
 </body>
 </html>
