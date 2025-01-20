@@ -58,6 +58,7 @@
       margin: 0;
       padding: 0;
       color: black;
+  z-index: 20;
     }
     /* CSS per il bottone blind */
     #blindToggle {
@@ -101,13 +102,21 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .hidden { display: none; }
     .overlay-content {
-      background-color: #fff;
+      background-image: url('backpopup.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover; /* Oppure "contain" se preferisci che l'intera immagine sia visibile */
+  background-color: #fff; /* Colore di fallback se l'immagine non viene caricata */
       border-radius: 12px;
       padding: 20px;
-      width: 90%;
-      max-width: 600px;
+      width: 280;
+      max-width: none;
       box-sizing: border-box;
       position: relative; text-align: center; color: #333;
+ box-shadow: 
+    inset 4px 4px 2px rgba(175,219,245,0.8),  /* Ombra interna scura in basso a destra */
+    inset -4px -4px 2px rgba(255,255,255,0.8); /* Ombra interna chiara in alto a sinistra */
+}
     }
     #chronoOverlay .overlay-content { max-width: 700px; }
     #closeOverlay { position: absolute; top: 10px; left: 10px; background-color: #dc3545; font-size: 14px; padding: 5px 10px; color: white; border: none; border-radius: 5px; cursor: pointer; }
@@ -261,7 +270,7 @@
     // Impostazioni canvas e coordinate di partenza/arrivo
     let startPoint = { x:150, y:30 };
     let finishRect = { x:130, y:490, width:40, height:10 };
-    
+    let lastSnowActive = false;
     function resizeCanvas(){
       canvas.width = 300;
       canvas.height = 520;
@@ -689,38 +698,43 @@ function failAttempt(msg) {
   setTimeout(() => nextParticipant(), 1200);
 }
 
-    function finishRun(){
-      drawing = false;
-      didFinishOrFailThisRun = true;
-      const endTime = performance.now();
-      const elapsedTime = endTime - startTime;
-      const distPx = calculateDistance(pointsPath);
-      const realLength = distPx * (window.conversionFactor || 1);
-      
-      // Calcola il tempo base
-      let baseTime = calculateFinalTime(elapsedTime, realLength);
-      
-      // Se il giocatore ha avuto colpi con l'albero nei tentativi precedenti, aggiungi il penalty
-      let currentPlayer = participants[currentIndex];
-      let extraPenalty = 0;
-      if (treeHits[currentPlayer]) {
-        extraPenalty = 0.01 * Math.pow(2, treeHits[currentPlayer] - 1);
-        // Reset del contatore per il giocatore corrente
-        treeHits[currentPlayer] = 0;
-      }
-      
-      const finalTime = baseTime + extraPenalty;
-      finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}`;
-      statusOutput.textContent = 'Finished!';
-      lastStatusMessage = 'Finished!';
-      // Salva il percorso per il replay
-      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-      updateTimes(finalTime);
-      attemptCount++;
-      resetBlindMode();
-      setTimeout(() => nextParticipant(), 1000);
-    }
-    
+function finishRun(){
+  drawing = false;
+  didFinishOrFailThisRun = true;
+  const endTime = performance.now();
+  const elapsedTime = endTime - startTime;
+  const distPx = calculateDistance(pointsPath);
+  const realLength = distPx * (window.conversionFactor || 1);
+  
+  // Calcola il tempo base
+  let baseTime = calculateFinalTime(elapsedTime, realLength);
+  
+  // Se il giocatore ha avuto colpi con l'albero nei tentativi precedenti, aggiungi il penalty
+  let currentPlayer = participants[currentIndex];
+  let extraPenalty = 0;
+  if (treeHits[currentPlayer]) {
+    extraPenalty = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
+    // Reset del contatore per il giocatore corrente
+    treeHits[currentPlayer] = 0;
+  }
+  
+  const finalTime = baseTime + extraPenalty;
+  finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}`;
+  statusOutput.textContent = 'Finished!';
+  lastStatusMessage = 'Finished!';
+  
+  // Salva il percorso per il replay
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+  
+  // Salva lo stato della neve (true se attiva, false se non attiva)
+  lastSnowActive = showSnow;
+  
+  updateTimes(finalTime);
+  attemptCount++;
+  resetBlindMode();
+  setTimeout(() => nextParticipant(), 1000);
+}
+
     function calculateDistance(arr){
       let tot = 0;
       for(let i = 1; i < arr.length; i++){
@@ -824,42 +838,57 @@ function failAttempt(msg) {
       }
     });
     
-    function replayTrajectory(customPoints){
-      const rp = (customPoints && customPoints.length >= 2)
-        ? customPoints : pointsPath;
-      if(!rp || rp.length < 2){
-        statusOutput.textContent = "No run to replay!";
-        lastStatusMessage = "No run to replay!";
-        return;
-      }
-      lastStatusMessage = statusOutput.innerHTML;
-      clearCanvas();
-      drawStartPoint();
-      drawFinishArea();
-      drawGates(gates);
-      drawTrees(trees);
-      let i = 0;
-      function step(){
-        if(i >= rp.length - 1){
-          setTimeout(() => {
-            clearCanvas();
-            if(currentTrack) drawTrack(currentTrack);
-            restoreStatusOutput();
-          }, 500);
-          return;
-        }
-        ctx.beginPath();
-        ctx.moveTo(rp[i].x, rp[i].y);
-        ctx.lineTo(rp[i+1].x, rp[i+1].y);
-        ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        const dt = rp[i+1].t - rp[i].t;
-        i++;
-        setTimeout(step, dt);
-      }
-      setTimeout(step, 0);
+ function replayTrajectory(customPoints){
+  const rp = (customPoints && customPoints.length >= 2)
+    ? customPoints : pointsPath;
+  if(!rp || rp.length < 2){
+    statusOutput.textContent = "No run to replay!";
+    lastStatusMessage = "No run to replay!";
+    return;
+  }
+  
+  // Riattiva la neve se era attiva durante la corsa
+  if(lastSnowActive) {
+      showSnow = true;
+      const snowCanvas = document.getElementById('snowCanvas');
+      snowCanvas.classList.remove('hidden');
+      snowCanvas.width = canvas.width;
+      snowCanvas.height = canvas.height;
+      initSnow();
+      updateSnow();
+  } else {
+      document.getElementById('snowCanvas').classList.add('hidden');
+  }
+  
+  lastStatusMessage = statusOutput.innerHTML;
+  clearCanvas();
+  drawStartPoint();
+  drawFinishArea();
+  drawGates(gates);
+  drawTrees(trees);
+  let i = 0;
+  function step(){
+    if(i >= rp.length - 1){
+      setTimeout(() => {
+        clearCanvas();
+        if(currentTrack) drawTrack(currentTrack);
+        restoreStatusOutput();
+      }, 500);
+      return;
     }
+    ctx.beginPath();
+    ctx.moveTo(rp[i].x, rp[i].y);
+    ctx.lineTo(rp[i+1].x, rp[i+1].y);
+    ctx.strokeStyle = '#a4b8eb';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    const dt = rp[i+1].t - rp[i].t;
+    i++;
+    setTimeout(step, dt);
+  }
+  setTimeout(step, 0);
+}
+
     
     function restoreStatusOutput(){
       if(!champOverlay.classList.contains('hidden')){
@@ -930,8 +959,8 @@ function callParticipant(){
   let penaltyDisplay = "";
   if (treeHits[currentPlayer]) {
     // Calcola il penalty in secondi:
-    let penaltyVal = 0.01 * Math.pow(2, treeHits[currentPlayer] - 1); 
-    // Formatta il valore con 2 decimali, es. "0.01s"
+    let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
+    // Formatta il valore con 2 decimali, es. "0.02s"
     penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
   }
   let msg = `Play <span style="color:black;">${currentPlayer}</span> (G${raceNumber}/M${runNumber}/R${att}${penaltyDisplay})`;
