@@ -109,7 +109,7 @@
   background-color: #fff; /* Colore di fallback se l'immagine non viene caricata */
       border-radius: 12px;
       padding: 20px;
-      width: 280;
+      width: 280px;
       max-width: none;
       box-sizing: border-box;
       position: relative; text-align: center; color: #333;
@@ -222,6 +222,8 @@
     ============================================== */
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
+const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 1px dal limite del canvas.
+
     
     const canvas           = document.getElementById('canvas');
     const ctx              = canvas.getContext('2d');
@@ -271,6 +273,29 @@
     let startPoint = { x:150, y:30 };
     let finishRect = { x:130, y:490, width:40, height:10 };
     let lastSnowActive = false;
+let outPenaltyCount = 0; // Conta quante volte la traiettoria esce dal campo
+let isOut = false;       // Flag per rilevare quando si esce ed evitare conteggi multipli continui
+// Funzione di interpolazione: controlla se tra p1 e p2 viene "toccatto" il bordo
+function checkInterpolationForBorder(p1, p2) {
+  const stepLength = 2;  // Lunghezza del passo in pixel
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const distance = Math.hypot(dx, dy);
+  const steps = Math.ceil(distance / stepLength);
+  
+  // Interpola tra p1 e p2
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const ix = p1.x + t * dx;
+    const iy = p1.y + t * dy;
+    if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD ||
+        iy < BORDER_THRESHOLD || iy > canvas.height - BORDER_THRESHOLD) {
+      return true;
+    }
+  }
+  return false;
+}
+
     function resizeCanvas(){
       canvas.width = 300;
       canvas.height = 520;
@@ -409,8 +434,8 @@
       for(let i = 0; i < count; i++){
         const dir = isRed ? 1 : -1;
         const x   = isRed 
-          ? Math.random() * (canvas.width/2 - 20) + canvas.width/2
-          : Math.random() * (canvas.width/2 - 20) + 20;
+          ? Math.random() * (canvas.width/2 - 35) + canvas.width/2
+          : Math.random() * (canvas.width/2 - 35) + 35;
         const y   = 60 + i * ((canvas.height-120) / count);
         const color = isRed ? 'red' : 'blue';
         arr.push({
@@ -517,43 +542,77 @@
       return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20);
     }
     
-    function handleMouseDown(e){
-      const { x, y } = getMouseCoords(e);
-      if(!isNearStartPoint(x, y)){
-        statusOutput.textContent = 'False start! Try again!';
-        falseStartCount++;
-        if(falseStartCount >= 3){
-          statusOutput.textContent = 'Run failed due to consecutive false starts!';
-          failAttempt("Run failed due to false starts.");
-          falseStartCount = 0;
-        }
-        return;
-      }
-      falseStartCount = 0;
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      statusOutput.textContent = '';
-      lastStatusMessage = '';
-      ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x, y);
-      didFinishOrFailThisRun = false;
+function handleMouseDown(e){
+  const { x, y } = getMouseCoords(e);
+  if(!isNearStartPoint(x, y)){
+    falseStartCount++;  // Incrementa il contatore degli errori
+
+    if(falseStartCount === 1) {
+      statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>';
+      setTimeout(() => {
+        restoreStatusOutput();
+      }, 1000); // Il messaggio resta per 1 secondo
+    } else if(falseStartCount === 2) {
+      statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>';
+      setTimeout(() => {
+        restoreStatusOutput();
+      }, 1000);
+    } else if(falseStartCount >= 3){
+      statusOutput.textContent = 'Run failed due to consecutive false starts!';
+      failAttempt("Run failed due to false starts.");
+      falseStartCount = 0;  // Reset dopo il fallimento
     }
-    
-    function handleMouseMove(e){
-      if(!drawing) return;
-      const { x, y } = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      pointsPath.push({ x, y, t: now });
-      if(!isBlind){
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-      checkIntersections();
+    return;
+  }
+  // Se il punto di partenza è corretto, resettiamo il conteggio
+  falseStartCount = 0;
+
+  // Resettiamo le variabili per la penalità "uscita dal campo"
+  outPenaltyCount = 0;
+  isOut = false;
+
+  drawing = true;
+  pointsPath = [];
+  startTime = performance.now();
+  statusOutput.textContent = '';
+  lastStatusMessage = '';
+  ctx.beginPath();
+  pointsPath.push({ x, y, t: 0 });
+  ctx.moveTo(x, y);
+  didFinishOrFailThisRun = false;
+}
+
+
+function handleMouseMove(e){
+  if(!drawing) return;
+  const { x, y } = getMouseCoords(e);
+  
+  // Preleva l'ultimo punto registrato (se esiste)
+  let p1 = pointsPath[pointsPath.length - 1];
+  let p2 = { x, y };
+
+  // Usa l'interpolazione per verificare se il segmento attraversa il bordo
+  if (p1 && checkInterpolationForBorder(p1, p2)) {
+    if(!isOut) {  // Se non è già stato segnato come "al bordo"
+      outPenaltyCount++; // Incrementa la penalità
+      isOut = true;
     }
+  } else {
+    isOut = false;
+  }
+
+  // Registra il nuovo punto con il tempo relativo
+  const now = performance.now() - startTime;
+  pointsPath.push({ x, y, t: now });
+  
+  if(!isBlind){
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#a4b8eb';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  checkIntersections();
+}
     
     function handleMouseUp(e){
       if(!drawing) return;
@@ -563,38 +622,60 @@
       }
     }
     
-    function handleTouchStart(e){
-      e.preventDefault();
-      const { x, y } = getMouseCoords(e);
-      if(!isNearStartPoint(x,y)){
-        statusOutput.textContent = 'You must start from the start point!';
-        return;
-      }
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      statusOutput.textContent = '';
-      lastStatusMessage = '';
-      ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x, y);
-      didFinishOrFailThisRun = false;
-    }
+function handleTouchStart(e){
+  e.preventDefault();
+  const { x, y } = getMouseCoords(e);
+  if(!isNearStartPoint(x,y)){
+    statusOutput.textContent = 'You must start from the start point!';
+    return;
+  }
+  
+  // Reset delle variabili per la penalità "uscita dal campo"
+  outPenaltyCount = 0;
+  isOut = false;
+  
+  drawing = true;
+  pointsPath = [];
+  startTime = performance.now();
+  statusOutput.textContent = '';
+  lastStatusMessage = '';
+  ctx.beginPath();
+  pointsPath.push({ x, y, t: 0 });
+  ctx.moveTo(x, y);
+  didFinishOrFailThisRun = false;
+}
+
     
-    function handleTouchMove(e){
-      e.preventDefault();
-      if(!drawing) return;
-      const { x, y } = getMouseCoords(e);
-      const now = performance.now() - startTime;
-      pointsPath.push({ x, y, t: now });
-      if(!isBlind){
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-      checkIntersections();
+function handleTouchMove(e){
+  e.preventDefault();
+  if(!drawing) return;
+  const { x, y } = getMouseCoords(e);
+
+  let p1 = pointsPath[pointsPath.length - 1];
+  let p2 = { x, y };
+
+  // Utilizza la funzione di interpolazione per controllare il contatto con il bordo
+  if (p1 && checkInterpolationForBorder(p1, p2)) {
+    if(!isOut) {
+      outPenaltyCount++;
+      isOut = true;
     }
+  } else {
+    isOut = false;
+  }
+  
+  const now = performance.now() - startTime;
+  pointsPath.push({ x, y, t: now });
+  
+  if(!isBlind){
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#a4b8eb';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  checkIntersections();
+}
+
     
     function handleTouchEnd(e){
       e.preventDefault();
@@ -678,9 +759,13 @@
 function failAttempt(msg) {
   drawing = false;
   didFinishOrFailThisRun = true;
-  
-  // Se stiamo giocando in modalità blind, indipendentemente dal motivo, 
-  // assegniamo +3 punti a ciascun altro giocatore.
+
+  // Salva il percorso della run non conclusa
+  if (pointsPath.length > 0) {
+    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath)); // Salva il percorso corrente
+  }
+
+  // Se stiamo giocando in modalità blind, assegniamo +3 punti agli altri giocatori
   if (isBlind) {
     statusOutput.textContent = "Blind failed! Penalty!";
     for (let player in championScores) {
@@ -692,10 +777,10 @@ function failAttempt(msg) {
   } else {
     statusOutput.textContent = msg;
   }
-  
+
   lastStatusMessage = statusOutput.textContent;
   attemptCount++;
-  setTimeout(() => nextParticipant(), 1200);
+  setTimeout(() => nextParticipant(), 2000);
 }
 
 function finishRun(){
@@ -709,31 +794,37 @@ function finishRun(){
   // Calcola il tempo base
   let baseTime = calculateFinalTime(elapsedTime, realLength);
   
-  // Se il giocatore ha avuto colpi con l'albero nei tentativi precedenti, aggiungi il penalty
+  // Penalità per alberi (già esistente)
   let currentPlayer = participants[currentIndex];
   let extraPenalty = 0;
   if (treeHits[currentPlayer]) {
     extraPenalty = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
-    // Reset del contatore per il giocatore corrente
-    treeHits[currentPlayer] = 0;
+    
   }
   
-  const finalTime = baseTime + extraPenalty;
-  finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}`;
+  // Nuova penalità: per ogni uscita dal campo, +0.10 secondi
+  let outPenaltyTotal = outPenaltyCount * 0.10;
+  
+  // Calcola il tempo finale sommando le penalità
+  const finalTime = baseTime + extraPenalty + outPenaltyTotal;
+  
+  // Visualizza il tempo finale e mostra la penalità tra parentesi (se presente)
+  finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}${(outPenaltyTotal > 0) ? `(+${outPenaltyTotal.toFixed(2)})` : ""}`;
   statusOutput.textContent = 'Finished!';
   lastStatusMessage = 'Finished!';
   
   // Salva il percorso per il replay
   lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
   
-  // Salva lo stato della neve (true se attiva, false se non attiva)
+  // Salva lo stato della neve
   lastSnowActive = showSnow;
   
   updateTimes(finalTime);
   attemptCount++;
   resetBlindMode();
-  setTimeout(() => nextParticipant(), 1000);
+  setTimeout(() => nextParticipant(), 2500);
 }
+
 
     function calculateDistance(arr){
       let tot = 0;
@@ -830,13 +921,16 @@ function finishRun(){
     /* =======================================
        REPLAY della Traiettoria
     ===================================== */
-    replayButton.addEventListener('click', () => {
-      if(lastCompleteRun && lastCompleteRun.length >= 2){
-        replayTrajectory(lastCompleteRun);
-      } else {
-        replayTrajectory();
-      }
-    });
+replayButton.addEventListener('click', () => {
+  if (lastCompleteRun && lastCompleteRun.length >= 2) {
+    replayTrajectory(lastCompleteRun);
+  } else {
+    statusOutput.textContent = "No run to replay!";
+    setTimeout(() => {
+      restoreStatusOutput();
+    }, 2000); // 2000 millisecondi = 2 secondi
+  }
+});
     
  function replayTrajectory(customPoints){
   const rp = (customPoints && customPoints.length >= 2)
@@ -844,6 +938,12 @@ function finishRun(){
   if(!rp || rp.length < 2){
     statusOutput.textContent = "No run to replay!";
     lastStatusMessage = "No run to replay!";
+    
+    // Ripristina il messaggio di stato dopo 2 secondi
+    setTimeout(() => {
+      restoreStatusOutput();
+    }, 1000);
+    
     return;
   }
   
@@ -890,12 +990,17 @@ function finishRun(){
 }
 
     
-    function restoreStatusOutput(){
-      if(!champOverlay.classList.contains('hidden')){
+ function restoreStatusOutput(){
+    if(!champOverlay.classList.contains('hidden')){
         return;
-      }
-      statusOutput.innerHTML = lastStatusMessage || '';
     }
+    // Se lastStatusMessage è "No run to replay!", ripristina lo stato di gioco
+    if (lastStatusMessage === "No run to replay!") {
+        statusOutput.innerHTML = `Play ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptCount + 1})`;
+    } else {
+        statusOutput.innerHTML = lastStatusMessage || '';
+    }
+}
     
     /* =======================================
        Blind Mode
@@ -963,7 +1068,11 @@ function callParticipant(){
     // Formatta il valore con 2 decimali, es. "0.02s"
     penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
   }
-  let msg = `Play <span style="color:black;">${currentPlayer}</span> (G${raceNumber}/M${runNumber}/R${att}${penaltyDisplay})`;
+let msg = `Play <span style="color:black;">${currentPlayer}</span> (
+  #<span style="color:black;">${raceNumber}</span>/
+  M<span style="color:black;">${runNumber}</span>/
+  Run<span style="color:black;">${att}</span>${penaltyDisplay}
+)`;
   statusOutput.innerHTML = msg;
   lastStatusMessage = msg;
   
@@ -1086,44 +1195,46 @@ function callParticipant(){
       champOverlay.classList.remove('hidden');
     }
     
-    function setupRace(){
-      // Azzeriamo la lastCompleteRun per dimenticare la run precedente
-      lastCompleteRun = null;
-      
-      // ==================================================
-      // METEO: Rivalutazione all'inizio della gara
-      // ==================================================
-      let newWeatherState;
-      if (!weatherState) {
-        newWeatherState = chooseWeatherState(null);
-      } else {
-        newWeatherState = chooseWeatherState(weatherState);
-      }
-      showSnow = applyWeatherState(newWeatherState);
-      
-      const snowCanvas = document.getElementById('snowCanvas');
-      if (showSnow) {
-        snowCanvas.classList.remove('hidden');
-        snowCanvas.width = canvas.width;
-        snowCanvas.height = canvas.height;
-        initSnow();
-        updateSnow();
-      } else {
-        snowCanvas.classList.add('hidden');
-      }
-      
-      // ==================================================
-      
-      currentTrack = createTrackForRace(raceNumber);
-      resizeCanvas();
-      drawTrack(currentTrack);
-      bestTimes = [];
-      updateLeaderboard();
-      currentIndex = 0;
-      attemptCount = 0;
-      runNumber = 1;
-      callParticipant();
-    }
+function setupRace(){
+  // Azzeriamo la lastCompleteRun per dimenticare la run precedente
+  lastCompleteRun = null;
+
+  // Resetta il tempo mostrato
+  finalTimeOutput.textContent = `⏰1'00"000'''`;
+
+  // ==================================================
+  // METEO: Rivalutazione all'inizio della gara
+  // ==================================================
+  let newWeatherState;
+  if (!weatherState) {
+    newWeatherState = chooseWeatherState(null);
+  } else {
+    newWeatherState = chooseWeatherState(weatherState);
+  }
+  showSnow = applyWeatherState(newWeatherState);
+
+  const snowCanvas = document.getElementById('snowCanvas');
+  if (showSnow) {
+    snowCanvas.classList.remove('hidden');
+    snowCanvas.width = canvas.width;
+    snowCanvas.height = canvas.height;
+    initSnow();
+    updateSnow();
+  } else {
+    snowCanvas.classList.add('hidden');
+  }
+
+  currentTrack = createTrackForRace(raceNumber);
+  resizeCanvas();
+  drawTrack(currentTrack);
+  bestTimes = [];
+  updateLeaderboard();
+  currentIndex = 0;
+  attemptCount = 0;
+  runNumber = 1;
+  callParticipant();
+}
+
     
     /* =======================================
        Popup generico
