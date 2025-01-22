@@ -25,7 +25,7 @@
       height: 520px;
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
-      border: 2px solid #e9effb;
+      border: 2px solid #ffffff;
       border-radius: 10px;
       margin-top: 20px;
       box-sizing: border-box;
@@ -62,15 +62,16 @@
     }
     button:hover { opacity: 0.7; }
     /* Posizionamento bottoni di controllo */
-    #sameTrack { position: absolute; bottom: 10px; left: 10px; }
-    #replayButton { position: absolute; bottom: 10px; left: 50px; }
+    /* Nota: il tasto sameTrack ora viene ripurposo per bloccare/abilitare la neve */
+    #sameTrack  { position: absolute; bottom: 6px; right: 50px; }
+    #replayButton { position: absolute; bottom: 5px; left: 10px; }
     #quit { position: absolute; bottom: 6px; right: 10px; }
-    #homeBtn { position: absolute; bottom: 8px; right: 50px; } /* Nuovo pulsante Home */
+    #homeBtn { position: absolute; top: 10px; left: 10px; } /* Nuovo pulsante Home */
     #chronoButton { position: absolute; top: 10px; right: 10px; }
     /* Bottone "View" – per salvare/caricare la pista */
-    #viewBtn { position: absolute; bottom: 8px; left: 100px; transform: translateX(-50%); }
+    #viewBtn { position: absolute; bottom: 6px; left: 100px; transform: translateX(-50%); }
     /* Nuovo bottone (icona coppa) per salvare il risultato */
-    #saveResultBtn { position: absolute; top: 10px; left: 10px; }
+    #saveResultBtn { position: absolute; bottom: 6px; left: 52px; }
     .info-container {
       margin-top: 13px;
       display: flex;
@@ -178,23 +179,28 @@
     <!-- Canvas per l'effetto neve -->
     <canvas id="snowCanvas" class="hidden"></canvas>
     <!-- Bottoni di controllo -->
-    <button id="sameTrack" title="Same Run">🔁</button>
-    <button id="replayButton" title="Replay">⏯️</button>
+    <!-- Il tasto sameTrack ora viene usato per abilitare/disabilitare la neve -->
+    <button id="sameTrack" title="Toggle Snow">
+  <img src="snowflake.png" alt="Toggle Snow" style="width:19px;height:19px;">
+</button>
+   <button id="replayButton" title="Replay">
+  <img src="replay.png" alt="Replay" style="width:20px; height:20px;">
+</button>
     <button id="quit" title="New Track">
-      <img src="star.png" alt="New Track" style="width:22px;height:22px;">
+      <img src="new.png" alt="New Track" style="width:20px;height:20px;">
     </button>
     <!-- Bottone Home aggiunto: puntando a index.html -->
-    <button id="homeBtn" title="Home" onclick="location.href='index.html'">
+    <button id="homeBtn" title="Home">
       <img src="home.png" alt="Home" style="width:18px;height:18px;">
     </button>
     <button id="chronoButton" title="Top 5">
-      <img src="stopwatch.png" alt="Top 5" style="width:24px;height:24px;">
+      <img src="stopwatch.png" alt="Top 5" style="width:20px;height:20px;">
     </button>
     <button id="viewBtn" title="View / Save Track">
-      <img src="save.png" alt="View / Save" style="width:18px;height:18px;">
+      <img src="save.png" alt="View / Save" style="width:17px;height:17px;">
     </button>
     <button id="saveResultBtn" title="Save Result">
-      <img src="cup.png" alt="Save Result" style="width:24px;height:24px;">
+      <img src="cup.png" alt="Save Result" style="width:18px;height:18px;">
     </button>
   </div>
 
@@ -261,6 +267,9 @@
     const BORDER_THRESHOLD = 5;
     const hardMode = true; // Abilita collisione con alberi
 
+    // Variabile per il controllo della neve: di default la neve è abilitata
+    let snowLocked = false;
+
     // Variabili per la gestione della neve (come nel campionato)
     let snowIntensity = 0;
     let showSnow = false;
@@ -274,9 +283,9 @@
     }
     function applyWeatherState(state) {
       if(state === "nn") { snowIntensity = 0; }
-      else if(state === "pn") { snowIntensity = 150; }
-      else if(state === "mn") { snowIntensity = 750; }
-      else if(state === "nf") { snowIntensity = 1500; }
+      else if(state === "pn") { snowIntensity = 300; }
+      else if(state === "mn") { snowIntensity = 1000; }
+      else if(state === "nf") { snowIntensity = 3250;}
       showSnow = (snowIntensity > 0);
       return showSnow;
     }
@@ -333,12 +342,13 @@
     // Punto di partenza ed area di arrivo
     let startPoint = { x: 150, y: 30 };
     let finishRect = { x: 130, y: 490, width: 40, height: 10 };
+let globalWind = Math.random() * 1 - 0.5;
 
     // Slides del tutorial
     let tutorialSlides = [
       { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
       { title: "How to Play", content: "Draw your path starting from the house icon. Pass through all gates and finish at the finish area. Avoid trees and boundaries." },
-      { title: "Controls", content: "Buttons:<br>🔁 Same Run (repeat track)<br>⏯️ Replay (review run)<br>❌ New Track<br>⏱️ Top 5 (view best times)<br>👁️ View (save/load track)<br>🏆 Cup (save your result)" },
+      { title: "Controls", content: "Buttons:<br>🔁 Toggle Snow<br>⏯️ Replay (review run)<br>❌ New Track<br>⏱️ Top 5 (view best times)<br>👁️ View (save/load track)<br>🏆 Cup (save your result)" },
       { title: "Good Luck!", content: "Try to beat your best time! Enjoy the slope!" }
     ];
     let currentTutorialIndex = 0;
@@ -466,7 +476,7 @@
       if(!showSnow)return;
       snowCtx.clearRect(0,0,snowCanvas.width,snowCanvas.height);
       snowflakes.forEach(flake=>{
-        flake.x += flake.speedX;
+        flake.x += flake.speedX + globalWind;
         flake.y += flake.speedY;
         if(flake.y > snowCanvas.height){
           flake.y = 0;
@@ -773,7 +783,22 @@
     // ------------------------------------------------------------------
     // GESTIONE BOTTONI (Modalità solitario)
     // ------------------------------------------------------------------
-    sameTrackButton.addEventListener('click', ()=> { resetRun(); });
+    
+    // Modifica del tasto SAME TRACK: ora il tasto inverte il flag snowLocked,
+    // cambia leggermente l'opacità del bottone e mostra un breve messaggio nello status
+    sameTrackButton.addEventListener('click', ()=> { 
+      snowLocked = !snowLocked;
+      if(snowLocked){
+        sameTrackButton.style.opacity = "0.5";  
+        statusOutput.textContent = "Snow locked";
+      } else {
+        sameTrackButton.style.opacity = "1";    
+        statusOutput.textContent = "Snow enabled";
+      }
+      setTimeout(restoreStatusOutput, 1000);
+      resetRun();
+    });
+    
     replayButton.addEventListener('click', ()=>{
       if(lastCompleteRun && lastCompleteRun.length>=2){
         replayTrajectory(lastCompleteRun);
@@ -833,15 +858,22 @@
       finalTimeOutput.textContent = `⏰1'00"000'''`;
       clearCanvas();
       drawTrack(currentTrack);
+// Aggiorna il vento: assegna un nuovo valore casuale ad ogni reset
+  globalWind = Math.random() * 1 - 0.5;
       // Gestione neve: seleziona meteo e, se previsto, attiva l’effetto
       weatherState = chooseWeatherState(weatherState);
       applyWeatherState(weatherState);
-      if(showSnow){
-        snowCanvas.classList.remove('hidden');
-        initSnow();
-        updateSnow();
-      } else {
+      // Se la neve è bloccata, nascondi il canvas della neve
+      if(snowLocked){
         snowCanvas.classList.add('hidden');
+      } else {
+        if(showSnow){
+          snowCanvas.classList.remove('hidden');
+          initSnow();
+          updateSnow();
+        } else {
+          snowCanvas.classList.add('hidden');
+        }
       }
     }
     function updateLeaderboard(){
@@ -978,6 +1010,13 @@
     }
     renderTutorial();
     // Il tutorial viene mostrato all'avvio
+
+    // Aggiunta dell'event listener per il pulsante Home (già presente nel codice)
+    document.getElementById('homeBtn').addEventListener('click', function() {
+      if (confirm('Are you sure you want to quit?')) { 
+        location.href = 'index.html';
+      }
+    });
   </script>
 </body>
 </html>
