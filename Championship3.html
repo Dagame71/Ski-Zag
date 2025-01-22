@@ -26,7 +26,7 @@
       /* Sfondo immagine */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
-      border: 2px solid #e9effb;
+      border: 2px solid #ffffff;
       border-radius: 10px;
       margin-top: 20px;
       box-sizing: border-box;
@@ -65,15 +65,15 @@
       font-size: 18px;
       padding: 5px 8px;
       position: absolute;
-      bottom: 0px;
-      left: 100px; /* Posizionato a sinistra del bottone alberi */
+      bottom: 3px;
+      left: 272px; /* Posizionato a sinistra del bottone alberi */
       transform: translateX(-50%);
       cursor: pointer;
     }
     button:hover { opacity: 0.7; }
     #sameTrack { position: absolute; bottom: 10px; left: 10px; }
-    #replayButton { position: absolute; bottom: 10px; left: 50px; }
-    #quit { position: absolute; bottom: 10px; right: 10px; }
+    #replayButton { position: absolute; bottom: 10px; left: 10px; }
+    #quit { position: absolute; top: 10px; left: 10px; }
     #chronoButton { position: absolute; top: 10px; right: 10px; }
     #addPlayerBtn, #removePlayerBtn { font-size: 12px; }
     .info-container {
@@ -155,14 +155,16 @@
     <canvas id="snowCanvas" class="hidden"></canvas>
     
     <!-- Bottoni di controllo -->
-    <button id="sameTrack" title="Same Run">🔁</button>
-    <button id="replayButton" title="Replay">⏯️</button>
+  <button id="sameTrack" title="Same Run" hidden>🔁</button>
+    <button id="replayButton" title="Replay">
+  <img src="replay.png" alt="Replay" style="width: 20px; height: 20px;">
+</button>
     <button id="chronoButton" title="Chrono">
-      <img src="stopwatch.png" alt="Chrono" style="width:24px; height:24px;">
+      <img src="stopwatch.png" alt="Chrono" style="width:20px; height:20px;">
     </button>
-    <button id="quit" onclick="location.href='index.html'" title="Close">
-      <img src="close.png" alt="Close" style="width:22px; height:22px;">
-    </button>
+   <button id="quit" title="Close">
+  <img src="close.png" alt="Close" style="width:18px; height:18px;">
+</button>
     <!-- Bottone per Blind Mode -->
     <button id="blindToggle" title="Toggle Blind Mode">
       <img id="blindIcon" src="view.png" alt="View Mode" style="width:24px; height:24px;">
@@ -265,7 +267,8 @@ const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 
     let weatherState      = null;  // "nn", "pn", "mn", "nf"
     let snowIntensity     = 0;     // Intensità neve
     let showSnow          = false;   // Flag effetto neve
-    
+    let globalWind = Math.random() * 1 - 0.5;
+let replaySnowState = false; // Per memorizzare lo stato della neve
     // Nuova variabile per gestire i colpi con l'albero
     let treeHits = {}; // Es.: treeHits["Mario"] = numero di impatti consecutivi
     
@@ -364,11 +367,11 @@ function checkInterpolationForBorder(p1, p2) {
       if (state === "nn") {
         snowIntensity = 0;
       } else if (state === "pn") {
-        snowIntensity = 150;
+        snowIntensity = 300;
       } else if (state === "mn") {
-        snowIntensity = 750;
+        snowIntensity = 1000;
       } else if (state === "nf") {
-        snowIntensity = 1500;
+        snowIntensity = 3250;
       }
       weatherState = state;
       return snowIntensity > 0;
@@ -399,7 +402,7 @@ function checkInterpolationForBorder(p1, p2) {
       if (!showSnow) return;
       snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
       snowflakes.forEach(flake => {
-        flake.x += flake.speedX;
+        flake.x += flake.speedX + globalWind;
         flake.y += flake.speedY;
         if (flake.y > snowCanvas.height) {
           flake.y = 0;
@@ -932,10 +935,10 @@ replayButton.addEventListener('click', () => {
   }
 });
     
- function replayTrajectory(customPoints){
+ function replayTrajectory(customPoints) {
   const rp = (customPoints && customPoints.length >= 2)
     ? customPoints : pointsPath;
-  if(!rp || rp.length < 2){
+  if (!rp || rp.length < 2) {
     statusOutput.textContent = "No run to replay!";
     lastStatusMessage = "No run to replay!";
     
@@ -946,20 +949,23 @@ replayButton.addEventListener('click', () => {
     
     return;
   }
-  
+
+  // Salva lo stato della neve prima del replay
+  const preReplaySnowState = showSnow;
+
   // Riattiva la neve se era attiva durante la corsa
-  if(lastSnowActive) {
-      showSnow = true;
-      const snowCanvas = document.getElementById('snowCanvas');
-      snowCanvas.classList.remove('hidden');
-      snowCanvas.width = canvas.width;
-      snowCanvas.height = canvas.height;
-      initSnow();
-      updateSnow();
+  if (lastSnowActive) {
+    showSnow = true;
+    const snowCanvas = document.getElementById('snowCanvas');
+    snowCanvas.classList.remove('hidden');
+    snowCanvas.width = canvas.width;
+    snowCanvas.height = canvas.height;
+    initSnow();
+    updateSnow();
   } else {
-      document.getElementById('snowCanvas').classList.add('hidden');
+    document.getElementById('snowCanvas').classList.add('hidden');
   }
-  
+
   lastStatusMessage = statusOutput.innerHTML;
   clearCanvas();
   drawStartPoint();
@@ -967,27 +973,46 @@ replayButton.addEventListener('click', () => {
   drawGates(gates);
   drawTrees(trees);
   let i = 0;
-  function step(){
-    if(i >= rp.length - 1){
+
+  function step() {
+    if (i >= rp.length - 1) {
       setTimeout(() => {
         clearCanvas();
-        if(currentTrack) drawTrack(currentTrack);
+        if (currentTrack) drawTrack(currentTrack);
+
+        // Ripristina lo stato della neve originale
+        if (preReplaySnowState) {
+          showSnow = true;
+          const snowCanvas = document.getElementById('snowCanvas');
+          snowCanvas.classList.remove('hidden');
+          snowCanvas.width = canvas.width;
+          snowCanvas.height = canvas.height;
+          initSnow();
+          updateSnow();
+        } else {
+          showSnow = false;
+          document.getElementById('snowCanvas').classList.add('hidden');
+        }
+
         restoreStatusOutput();
       }, 500);
       return;
     }
+
     ctx.beginPath();
     ctx.moveTo(rp[i].x, rp[i].y);
-    ctx.lineTo(rp[i+1].x, rp[i+1].y);
+    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
     ctx.strokeStyle = '#a4b8eb';
     ctx.lineWidth = 2;
     ctx.stroke();
-    const dt = rp[i+1].t - rp[i].t;
+    const dt = rp[i + 1].t - rp[i].t;
     i++;
     setTimeout(step, dt);
   }
+  
   setTimeout(step, 0);
 }
+
 
     
  function restoreStatusOutput(){
@@ -1068,7 +1093,7 @@ function callParticipant(){
     // Formatta il valore con 2 decimali, es. "0.02s"
     penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
   }
-let msg = `Play <span style="color:black;">${currentPlayer}</span> (
+let msg = `<span style="color:black;">${currentPlayer}</span> (
   #<span style="color:black;">${raceNumber}</span>/
   M<span style="color:black;">${runNumber}</span>/
   Run<span style="color:black;">${att}</span>${penaltyDisplay}
@@ -1413,13 +1438,22 @@ function setupRace(){
     
     function startChampionship(){
       championScores = {};
-      participants.forEach(p => championScores[p] = 0);
+      participants.forEach(p => {
+  championScores[p] = 0; // Reset dei punti del campionato
+  treeHits[p] = 0;       // Reset delle penalità accumulate
+});
       slidesOverlay.classList.add('hidden');
       raceNumber = 1;
       runNumber = 1;
       setupRace();
     }
-    
+    document.getElementById('quit').addEventListener('click', () => {
+  const confirmQuit = confirm("Are you sure you want to quit?");
+  if (confirmQuit) {
+    window.location.href = 'index.html'; // Reindirizza alla pagina iniziale
+  }
+});
+
     document.addEventListener('DOMContentLoaded', () => {
       resizeCanvas();
       renderSlide();
