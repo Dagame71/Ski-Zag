@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <!-- Disabilita pinch-to-zoom / doppio tap -->
-  <meta name="viewport" content="width=300, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Ski Championship</title>
   <style>
-    /* (stili invariati) */
+    /* Stili di base */
     html, body {
       margin: 0;
       padding: 0;
@@ -21,9 +21,9 @@
     }
     .container {
       position: relative;
-      width: 300px;
-      height: 520px;
-      /* Sfondo immagine */
+      width: 90vw; /* 90% della larghezza della viewport */
+      max-width: 600px; /* Limite massimo per schermi grandi */
+      aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
       border: 2px solid #ffffff;
@@ -40,7 +40,7 @@
       height: 100%;
       cursor: crosshair;
     }
-    /* Nuovo canvas per l'effetto neve */
+    /* Canvas per l'effetto neve */
     #snowCanvas {
       position: absolute;
       top: 0;
@@ -50,32 +50,50 @@
       pointer-events: none;
       z-index: 10;
     }
+    /* Bottoni */
     button {
       border: none;
       background: none;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 1em; /* Dimensione relativa */
       margin: 0;
       padding: 0;
       color: black;
-  z-index: 20;
+      z-index: 20;
     }
-    /* CSS per il bottone blind */
-    #blindToggle {
-      font-size: 18px;
-      padding: 5px 8px;
+    button:hover { opacity: 0.7; }
+    /* Posizionamento bottoni con percentuali */
+    #sameTrack { 
+      position: absolute; 
+      bottom: 2%; 
+      left: 3%; 
+    }
+    #replayButton { 
+      position: absolute; 
+      bottom: 2%; 
+      left: 10%; 
+    }
+    #quit { 
+      position: absolute; 
+      top: 2%; 
+      left: 3%; 
+    }
+    #chronoButton { 
+      position: absolute; 
+      top: 2%; 
+      right: 3%; 
+    }
+    /* Bottone per Blind Mode */
+    #blindToggle { 
+      font-size: 1em; /* Dimensione relativa */
+      padding: 0.5em 0.8em; /* Padding relativo */
       position: absolute;
-      bottom: 3px;
-      left: 272px; /* Posizionato a sinistra del bottone alberi */
+      bottom: 3%; 
+      left: 90%; /* Posizionato relativamente alla larghezza */
       transform: translateX(-50%);
       cursor: pointer;
     }
-    button:hover { opacity: 0.7; }
-    #sameTrack { position: absolute; bottom: 10px; left: 10px; }
-    #replayButton { position: absolute; bottom: 10px; left: 10px; }
-    #quit { position: absolute; top: 10px; left: 10px; }
-    #chronoButton { position: absolute; top: 10px; right: 10px; }
-    #addPlayerBtn, #removePlayerBtn { font-size: 12px; }
+    /* Informazioni */
     .info-container {
       margin-top: 13px;
       display: flex;
@@ -83,66 +101,240 @@
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput { margin: -10px 0; font-weight: bold; }
-    #statusOutput { margin: 15px 0; font-weight: bold; color: red; min-height: 20px; }
+    #finalTimeOutput { 
+      margin: -10px 0; 
+      font-weight: bold; 
+      font-size: 1.2em; /* Dimensione relativa */
+    }
+    #statusOutput { 
+      margin: 15px 0; 
+      font-weight: bold; 
+      color: red; 
+      min-height: 20px; 
+      font-size: 1em; /* Dimensione relativa */
+    }
+    /* Animazioni */
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
     .record { animation: blink 0.5s ease-in-out 3; }
+    @keyframes fadeIn { 
+      from { opacity: 0; } 
+      to { opacity: 1; } 
+    }
+    /* Overlay */
     .overlay {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.7);
       z-index: 9999;
-      display: flex; justify-content: center; align-items: center;
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
       animation: fadeIn 0.3s ease;
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .hidden { display: none; }
     .overlay-content {
       background-image: url('backpopup.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover; /* Oppure "contain" se preferisci che l'intera immagine sia visibile */
-  background-color: #fff; /* Colore di fallback se l'immagine non viene caricata */
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover; /* Oppure "contain" se preferisci che l'intera immagine sia visibile */
+      background-color: #fff; /* Colore di fallback se l'immagine non viene caricata */
       border-radius: 12px;
-      padding: 20px;
-      width: 280px;
-      max-width: none;
+      padding: 2%; /* Padding relativo */
+      width: 80%; /* Responsive width */
+      max-width: 700px; /* Limite massimo */
       box-sizing: border-box;
-      position: relative; text-align: center; color: #333;
- box-shadow: 
-    inset 4px 4px 2px rgba(175,219,245,0.8),  /* Ombra interna scura in basso a destra */
-    inset -4px -4px 2px rgba(255,255,255,0.8); /* Ombra interna chiara in alto a sinistra */
-}
+      position: relative; 
+      text-align: center; 
+      color: #333;
+      box-shadow: 
+        inset 4px 4px 2px rgba(175,219,245,0.8),  /* Ombra interna scura in basso a destra */
+        inset -4px -4px 2px rgba(255,255,255,0.8); /* Ombra interna chiara in alto a sinistra */
     }
-    #chronoOverlay .overlay-content { max-width: 700px; }
-    #closeOverlay { position: absolute; top: 10px; left: 10px; background-color: #dc3545; font-size: 14px; padding: 5px 10px; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    #closeOverlay:hover { background-color: #c82333; }
-    .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
-    .leaderboard { width: 80%; margin: 0 auto; }
-    .leaderboard h2 { text-align: center; margin: 10px 0; }
-    ol { border: 1px solid #ccc; border-radius: 5px; list-style: decimal inside; min-height: 100px; padding: 10px; margin: 0; }
-    li { padding: 5px 0; }
+    /* Correzione degli errori di sintassi */
+    /* Rimosso '}' in eccesso */
+    /* Bottoni per chiudere gli overlay */
+    #closeOverlay { 
+      position: absolute; 
+      top: 10px; 
+      left: 10px; 
+      background-color: #dc3545; 
+      font-size: 0.875em; /* Dimensione relativa */
+      padding: 0.5em 1em; /* Padding relativo */
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+    }
+    #closeOverlay:hover { 
+      background-color: #c82333; 
+    }
+    /* Leaderboard */
+    .leaderboard-container { 
+      display: block; 
+      width: 100%; 
+      margin-top: 10px; 
+    }
+    .leaderboard { 
+      width: 80%; 
+      margin: 0 auto; 
+    }
+    .leaderboard h2 { 
+      text-align: center; 
+      margin: 10px 0; 
+      font-size: 1.2em; /* Dimensione relativa */
+    }
+    ol { 
+      border: 1px solid #ccc; 
+      border-radius: 5px; 
+      list-style: decimal inside; 
+      min-height: 100px; 
+      padding: 10px; 
+      margin: 0; 
+    }
+    li { 
+      padding: 5px 0; 
+      font-size: 1em; /* Dimensione relativa */
+    }
+    /* Slider del tutorial */
     .intro-overlay { }
-    .slide-content { margin-bottom: 20px; line-height: 1.4; }
-    .slide-title { margin-top: 0; margin-bottom: 10px; font-size: 22px; }
-    .slides-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
-    .slides-nav .nav-button { background: #007bff; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
-    .slides-nav .nav-button:disabled { background: #999; cursor: not-allowed; }
-    .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; cursor: pointer; transition: background 0.3s; }
-    .dot.active { background: #007bff; }
-    .champ-table { margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; width: 100%; overflow: hidden; text-align: left; }
-    .champ-table table { width: 100%; border-collapse: collapse; }
-    .champ-table th, .champ-table td { padding: 8px; border-bottom: 1px solid #eee; }
-    .champ-table th { background: #f7f7f7; font-weight: bold; }
-    .champ-table tr:last-child td { border-bottom: none; }
-    .end-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-    .end-buttons button { background: #007bff; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
-    .end-buttons button:hover { background-color: #0056b3; }
+    .slide-content { 
+      margin-bottom: 20px; 
+      line-height: 1.4; 
+      font-size: 1em; /* Dimensione relativa */
+    }
+    .slide-title { 
+      margin-top: 0; 
+      margin-bottom: 10px; 
+      font-size: 1.5em; /* Dimensione relativa */
+    }
+    .slides-nav { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-top: 15px; 
+    }
+    .slides-nav .nav-button { 
+      background: #007bff; 
+      color: #fff; 
+      border: none; 
+      border-radius: 8px; 
+      padding: 0.5em 1em; /* Padding relativo */
+      font-size: 1em; /* Dimensione relativa */
+      cursor: pointer; 
+    }
+    .slides-nav .nav-button:disabled { 
+      background: #999; 
+      cursor: not-allowed; 
+    }
+    .tutorial-dots { 
+      display: flex; 
+      justify-content: center; 
+      gap: 8px; 
+      margin: 10px 0; 
+    }
+    .dot { 
+      width: 10px; 
+      height: 10px; 
+      border-radius: 50%; 
+      background: #ccc; 
+      cursor: pointer; 
+      transition: background 0.3s; 
+    }
+    .dot.active { 
+      background: #007bff; 
+    }
+    /* Tabella del campionato */
+    .champ-table { 
+      margin: 15px 0; 
+      border: 1px solid #ccc; 
+      border-radius: 8px; 
+      width: 100%; 
+      overflow: hidden; 
+      text-align: left; 
+    }
+    .champ-table table { 
+      width: 100%; 
+      border-collapse: collapse; 
+    }
+    .champ-table th, .champ-table td { 
+      padding: 8px; 
+      border-bottom: 1px solid #eee; 
+      font-size: 1em; /* Dimensione relativa */
+    }
+    .champ-table th { 
+      background: #f7f7f7; 
+      font-weight: bold; 
+    }
+    .champ-table tr:last-child td { 
+      border-bottom: none; 
+    }
+    /* Bottoni alla fine */
+    .end-buttons { 
+      display: flex; 
+      justify-content: center; 
+      gap: 10px; 
+      margin-top: 20px; 
+    }
+    .end-buttons button { 
+      background: #007bff; 
+      color: #fff; 
+      border: none; 
+      border-radius: 8px; 
+      padding: 0.5em 1em; /* Padding relativo */
+      font-size: 1em; /* Dimensione relativa */
+      cursor: pointer; 
+    }
+    .end-buttons button:hover { 
+      background-color: #0056b3; 
+    }
+
+    /* Media Queries per Schermi Più Grandi */
+    @media (min-width: 600px) {
+      .container {
+        max-width: 900px; /* Aumentato da 600px a 900px */
+      }
+      
+      #replayButton { 
+        left: 15%; /* Sposta leggermente a sinistra */
+      }
+      
+      #blindToggle { 
+        left: 88%; /* Adeguamento posizione */
+      }
+    }
+
+    @media (min-width: 900px) {
+      .container {
+        max-width: 1200px; /* Aumentato da 900px a 1200px */
+      }
+      
+      #replayButton { 
+        left: 20%; /* Ulteriore spostamento */
+      }
+      
+      #blindToggle { 
+        left: 85%; /* Adeguamento posizione */
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1500px; /* Aumentato da 1200px a 1500px */
+      }
+      
+      #replayButton { 
+        left: 25%; /* Ulteriore spostamento */
+      }
+      
+      #blindToggle { 
+        left: 82%; /* Adeguamento posizione */
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -151,23 +343,23 @@
   
   <div class="container">
     <canvas id="canvas"></canvas>
-    <!-- Nuovo canvas per l'effetto neve -->
+    <!-- Canvas per l'effetto neve -->
     <canvas id="snowCanvas" class="hidden"></canvas>
     
     <!-- Bottoni di controllo -->
-  <button id="sameTrack" title="Same Run" hidden>🔁</button>
+    <button id="sameTrack" title="Same Run" hidden>🔁</button>
     <button id="replayButton" title="Replay">
-  <img src="replay.png" alt="Replay" style="width: 20px; height: 20px;">
-</button>
-    <button id="chronoButton" title="Chrono">
-      <img src="stopwatch.png" alt="Chrono" style="width:20px; height:20px;">
+      <img src="replay.png" alt="Replay" style="width: 1.3em; height: 1.3em;">
     </button>
-   <button id="quit" title="Close">
-  <img src="close.png" alt="Close" style="width:18px; height:18px;">
-</button>
+    <button id="chronoButton" title="Chrono">
+      <img src="stopwatch.png" alt="Chrono" style="width:1.3em; height:1.3em;">
+    </button>
+    <button id="quit" title="Close">
+      <img src="close.png" alt="Close" style="width:1.2em; height:1.2em;">
+    </button>
     <!-- Bottone per Blind Mode -->
     <button id="blindToggle" title="Toggle Blind Mode">
-      <img id="blindIcon" src="view.png" alt="View Mode" style="width:24px; height:24px;">
+      <img id="blindIcon" src="view.png" alt="View Mode" style="width:1.5em; height:1.5em;">
     </button>
     
     <!-- Overlay CHRONO (Top 5) -->
@@ -224,8 +416,7 @@
     ============================================== */
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
-const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 1px dal limite del canvas.
-
+    const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 5px dal limite del canvas.
     
     const canvas           = document.getElementById('canvas');
     const ctx              = canvas.getContext('2d');
@@ -266,9 +457,9 @@ const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 
     let falseStartCount   = 0;
     let weatherState      = null;  // "nn", "pn", "mn", "nf"
     let snowIntensity     = 0;     // Intensità neve
-    let showSnow          = false;   // Flag effetto neve
+    let showSnow          = false; // Flag effetto neve
     let globalWind = Math.random() * 1 - 0.5;
-let replaySnowState = false; // Per memorizzare lo stato della neve
+    let replaySnowState = false; // Per memorizzare lo stato della neve
     // Nuova variabile per gestire i colpi con l'albero
     let treeHits = {}; // Es.: treeHits["Mario"] = numero di impatti consecutivi
     
@@ -276,40 +467,52 @@ let replaySnowState = false; // Per memorizzare lo stato della neve
     let startPoint = { x:150, y:30 };
     let finishRect = { x:130, y:490, width:40, height:10 };
     let lastSnowActive = false;
-let outPenaltyCount = 0; // Conta quante volte la traiettoria esce dal campo
-let isOut = false;       // Flag per rilevare quando si esce ed evitare conteggi multipli continui
-// Funzione di interpolazione: controlla se tra p1 e p2 viene "toccatto" il bordo
-function checkInterpolationForBorder(p1, p2) {
-  const stepLength = 2;  // Lunghezza del passo in pixel
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  const distance = Math.hypot(dx, dy);
-  const steps = Math.ceil(distance / stepLength);
-  
-  // Interpola tra p1 e p2
-  for (let i = 1; i <= steps; i++) {
-    const t = i / steps;
-    const ix = p1.x + t * dx;
-    const iy = p1.y + t * dy;
-    if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD ||
-        iy < BORDER_THRESHOLD || iy > canvas.height - BORDER_THRESHOLD) {
-      return true;
+    let outPenaltyCount = 0; // Conta quante volte la traiettoria esce dal campo
+    let isOut = false;       // Flag per rilevare quando si esce ed evitare conteggi multipli continui
+    
+    /* =======================================
+       Funzione di interpolazione: controlla se tra p1 e p2 viene "toccatto" il bordo
+    ======================================= */
+    function checkInterpolationForBorder(p1, p2) {
+      const stepLength = 2;  // Lunghezza del passo in pixel
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const distance = Math.hypot(dx, dy);
+      const steps = Math.ceil(distance / stepLength);
+      
+      // Interpola tra p1 e p2
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const ix = p1.x + t * dx;
+        const iy = p1.y + t * dy;
+        if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD ||
+            iy < BORDER_THRESHOLD || iy > canvas.height - BORDER_THRESHOLD) {
+          return true;
+        }
+      }
+      return false;
     }
-  }
-  return false;
-}
-
+    
+    /* =======================================
+       Resize Canvas Responsivo
+    ======================================= */
     function resizeCanvas(){
-      canvas.width = 300;
-      canvas.height = 520;
-      startPoint = { x: canvas.width/2, y:30 };
-      finishRect = { x: (canvas.width/2)-20, y: canvas.height-30, width:40, height:10 };
+      // Imposta le dimensioni del canvas in base alla dimensione del contenitore
+      const container = document.querySelector('.container');
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      startPoint = { x: canvas.width / 2, y: 30 };
+      finishRect = { x: (canvas.width / 2) - 20, y: canvas.height - 30, width:40, height:10 };
+      
       // Aggiorna anche il canvas neve
       const snowCanvas = document.getElementById('snowCanvas');
       snowCanvas.width = canvas.width;
       snowCanvas.height = canvas.height;
     }
     
+    /* =======================================
+       Clear Canvas
+    ======================================= */
     function clearCanvas(){
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
@@ -324,7 +527,7 @@ function checkInterpolationForBorder(p1, p2) {
     
     /* =======================================
        Impostazione delle icone e risorse
-    ===================================== */
+    ======================================= */
     const gateIcons = {
       red: new Image(),
       blue: new Image()
@@ -334,7 +537,7 @@ function checkInterpolationForBorder(p1, p2) {
     
     /* =======================================
        Funzioni Meteo (unificate)
-    ===================================== */
+    ======================================= */
     function chooseWeatherState(prevState) {
       const r = Math.random() * 100;
       switch (prevState) {
@@ -379,8 +582,7 @@ function checkInterpolationForBorder(p1, p2) {
     
     /* =======================================
        Sistema neve: inizializza e aggiorna le particelle
-    ===================================== */
-    const container = document.querySelector('.container');
+    ======================================= */
     let snowCanvas = document.getElementById('snowCanvas');
     const snowCtx = snowCanvas.getContext('2d');
     let snowflakes = [];
@@ -420,7 +622,7 @@ function checkInterpolationForBorder(p1, p2) {
     
     /* =======================================
        Generazione della Pista
-    ===================================== */
+    ======================================= */
     function createTrackForRace(rn){
       let gc = 8;
       if(rn === 2) gc = 10;
@@ -437,9 +639,9 @@ function checkInterpolationForBorder(p1, p2) {
       for(let i = 0; i < count; i++){
         const dir = isRed ? 1 : -1;
         const x   = isRed 
-          ? Math.random() * (canvas.width/2 - 35) + canvas.width/2
-          : Math.random() * (canvas.width/2 - 35) + 35;
-        const y   = 60 + i * ((canvas.height-120) / count);
+          ? Math.random() * (canvas.width / 2 - 35) + canvas.width / 2
+          : Math.random() * (canvas.width / 2 - 35) + 35;
+        const y   = 60 + i * ((canvas.height - 120) / count);
         const color = isRed ? 'red' : 'blue';
         arr.push({
           x, y, color,
@@ -471,11 +673,12 @@ function checkInterpolationForBorder(p1, p2) {
     
     /* =======================================
        Disegno della Pista e degli Elementi
-    ===================================== */
+    ======================================= */
     function drawTrack(track){
       clearCanvas();
       gates = track.gates;
       trees = track.trees;
+      intersectedGates = new Set();
       drawStartPoint();
       drawFinishArea();
       drawGates(gates);
@@ -483,7 +686,7 @@ function checkInterpolationForBorder(p1, p2) {
     }
     
     function drawStartPoint(){
-      ctx.font = '18px Arial';
+      ctx.font = `${18 / 520 * canvas.height}px Arial`; // Font relativo
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('🏠', startPoint.x, startPoint.y);
@@ -495,8 +698,8 @@ function checkInterpolationForBorder(p1, p2) {
       const rowCount = Math.floor(height / (width / 8));
       for(let row = 0; row < rowCount; row++){
         for(let col = 0; col < 8; col++){
-          ctx.fillStyle = ((row+col) % 2 === 0) ? 'black' : '#F0F0F0';
-          ctx.fillRect(x + col*sq, y + row*sq, sq, sq);
+          ctx.fillStyle = ((row + col) % 2 === 0) ? 'black' : '#F0F0F0';
+          ctx.fillRect(x + col * sq, y + row * sq, sq, sq);
         }
       }
     }
@@ -504,9 +707,9 @@ function checkInterpolationForBorder(p1, p2) {
     function drawGates(gArr){
       gArr.forEach(g => {
         const icon = g.color === "red" ? gateIcons.red : gateIcons.blue;
-        const iconWidth = 16;
-        const iconHeight = 16;
-        ctx.drawImage(icon, g.x - iconWidth/2, g.y - iconHeight/2, iconWidth, iconHeight);
+        const iconWidth = 16 / 300 * canvas.width; // Dimensione relativa
+        const iconHeight = 16 / 520 * canvas.height;
+        ctx.drawImage(icon, g.x - iconWidth / 2, g.y - iconHeight / 2, iconWidth, iconHeight);
       });
     }
     
@@ -516,14 +719,16 @@ function checkInterpolationForBorder(p1, p2) {
       treeImg.onload = () => {
         tArr.forEach(t => {
           // Disegno con offset: l'immagine viene disegnata a t.x-6, t.y-20, dimensione 12x20
-          ctx.drawImage(treeImg, t.x - 6, t.y - 20, 12, 20);
+          const treeWidth = 12 / 300 * canvas.width;
+          const treeHeight = 20 / 520 * canvas.height;
+          ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
         });
       };
     }
     
     /* =======================================
        Eventi Mouse / Touch (unificati)
-    ===================================== */
+    ======================================= */
     if(!canvas._eventsAttached){
       canvas.addEventListener('mousedown', handleMouseDown);
       canvas.addEventListener('mousemove', handleMouseMove);
@@ -538,85 +743,85 @@ function checkInterpolationForBorder(p1, p2) {
       const rect = canvas.getBoundingClientRect();
       const cx = (e.touches) ? e.touches[0].clientX : e.clientX;
       const cy = (e.touches) ? e.touches[0].clientY : e.clientY;
-      return { x: cx - rect.left, y: cy - rect.top };
+      return { x: (cx - rect.left) / rect.width * canvas.width, y: (cy - rect.top) / rect.height * canvas.height };
     }
     
     function isNearStartPoint(x,y){
-      return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20);
+      return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20 / 520 * canvas.height);
     }
     
-function handleMouseDown(e){
-  const { x, y } = getMouseCoords(e);
-  if(!isNearStartPoint(x, y)){
-    falseStartCount++;  // Incrementa il contatore degli errori
-
-    if(falseStartCount === 1) {
-      statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>';
-      setTimeout(() => {
-        restoreStatusOutput();
-      }, 1000); // Il messaggio resta per 1 secondo
-    } else if(falseStartCount === 2) {
-      statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>';
-      setTimeout(() => {
-        restoreStatusOutput();
-      }, 1000);
-    } else if(falseStartCount >= 3){
-      statusOutput.textContent = 'Run failed due to consecutive false starts!';
-      failAttempt("Run failed due to false starts.");
-      falseStartCount = 0;  // Reset dopo il fallimento
-    }
-    return;
-  }
-  // Se il punto di partenza è corretto, resettiamo il conteggio
-  falseStartCount = 0;
-
-  // Resettiamo le variabili per la penalità "uscita dal campo"
-  outPenaltyCount = 0;
-  isOut = false;
-
-  drawing = true;
-  pointsPath = [];
-  startTime = performance.now();
-  statusOutput.textContent = '';
-  lastStatusMessage = '';
-  ctx.beginPath();
-  pointsPath.push({ x, y, t: 0 });
-  ctx.moveTo(x, y);
-  didFinishOrFailThisRun = false;
-}
-
-
-function handleMouseMove(e){
-  if(!drawing) return;
-  const { x, y } = getMouseCoords(e);
-  
-  // Preleva l'ultimo punto registrato (se esiste)
-  let p1 = pointsPath[pointsPath.length - 1];
-  let p2 = { x, y };
-
-  // Usa l'interpolazione per verificare se il segmento attraversa il bordo
-  if (p1 && checkInterpolationForBorder(p1, p2)) {
-    if(!isOut) {  // Se non è già stato segnato come "al bordo"
-      outPenaltyCount++; // Incrementa la penalità
-      isOut = true;
-    }
-  } else {
-    isOut = false;
-  }
-
-  // Registra il nuovo punto con il tempo relativo
-  const now = performance.now() - startTime;
-  pointsPath.push({ x, y, t: now });
-  
-  if(!isBlind){
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = '#a4b8eb';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-  checkIntersections();
-}
+    function handleMouseDown(e){
+      const { x, y } = getMouseCoords(e);
+      if(!isNearStartPoint(x, y)){
+        falseStartCount++;  // Incrementa il contatore degli errori
     
+        if(falseStartCount === 1) {
+          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>';
+          setTimeout(() => {
+            restoreStatusOutput();
+          }, 1000); // Il messaggio resta per 1 secondo
+        } else if(falseStartCount === 2) {
+          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>';
+          setTimeout(() => {
+            restoreStatusOutput();
+          }, 1000);
+        } else if(falseStartCount >= 3){
+          statusOutput.textContent = 'Run failed due to consecutive false starts!';
+          failAttempt("Run failed due to false starts.");
+          falseStartCount = 0;  // Reset dopo il fallimento
+        }
+        return;
+      }
+      // Se il punto di partenza è corretto, resettiamo il conteggio
+      falseStartCount = 0;
+    
+      // Resettiamo le variabili per la penalità "uscita dal campo"
+      outPenaltyCount = 0;
+      isOut = false;
+    
+      drawing = true;
+      pointsPath = [];
+      startTime = performance.now();
+      statusOutput.textContent = '';
+      lastStatusMessage = '';
+      ctx.beginPath();
+      pointsPath.push({ x, y, t: 0 });
+      ctx.moveTo(x, y);
+      didFinishOrFailThisRun = false;
+    }
+    
+    
+    function handleMouseMove(e){
+      if(!drawing) return;
+      const { x, y } = getMouseCoords(e);
+      
+      // Preleva l'ultimo punto registrato (se esiste)
+      let p1 = pointsPath[pointsPath.length - 1];
+      let p2 = { x, y };
+    
+      // Usa l'interpolazione per verificare se il segmento attraversa il bordo
+      if (p1 && checkInterpolationForBorder(p1, p2)) {
+        if(!isOut) {  // Se non è già stato segnato come "al bordo"
+          outPenaltyCount++; // Incrementa la penalità
+          isOut = true;
+        }
+      } else {
+        isOut = false;
+      }
+    
+      // Registra il nuovo punto con il tempo relativo
+      const now = performance.now() - startTime;
+      pointsPath.push({ x, y, t: now });
+      
+      if(!isBlind){
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#a4b8eb';
+        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.stroke();
+      }
+      checkIntersections();
+    }
+        
     function handleMouseUp(e){
       if(!drawing) return;
       drawing = false;
@@ -625,61 +830,61 @@ function handleMouseMove(e){
       }
     }
     
-function handleTouchStart(e){
-  e.preventDefault();
-  const { x, y } = getMouseCoords(e);
-  if(!isNearStartPoint(x,y)){
-    statusOutput.textContent = 'You must start from the start point!';
-    return;
-  }
-  
-  // Reset delle variabili per la penalità "uscita dal campo"
-  outPenaltyCount = 0;
-  isOut = false;
-  
-  drawing = true;
-  pointsPath = [];
-  startTime = performance.now();
-  statusOutput.textContent = '';
-  lastStatusMessage = '';
-  ctx.beginPath();
-  pointsPath.push({ x, y, t: 0 });
-  ctx.moveTo(x, y);
-  didFinishOrFailThisRun = false;
-}
-
-    
-function handleTouchMove(e){
-  e.preventDefault();
-  if(!drawing) return;
-  const { x, y } = getMouseCoords(e);
-
-  let p1 = pointsPath[pointsPath.length - 1];
-  let p2 = { x, y };
-
-  // Utilizza la funzione di interpolazione per controllare il contatto con il bordo
-  if (p1 && checkInterpolationForBorder(p1, p2)) {
-    if(!isOut) {
-      outPenaltyCount++;
-      isOut = true;
+    function handleTouchStart(e){
+      e.preventDefault();
+      const { x, y } = getMouseCoords(e);
+      if(!isNearStartPoint(x,y)){
+        statusOutput.textContent = 'You must start from the start point!';
+        return;
+      }
+      
+      // Reset delle variabili per la penalità "uscita dal campo"
+      outPenaltyCount = 0;
+      isOut = false;
+      
+      drawing = true;
+      pointsPath = [];
+      startTime = performance.now();
+      statusOutput.textContent = '';
+      lastStatusMessage = '';
+      ctx.beginPath();
+      pointsPath.push({ x, y, t: 0 });
+      ctx.moveTo(x, y);
+      didFinishOrFailThisRun = false;
     }
-  } else {
-    isOut = false;
-  }
-  
-  const now = performance.now() - startTime;
-  pointsPath.push({ x, y, t: now });
-  
-  if(!isBlind){
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = '#a4b8eb';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-  checkIntersections();
-}
-
     
+        
+    function handleTouchMove(e){
+      e.preventDefault();
+      if(!drawing) return;
+      const { x, y } = getMouseCoords(e);
+    
+      let p1 = pointsPath[pointsPath.length - 1];
+      let p2 = { x, y };
+    
+      // Utilizza la funzione di interpolazione per controllare il contatto con il bordo
+      if (p1 && checkInterpolationForBorder(p1, p2)) {
+        if(!isOut) {
+          outPenaltyCount++;
+          isOut = true;
+        }
+      } else {
+        isOut = false;
+      }
+      
+      const now = performance.now() - startTime;
+      pointsPath.push({ x, y, t: now });
+      
+      if(!isBlind){
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#a4b8eb';
+        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.stroke();
+      }
+      checkIntersections();
+    }
+    
+        
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing) return;
@@ -701,7 +906,7 @@ function handleTouchMove(e){
               // Per l'immagine dell'albero, il disegno usa un offset: l'icona è disegnata in (tree.x-6, tree.y-20)
               // Il centro visivo è dunque (tree.x, tree.y-10)
               const dist = Math.hypot(ix - tree.x, iy - (tree.y - 10));
-              if(dist < 10){
+              if(dist < 10 / 520 * canvas.height){
                 // Registra il colpo dell'albero per il giocatore attuale
                 let currentPlayer = participants[currentIndex];
                 if (!treeHits[currentPlayer]) {
@@ -758,77 +963,76 @@ function handleTouchMove(e){
     
     /* =======================================
        Gestione dei Tentativi
-    ===================================== */
-function failAttempt(msg) {
-  drawing = false;
-  didFinishOrFailThisRun = true;
-
-  // Salva il percorso della run non conclusa
-  if (pointsPath.length > 0) {
-    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath)); // Salva il percorso corrente
-  }
-
-  // Se stiamo giocando in modalità blind, assegniamo +3 punti agli altri giocatori
-  if (isBlind) {
-    statusOutput.textContent = "Blind failed! Penalty!";
-    for (let player in championScores) {
-      if (player !== participants[currentIndex]) {
-        championScores[player] += 3;
-      }
-    }
-    updatePointsLeaderboard();
-  } else {
-    statusOutput.textContent = msg;
-  }
-
-  lastStatusMessage = statusOutput.textContent;
-  attemptCount++;
-  setTimeout(() => nextParticipant(), 2000);
-}
-
-function finishRun(){
-  drawing = false;
-  didFinishOrFailThisRun = true;
-  const endTime = performance.now();
-  const elapsedTime = endTime - startTime;
-  const distPx = calculateDistance(pointsPath);
-  const realLength = distPx * (window.conversionFactor || 1);
-  
-  // Calcola il tempo base
-  let baseTime = calculateFinalTime(elapsedTime, realLength);
-  
-  // Penalità per alberi (già esistente)
-  let currentPlayer = participants[currentIndex];
-  let extraPenalty = 0;
-  if (treeHits[currentPlayer]) {
-    extraPenalty = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
+    ======================================= */
+    function failAttempt(msg) {
+      drawing = false;
+      didFinishOrFailThisRun = true;
     
-  }
-  
-  // Nuova penalità: per ogni uscita dal campo, +0.10 secondi
-  let outPenaltyTotal = outPenaltyCount * 0.10;
-  
-  // Calcola il tempo finale sommando le penalità
-  const finalTime = baseTime + extraPenalty + outPenaltyTotal;
-  
-  // Visualizza il tempo finale e mostra la penalità tra parentesi (se presente)
-  finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}${(outPenaltyTotal > 0) ? `(+${outPenaltyTotal.toFixed(2)})` : ""}`;
-  statusOutput.textContent = 'Finished!';
-  lastStatusMessage = 'Finished!';
-  
-  // Salva il percorso per il replay
-  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-  
-  // Salva lo stato della neve
-  lastSnowActive = showSnow;
-  
-  updateTimes(finalTime);
-  attemptCount++;
-  resetBlindMode();
-  setTimeout(() => nextParticipant(), 2500);
-}
-
-
+      // Salva il percorso della run non conclusa
+      if (pointsPath.length > 0) {
+        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath)); // Salva il percorso corrente
+      }
+    
+      // Se stiamo giocando in modalità blind, assegniamo +3 punti agli altri giocatori
+      if (isBlind) {
+        statusOutput.textContent = "Blind failed! Penalty!";
+        for (let player in championScores) {
+          if (player !== participants[currentIndex]) {
+            championScores[player] += 3;
+          }
+        }
+        updatePointsLeaderboard();
+      } else {
+        statusOutput.textContent = msg;
+      }
+    
+      lastStatusMessage = statusOutput.textContent;
+      attemptCount++;
+      setTimeout(() => nextParticipant(), 2000);
+    }
+    
+    function finishRun(){
+      drawing = false;
+      didFinishOrFailThisRun = true;
+      const endTime = performance.now();
+      const elapsedTime = endTime - startTime;
+      const distPx = calculateDistance(pointsPath);
+      const realLength = distPx * (window.conversionFactor || 1);
+      
+      // Calcola il tempo base
+      let baseTime = calculateFinalTime(elapsedTime, realLength);
+      
+      // Penalità per alberi (già esistente)
+      let currentPlayer = participants[currentIndex];
+      let extraPenalty = 0;
+      if (treeHits[currentPlayer]) {
+        extraPenalty = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
+      }
+      
+      // Nuova penalità: per ogni uscita dal campo, +0.10 secondi
+      let outPenaltyTotal = outPenaltyCount * 0.10;
+      
+      // Calcola il tempo finale sommando le penalità
+      const finalTime = baseTime + extraPenalty + outPenaltyTotal;
+      
+      // Visualizza il tempo finale e mostra la penalità tra parentesi (se presente)
+      finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}${(outPenaltyTotal > 0) ? `(+${outPenaltyTotal.toFixed(2)})` : ""}`;
+      statusOutput.textContent = 'Finished!';
+      lastStatusMessage = 'Finished!';
+      
+      // Salva il percorso per il replay
+      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+      
+      // Salva lo stato della neve
+      lastSnowActive = showSnow;
+      
+      updateTimes(finalTime);
+      attemptCount++;
+      resetBlindMode();
+      setTimeout(() => nextParticipant(), 2500);
+    }
+    
+    
     function calculateDistance(arr){
       let tot = 0;
       for(let i = 1; i < arr.length; i++){
@@ -853,7 +1057,7 @@ function finishRun(){
     
     /* =======================================
        Aggiornamento Leaderboard e Punteggi
-    ===================================== */
+    ======================================= */
     function updateTimes(t){
       const nameValue = participants[currentIndex];
       const replayData = JSON.parse(JSON.stringify(pointsPath));
@@ -890,7 +1094,7 @@ function finishRun(){
         const li = document.createElement('li');
         const blindMark = entry.blind ? ' (B)' : '';
         if(i === 0){
-          li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:18px;">⏯️</span>`;
+          li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:1.2em;">⏯️</span>`;
           li.style.fontWeight = 'bold';
           li.style.cursor = 'pointer';
           li.title = "Click to watch the best replay";
@@ -923,113 +1127,110 @@ function finishRun(){
     
     /* =======================================
        REPLAY della Traiettoria
-    ===================================== */
-replayButton.addEventListener('click', () => {
-  if (lastCompleteRun && lastCompleteRun.length >= 2) {
-    replayTrajectory(lastCompleteRun);
-  } else {
-    statusOutput.textContent = "No run to replay!";
-    setTimeout(() => {
-      restoreStatusOutput();
-    }, 2000); // 2000 millisecondi = 2 secondi
-  }
-});
-    
- function replayTrajectory(customPoints) {
-  const rp = (customPoints && customPoints.length >= 2)
-    ? customPoints : pointsPath;
-  if (!rp || rp.length < 2) {
-    statusOutput.textContent = "No run to replay!";
-    lastStatusMessage = "No run to replay!";
-    
-    // Ripristina il messaggio di stato dopo 2 secondi
-    setTimeout(() => {
-      restoreStatusOutput();
-    }, 1000);
-    
-    return;
-  }
-
-  // Salva lo stato della neve prima del replay
-  const preReplaySnowState = showSnow;
-
-  // Riattiva la neve se era attiva durante la corsa
-  if (lastSnowActive) {
-    showSnow = true;
-    const snowCanvas = document.getElementById('snowCanvas');
-    snowCanvas.classList.remove('hidden');
-    snowCanvas.width = canvas.width;
-    snowCanvas.height = canvas.height;
-    initSnow();
-    updateSnow();
-  } else {
-    document.getElementById('snowCanvas').classList.add('hidden');
-  }
-
-  lastStatusMessage = statusOutput.innerHTML;
-  clearCanvas();
-  drawStartPoint();
-  drawFinishArea();
-  drawGates(gates);
-  drawTrees(trees);
-  let i = 0;
-
-  function step() {
-    if (i >= rp.length - 1) {
-      setTimeout(() => {
-        clearCanvas();
-        if (currentTrack) drawTrack(currentTrack);
-
-        // Ripristina lo stato della neve originale
-        if (preReplaySnowState) {
-          showSnow = true;
-          const snowCanvas = document.getElementById('snowCanvas');
-          snowCanvas.classList.remove('hidden');
-          snowCanvas.width = canvas.width;
-          snowCanvas.height = canvas.height;
-          initSnow();
-          updateSnow();
-        } else {
-          showSnow = false;
-          document.getElementById('snowCanvas').classList.add('hidden');
-        }
-
-        restoreStatusOutput();
-      }, 500);
-      return;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(rp[i].x, rp[i].y);
-    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
-    ctx.strokeStyle = '#a4b8eb';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    const dt = rp[i + 1].t - rp[i].t;
-    i++;
-    setTimeout(step, dt);
-  }
-  
-  setTimeout(step, 0);
-}
-
-
-    
- function restoreStatusOutput(){
-    if(!champOverlay.classList.contains('hidden')){
+    ======================================= */
+    replayButton.addEventListener('click', () => {
+      if (lastCompleteRun && lastCompleteRun.length >= 2) {
+        replayTrajectory(lastCompleteRun);
+      } else {
+        statusOutput.textContent = "No run to replay!";
+        setTimeout(() => {
+          restoreStatusOutput();
+        }, 2000); // 2000 millisecondi = 2 secondi
+      }
+    });
+        
+    function replayTrajectory(customPoints) {
+      const rp = (customPoints && customPoints.length >= 2)
+        ? customPoints : pointsPath;
+      if (!rp || rp.length < 2) {
+        statusOutput.textContent = "No run to replay!";
+        lastStatusMessage = "No run to replay!";
+        
+        // Ripristina il messaggio di stato dopo 2 secondi
+        setTimeout(() => {
+          restoreStatusOutput();
+        }, 1000);
+        
         return;
+      }
+    
+      // Salva lo stato della neve prima del replay
+      const preReplaySnowState = showSnow;
+    
+      // Riattiva la neve se era attiva durante la corsa
+      if (lastSnowActive) {
+        showSnow = true;
+        snowCanvas.classList.remove('hidden');
+        snowCanvas.width = canvas.width;
+        snowCanvas.height = canvas.height;
+        initSnow();
+        updateSnow();
+      } else {
+        snowCanvas.classList.add('hidden');
+      }
+    
+      lastStatusMessage = statusOutput.innerHTML;
+      clearCanvas();
+      drawStartPoint();
+      drawFinishArea();
+      drawGates(gates);
+      drawTrees(trees);
+      let i = 0;
+    
+      function step() {
+        if (i >= rp.length - 1) {
+          setTimeout(() => {
+            clearCanvas();
+            if (currentTrack) drawTrack(currentTrack);
+    
+            // Ripristina lo stato della neve originale
+            if (preReplaySnowState) {
+              showSnow = true;
+              snowCanvas.classList.remove('hidden');
+              snowCanvas.width = canvas.width;
+              snowCanvas.height = canvas.height;
+              initSnow();
+              updateSnow();
+            } else {
+              showSnow = false;
+              snowCanvas.classList.add('hidden');
+            }
+    
+            restoreStatusOutput();
+          }, 500);
+          return;
+        }
+    
+        ctx.beginPath();
+        ctx.moveTo(rp[i].x, rp[i].y);
+        ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
+        ctx.strokeStyle = '#a4b8eb';
+        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.stroke();
+        const dt = rp[i + 1].t - rp[i].t;
+        i++;
+        setTimeout(step, dt);
+      }
+      
+      setTimeout(step, 0);
     }
-    // Se lastStatusMessage è "No run to replay!", ripristina lo stato di gioco
-    if (lastStatusMessage === "No run to replay!") {
-        statusOutput.innerHTML = `Play ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptCount + 1})`;
-    } else {
-        statusOutput.innerHTML = lastStatusMessage || '';
+    
+    
+    function restoreStatusOutput(){
+      if(!champOverlay.classList.contains('hidden')){
+          return;
+      }
+      // Se lastStatusMessage è "No run to replay!", ripristina lo stato di gioco
+      if (lastStatusMessage === "No run to replay!") {
+          statusOutput.innerHTML = `Play ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptCount + 1})`;
+      } else {
+          statusOutput.innerHTML = lastStatusMessage || '';
+      }
     }
-}
     
     /* =======================================
        Blind Mode
-    ===================================== */
+    ======================================= */
     const blindToggleButton = document.getElementById('blindToggle');
     let isBlind = false;
     blindToggleButton.addEventListener('click', () => {
@@ -1053,7 +1254,7 @@ replayButton.addEventListener('click', () => {
     
     /* =======================================
        Gestione Discesa, Manche e Gara
-    ===================================== */
+    ======================================= */
     function nextParticipant(){
       resetBlindMode();
       if(attemptCount >= 3){
@@ -1083,40 +1284,39 @@ replayButton.addEventListener('click', () => {
       }
     }
     
-function callParticipant(){
-  let att = attemptCount + 1;
-  let currentPlayer = participants[currentIndex];
-  let penaltyDisplay = "";
-  if (treeHits[currentPlayer]) {
-    // Calcola il penalty in secondi:
-    let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
-    // Formatta il valore con 2 decimali, es. "0.02s"
-    penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
-  }
-let msg = `<span style="color:black;">${currentPlayer}</span> (
-  #<span style="color:black;">${raceNumber}</span>/
-  M<span style="color:black;">${runNumber}</span>/
-  Run<span style="color:black;">${att}</span>${penaltyDisplay}
-)`;
-  statusOutput.innerHTML = msg;
-  lastStatusMessage = msg;
-  
-  // Rivaluta il meteo all'inizio di ogni discesa
-  let newWeatherState = chooseWeatherState(weatherState);
-  showSnow = applyWeatherState(newWeatherState);
-  
-  const snowCanvas = document.getElementById('snowCanvas');
-  if (showSnow) {
-      snowCanvas.classList.remove('hidden');
-      snowCanvas.width = canvas.width;
-      snowCanvas.height = canvas.height;
-      initSnow();
-      updateSnow();
-  } else {
-      snowCanvas.classList.add('hidden');
-  }
-}
-
+    function callParticipant(){
+      let att = attemptCount + 1;
+      let currentPlayer = participants[currentIndex];
+      let penaltyDisplay = "";
+      if (treeHits[currentPlayer]) {
+        // Calcola il penalty in secondi:
+        let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
+        // Formatta il valore con 2 decimali, es. "0.02s"
+        penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
+      }
+      let msg = `<span style="color:black;">${currentPlayer}</span> (
+        #<span style="color:black;">${raceNumber}</span>/
+        M<span style="color:black;">${runNumber}</span>/
+        Run<span style="color:black;">${att}</span>${penaltyDisplay}
+      )`;
+      statusOutput.innerHTML = msg;
+      lastStatusMessage = msg;
+      
+      // Rivaluta il meteo all'inizio di ogni discesa
+      let newWeatherState = chooseWeatherState(weatherState);
+      showSnow = applyWeatherState(newWeatherState);
+      
+      const snowCanvas = document.getElementById('snowCanvas');
+      if (showSnow) {
+          snowCanvas.classList.remove('hidden');
+          snowCanvas.width = canvas.width;
+          snowCanvas.height = canvas.height;
+          initSnow();
+          updateSnow();
+      } else {
+          snowCanvas.classList.add('hidden');
+      }
+    }
     
     function resetTrack(track){
       drawing = false;
@@ -1220,46 +1420,45 @@ let msg = `<span style="color:black;">${currentPlayer}</span> (
       champOverlay.classList.remove('hidden');
     }
     
-function setupRace(){
-  // Azzeriamo la lastCompleteRun per dimenticare la run precedente
-  lastCompleteRun = null;
-
-  // Resetta il tempo mostrato
-  finalTimeOutput.textContent = `⏰1'00"000'''`;
-
-  // ==================================================
-  // METEO: Rivalutazione all'inizio della gara
-  // ==================================================
-  let newWeatherState;
-  if (!weatherState) {
-    newWeatherState = chooseWeatherState(null);
-  } else {
-    newWeatherState = chooseWeatherState(weatherState);
-  }
-  showSnow = applyWeatherState(newWeatherState);
-
-  const snowCanvas = document.getElementById('snowCanvas');
-  if (showSnow) {
-    snowCanvas.classList.remove('hidden');
-    snowCanvas.width = canvas.width;
-    snowCanvas.height = canvas.height;
-    initSnow();
-    updateSnow();
-  } else {
-    snowCanvas.classList.add('hidden');
-  }
-
-  currentTrack = createTrackForRace(raceNumber);
-  resizeCanvas();
-  drawTrack(currentTrack);
-  bestTimes = [];
-  updateLeaderboard();
-  currentIndex = 0;
-  attemptCount = 0;
-  runNumber = 1;
-  callParticipant();
-}
-
+    function setupRace(){
+      // Azzeriamo la lastCompleteRun per dimenticare la run precedente
+      lastCompleteRun = null;
+    
+      // Resetta il tempo mostrato
+      finalTimeOutput.textContent = `⏰1'00"000'''`;
+    
+      // ==================================================
+      // METEO: Rivalutazione all'inizio della gara
+      // ==================================================
+      let newWeatherState;
+      if (!weatherState) {
+        newWeatherState = chooseWeatherState(null);
+      } else {
+        newWeatherState = chooseWeatherState(weatherState);
+      }
+      showSnow = applyWeatherState(newWeatherState);
+    
+      const snowCanvas = document.getElementById('snowCanvas');
+      if (showSnow) {
+        snowCanvas.classList.remove('hidden');
+        snowCanvas.width = canvas.width;
+        snowCanvas.height = canvas.height;
+        initSnow();
+        updateSnow();
+      } else {
+        snowCanvas.classList.add('hidden');
+      }
+    
+      currentTrack = createTrackForRace(raceNumber);
+      resizeCanvas();
+      drawTrack(currentTrack);
+      bestTimes = [];
+      updateLeaderboard();
+      currentIndex = 0;
+      attemptCount = 0;
+      runNumber = 1;
+      callParticipant();
+    }
     
     /* =======================================
        Popup generico
@@ -1311,6 +1510,7 @@ function setupRace(){
       }
     ];
     let draftParticipants = [];
+    
     function renderSlide(){
       slidesOverlay.classList.remove('hidden');
       const slide = slidesIntro[currentSlideIndex];
@@ -1439,26 +1639,51 @@ function setupRace(){
     function startChampionship(){
       championScores = {};
       participants.forEach(p => {
-  championScores[p] = 0; // Reset dei punti del campionato
-  treeHits[p] = 0;       // Reset delle penalità accumulate
-});
+        championScores[p] = 0; // Reset dei punti del campionato
+        treeHits[p] = 0;       // Reset delle penalità accumulate
+      });
       slidesOverlay.classList.add('hidden');
       raceNumber = 1;
       runNumber = 1;
       setupRace();
     }
+    
+    /* =======================================
+       Gestione Quit
+    ======================================= */
     document.getElementById('quit').addEventListener('click', () => {
-  const confirmQuit = confirm("Are you sure you want to quit?");
-  if (confirmQuit) {
-    window.location.href = 'index.html'; // Reindirizza alla pagina iniziale
-  }
-});
-
+      const confirmQuit = confirm("Are you sure you want to quit?");
+      if (confirmQuit) {
+        window.location.href = 'index.html'; // Reindirizza alla pagina iniziale
+      }
+    });
+    
+    /* =======================================
+       Inizializzazione alla DOMContentLoaded
+    ======================================= */
     document.addEventListener('DOMContentLoaded', () => {
       resizeCanvas();
       renderSlide();
       resetBlindMode();
     });
+    
+    /* =======================================
+       Funzioni Helper
+    ======================================= */
+    function clearCanvas(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    /* =======================================
+       Popup generico
+    ======================================= */
+    // (Funzione già definita sopra)
+    
+    /* =======================================
+       SLIDES INTRO & GESTIONE PLAYER
+    ======================================= */
+    // (Funzioni già definite sopra)
+    
   </script>
 </body>
 </html>
