@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <!-- Aggiornato per consentire il ridimensionamento -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ski Solo – Modified Version</title>
+  <title>Ski Solo – Responsive Version</title>
   <style>
     /* Stili di base */
     html, body {
@@ -22,7 +21,7 @@
     .container {
       position: relative;
       width: 90%; /* Responsive width */
-      max-width: 300px; /* Limita la larghezza massima */
+      max-width: 80vw; /* 80% della larghezza della viewport */
       aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
@@ -170,6 +169,25 @@
     }
     .deleteBtn:hover {
       background-color: #c82333;
+    }
+
+    /* Media Queries per Schermi Più Grandi */
+    @media (min-width: 600px) {
+      .container {
+        max-width: 600px;
+      }
+    }
+
+    @media (min-width: 900px) {
+      .container {
+        max-width: 800px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1000px;
+      }
     }
   </style>
 </head>
