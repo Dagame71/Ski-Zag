@@ -1592,16 +1592,16 @@
     }
     
     function addPlayerField(container, def = ''){
-      const d = document.createElement('div');
-      d.innerHTML = `
-        <input type="text" class="player-name-input"
-         placeholder="Player name"
-         style="margin-bottom:5px;width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;"
-         value="${def}"
-        />
-      `;
-      container.appendChild(d);
-    }
+  const d = document.createElement('div');
+  d.innerHTML = `
+    <input type="text" class="player-name-input"
+     placeholder="Player name"
+     style="margin-bottom:5px;width:80%;padding:6px;border-radius:6px;border:1px solid #ccc;"
+     value="${def}"
+    />
+  `;
+  container.appendChild(d);
+}
     
     function syncDraftParticipants(){
       const inputs = slidesContent.querySelectorAll('.player-name-input');
