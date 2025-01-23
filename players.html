@@ -299,11 +299,11 @@
       }
       
       #replayButton { 
-        left: 15%; /* Sposta leggermente a sinistra */
+        left: 3%; /* Sposta leggermente a sinistra */
       }
       
       #blindToggle { 
-        left: 88%; /* Adeguamento posizione */
+        left: 95%; /* Adeguamento posizione */
       }
     }
 
@@ -512,6 +512,9 @@
     };
     gateIcons.red.src = "red_gate.svg";
     gateIcons.blue.src = "blue_gate.svg";
+// Icona per il punto di partenza
+const startIcon = new Image();
+startIcon.src = "start.svg";  // Percorso al file .svg
     
     /* =======================================
        Funzioni Meteo (unificate)
@@ -663,12 +666,20 @@
       drawTrees(trees);
     }
     
-    function drawStartPoint(){
-      ctx.font = `${18 / 520 * canvas.height}px Arial`; // Font relativo
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🏠', startPoint.x, startPoint.y);
-    }
+ function drawStartPoint() {
+  // Ad esempio dimensioni relative (simili ai gate)
+  const iconWidth  = 16 / 300 * canvas.width;
+  const iconHeight = 16 / 520 * canvas.height;
+
+  // Disegno al centro del punto di partenza
+  ctx.drawImage(
+    startIcon,
+    startPoint.x - iconWidth / 2,
+    startPoint.y - iconHeight / 2,
+    iconWidth,
+    iconHeight
+  );
+}
     
     function drawFinishArea(){
       const { x, y, width, height } = finishRect;
