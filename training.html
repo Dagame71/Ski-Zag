@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <!-- Disabilita pinch-to-zoom / doppio tap -->
-  <meta name="viewport" content="width=300, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <!-- Aggiornato per consentire il ridimensionamento -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ski Solo – Modified Version</title>
   <style>
     /* Stili di base */
@@ -21,8 +21,9 @@
     }
     .container {
       position: relative;
-      width: 300px;
-      height: 520px;
+      width: 90%; /* Responsive width */
+      max-width: 300px; /* Limita la larghezza massima */
+      aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
       border: 2px solid #ffffff;
@@ -61,17 +62,14 @@
       z-index: 20;
     }
     button:hover { opacity: 0.7; }
-    /* Posizionamento bottoni di controllo */
-    /* Nota: il tasto sameTrack ora viene ripurposo per bloccare/abilitare la neve */
-    #sameTrack  { position: absolute; bottom: 6px; right: 50px; }
-    #replayButton { position: absolute; bottom: 5px; left: 10px; }
-    #quit { position: absolute; bottom: 6px; right: 10px; }
-    #homeBtn { position: absolute; top: 10px; left: 10px; } /* Nuovo pulsante Home */
-    #chronoButton { position: absolute; top: 10px; right: 10px; }
-    /* Bottone "View" – per salvare/caricare la pista */
-    #viewBtn { position: absolute; bottom: 6px; left: 100px; transform: translateX(-50%); }
-    /* Nuovo bottone (icona coppa) per salvare il risultato */
-    #saveResultBtn { position: absolute; bottom: 6px; left: 52px; }
+    /* Posizionamento bottoni di controllo con percentuali */
+    #sameTrack  { position: absolute; bottom: 1.15%; right: 16.67%; }
+    #replayButton { position: absolute; bottom: 0.96%; left: 3.33%; }
+    #quit { position: absolute; bottom: 1.15%; right: 1.92%; }
+    #homeBtn { position: absolute; top: 1.92%; left: 3.33%; }
+    #chronoButton { position: absolute; top: 1.92%; right: 3.33%; }
+    #viewBtn { position: absolute; bottom: 1.15%; left: 33.33%; transform: translateX(-50%); }
+    #saveResultBtn { position: absolute; bottom: 1.15%; left: 17.33%; }
     .info-container {
       margin-top: 13px;
       display: flex;
@@ -103,8 +101,8 @@
       background-color: #fff;
       border-radius: 12px;
       padding: 20px;
-      width: 280px;
-      max-width: none;
+      width: 80%; /* Responsive width */
+      max-width: 280px;
       box-sizing: border-box;
       position: relative;
       text-align: center;
@@ -148,11 +146,14 @@
       color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 14px;
+      padding: 10px 20px; /* Aumentato padding */
+      font-size: 16px;    /* Aumentato font-size */
       cursor: pointer;
     }
-    .slides-nav .nav-button:disabled { background: #999; cursor: not-allowed; }
+    .slides-nav .nav-button:disabled { 
+      background: #999; 
+      cursor: not-allowed; 
+    }
     .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; cursor: pointer; transition: background 0.3s; }
     .dot.active { background: #007bff; }
@@ -174,18 +175,18 @@
 </head>
 <body>
   <!-- CONTENITORE DI GIOCO -->
-  <div class="container">
+  <div class="container" id="gameContainer">
     <canvas id="canvas"></canvas>
     <!-- Canvas per l'effetto neve -->
     <canvas id="snowCanvas" class="hidden"></canvas>
     <!-- Bottoni di controllo -->
     <!-- Il tasto sameTrack ora viene usato per abilitare/disabilitare la neve -->
     <button id="sameTrack" title="Toggle Snow">
-  <img src="snowflake.png" alt="Toggle Snow" style="width:19px;height:19px;">
-</button>
-   <button id="replayButton" title="Replay">
-  <img src="replay.png" alt="Replay" style="width:20px; height:20px;">
-</button>
+      <img src="snowflake.png" alt="Toggle Snow" style="width:19px;height:19px;">
+    </button>
+    <button id="replayButton" title="Replay">
+      <img src="replay.png" alt="Replay" style="width:20px; height:20px;">
+    </button>
     <button id="quit" title="New Track">
       <img src="new.png" alt="New Track" style="width:20px;height:20px;">
     </button>
@@ -342,7 +343,7 @@
     // Punto di partenza ed area di arrivo
     let startPoint = { x: 150, y: 30 };
     let finishRect = { x: 130, y: 490, width: 40, height: 10 };
-let globalWind = Math.random() * 1 - 0.5;
+    let globalWind = Math.random() * 1 - 0.5;
 
     // Slides del tutorial
     let tutorialSlides = [
@@ -353,28 +354,41 @@ let globalWind = Math.random() * 1 - 0.5;
     ];
     let currentTutorialIndex = 0;
 
+    const container = document.getElementById('gameContainer'); // Per il ridimensionamento
+
     function resizeCanvas(){
-      canvas.width = 300;
-      canvas.height = 520;
-      startPoint = { x: canvas.width/2, y:30 };
-      finishRect = { x: (canvas.width/2)-20, y: canvas.height-30, width:40, height:10 };
-      snowCanvas.width = canvas.width;
-      snowCanvas.height = canvas.height;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      snowCanvas.width = container.clientWidth;
+      snowCanvas.height = container.clientHeight;
+
+      // Aggiorna i punti di partenza e di arrivo in base alle nuove dimensioni
+      startPoint = { x: canvas.width / 2, y: 30 / 520 * canvas.height };
+      finishRect = { 
+        x: (canvas.width / 2) - (40 / 300 * canvas.width) / 2, 
+        y: canvas.height - (30 / 520 * canvas.height), 
+        width: 40 / 300 * canvas.width, 
+        height: 10 / 520 * canvas.height 
+      };
+
+      // Ridisegna la pista e gli elementi
+      drawTrack(currentTrack);
     }
-    resizeCanvas();
+    // Rimuovi la chiamata iniziale a resizeCanvas() qui
+    // resizeCanvas();
 
     function clearCanvas(){ ctx.clearRect(0,0,canvas.width, canvas.height); }
 
     function drawStartPoint(){
-      ctx.font = '18px Arial';
+      ctx.font = `${18 / 520 * canvas.height}px Arial`; // Font relativo
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('🏠', startPoint.x, startPoint.y);
     }
     function drawFinishArea(){
       const { x, y, width, height } = finishRect;
-      const sq = width/8;
-      let rowCount = Math.floor(height/(width/8));
+      const sq = width / 8;
+      let rowCount = Math.floor(height / (width / 8));
       for(let row=0; row<rowCount; row++){
         for(let col=0; col<8; col++){
           ctx.fillStyle = ((row+col)%2===0) ? 'black' : '#F0F0F0';
@@ -399,11 +413,11 @@ let globalWind = Math.random() * 1 - 0.5;
         let x = isRed 
           ? Math.random()*(canvas.width/2-35)+canvas.width/2
           : Math.random()*(canvas.width/2-35)+35;
-        let y = 60 + i*((canvas.height-120)/count);
+        let y = 60 / 520 * canvas.height + i*((canvas.height - (120 / 520 * canvas.height))/count);
         let color = isRed ? 'red' : 'blue';
         arr.push({
           x, y, color,
-          line: { x1: x, y1: y, x2: x+dir*200, y2: y }
+          line: { x1: x, y1: y, x2: x + dir * (200 / 300 * canvas.width), y2: y }
         });
         isRed = !isRed;
       }
@@ -412,10 +426,15 @@ let globalWind = Math.random() * 1 - 0.5;
     function generateTrees(gArr){
       let treeCount = Math.floor(Math.random()*3)+6;
       let arr = [];
-      const margin = 15, minGate = 50, minTree = 30, minFinish = 50, minStart = 20, minTop = 30;
+      const margin = 15 / 520 * canvas.height, 
+            minGate = 50 / 300 * canvas.width, 
+            minTree = 30 / 520 * canvas.height, 
+            minFinish = 50 / 300 * canvas.width, 
+            minStart = 20 / 520 * canvas.height, 
+            minTop = 30 / 520 * canvas.height;
       while(arr.length < treeCount){
         let tx = margin + Math.random()*(canvas.width-2*margin);
-        let ty = 20 + Math.random()*(canvas.height-20-margin);
+        let ty = 20 / 520 * canvas.height + Math.random()*(canvas.height - (20 / 520 * canvas.height) - margin);
         let closeGate = gArr.some(g=> Math.hypot(tx-g.x, ty-g.y) < minGate);
         let closeTrees = arr.some(t=> Math.hypot(tx-t.x, ty-t.y) < minTree);
         let closeFinish = isNearFinish(tx,ty,finishRect,minFinish);
@@ -434,8 +453,9 @@ let globalWind = Math.random() * 1 - 0.5;
     function drawGates(gArr){
       gArr.forEach(g=>{
         let icon = g.color==="red" ? gateIcons.red : gateIcons.blue;
-        let iconWidth = 16, iconHeight = 16;
-        ctx.drawImage(icon, g.x-iconWidth/2, g.y-iconHeight/2, iconWidth, iconHeight);
+        let iconWidth = 16 / 300 * canvas.width; // Dimensione relativa
+        let iconHeight = 16 / 520 * canvas.height;
+        ctx.drawImage(icon, g.x - iconWidth / 2, g.y - iconHeight / 2, iconWidth, iconHeight);
       });
     }
     function drawTrees(tArr){
@@ -443,7 +463,9 @@ let globalWind = Math.random() * 1 - 0.5;
       treeImg.src = "./tree.svg";
       treeImg.onload = ()=>{
         tArr.forEach(t=>{
-          ctx.drawImage(treeImg, t.x-6, t.y-20, 12, 20);
+          let treeWidth = 12 / 300 * canvas.width;
+          let treeHeight = 20 / 520 * canvas.height;
+          ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
         });
       };
     }
@@ -508,10 +530,10 @@ let globalWind = Math.random() * 1 - 0.5;
       let rect = canvas.getBoundingClientRect();
       let cx = e.touches ? e.touches[0].clientX : e.clientX;
       let cy = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: cx - rect.left, y: cy - rect.top };
+      return { x: (cx - rect.left) / rect.width * canvas.width, y: (cy - rect.top) / rect.height * canvas.height };
     }
-    function isNearStartPoint(x,y){ return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20); }
-    
+    function isNearStartPoint(x,y){ return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20 / 520 * canvas.height); }
+
     // ------------------------------------------------------------------
     // GESTIONE FALSE START CON MESSAGGI ORIGINALI
     // ------------------------------------------------------------------
@@ -555,7 +577,7 @@ let globalWind = Math.random() * 1 - 0.5;
       pointsPath.push({ x, y, t: now });
       ctx.lineTo(x,y);
       ctx.strokeStyle = '#a4b8eb';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
       ctx.stroke();
       checkIntersections();
     }
@@ -595,7 +617,7 @@ let globalWind = Math.random() * 1 - 0.5;
       pointsPath.push({ x, y, t: now });
       ctx.lineTo(x,y);
       ctx.strokeStyle = '#a4b8eb';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
       ctx.stroke();
       checkIntersections();
     }
@@ -606,7 +628,7 @@ let globalWind = Math.random() * 1 - 0.5;
       if(!didFinishOrFail){ failRun("Run interrupted!"); }
     }
     function checkInterpolationForBorder(p1, p2){
-      const stepLength = 2;
+      const stepLength = 2 / 520 * canvas.height; // Step relativo
       const dx = p2.x - p1.x, dy = p2.y - p1.y;
       const distance = Math.hypot(dx,dy);
       const steps = Math.ceil(distance/stepLength);
@@ -614,8 +636,8 @@ let globalWind = Math.random() * 1 - 0.5;
         let t = i/steps;
         let ix = p1.x + t*dx;
         let iy = p1.y + t*dy;
-        if(ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD ||
-           iy < BORDER_THRESHOLD || iy > canvas.height - BORDER_THRESHOLD){
+        if(ix < BORDER_THRESHOLD / 300 * canvas.width || ix > canvas.width - BORDER_THRESHOLD / 300 * canvas.width ||
+           iy < BORDER_THRESHOLD / 520 * canvas.height || iy > canvas.height - BORDER_THRESHOLD / 520 * canvas.height){
           return true;
         }
       }
@@ -638,9 +660,9 @@ let globalWind = Math.random() * 1 - 0.5;
             for(let j=0; j<=steps; j++){
               let ix = p1.x + (p2.x-p1.x)*(j/steps);
               let iy = p1.y + (p2.y-p1.y)*(j/steps);
-              // Centro visivo dell'albero: (tree.x, tree.y-10)
-              let dist = Math.hypot(ix - tree.x, iy - (tree.y-10));
-              if(dist < 10){
+              // Centro visivo dell'albero: (tree.x, tree.y-10 / 520 * canvas.height)
+              let dist = Math.hypot(ix - tree.x, iy - (tree.y - 10 / 520 * canvas.height));
+              if(dist < 10 / 520 * canvas.height){
                 didFinishOrFail = true;
                 failRun("You hit a tree!");
                 return;
@@ -770,7 +792,7 @@ let globalWind = Math.random() * 1 - 0.5;
         ctx.moveTo(rp[i].x, rp[i].y);
         ctx.lineTo(rp[i+1].x, rp[i+1].y);
         ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
         ctx.stroke();
         let dt = rp[i+1].t - rp[i].t;
         i++;
@@ -783,7 +805,7 @@ let globalWind = Math.random() * 1 - 0.5;
     // ------------------------------------------------------------------
     // GESTIONE BOTTONI (Modalità solitario)
     // ------------------------------------------------------------------
-    
+
     // Modifica del tasto SAME TRACK: ora il tasto inverte il flag snowLocked,
     // cambia leggermente l'opacità del bottone e mostra un breve messaggio nello status
     sameTrackButton.addEventListener('click', ()=> { 
@@ -798,7 +820,7 @@ let globalWind = Math.random() * 1 - 0.5;
       setTimeout(restoreStatusOutput, 1000);
       resetRun();
     });
-    
+
     replayButton.addEventListener('click', ()=>{
       if(lastCompleteRun && lastCompleteRun.length>=2){
         replayTrajectory(lastCompleteRun);
@@ -858,8 +880,8 @@ let globalWind = Math.random() * 1 - 0.5;
       finalTimeOutput.textContent = `⏰1'00"000'''`;
       clearCanvas();
       drawTrack(currentTrack);
-// Aggiorna il vento: assegna un nuovo valore casuale ad ogni reset
-  globalWind = Math.random() * 1 - 0.5;
+      // Aggiorna il vento: assegna un nuovo valore casuale ad ogni reset
+      globalWind = Math.random() * 1 - 0.5;
       // Gestione neve: seleziona meteo e, se previsto, attiva l’effetto
       weatherState = chooseWeatherState(weatherState);
       applyWeatherState(weatherState);
@@ -933,6 +955,7 @@ let globalWind = Math.random() * 1 - 0.5;
           currentTrack = saved.track;
           bestTimes = saved.bestTimes || [];
           currentTrackName = name;
+          resizeCanvas(); // Ridimensiona il canvas dopo aver caricato la nuova pista
           resetRun();
           viewOverlay.classList.add('hidden');
         });
@@ -972,26 +995,32 @@ let globalWind = Math.random() * 1 - 0.5;
       let slide = tutorialSlides[currentTutorialIndex];
       tutorialContent.innerHTML = `<h2>${slide.title}</h2><p>${slide.content}</p>`;
       tutorialDots.innerHTML = "";
-      tutorialSlides.forEach((s,i)=>{
+      
+      tutorialSlides.forEach((s, i) => {
         let d = document.createElement('div');
-        d.className = "dot" + (i===currentTutorialIndex ? " active" : "");
-        d.addEventListener('click', ()=>{
+        d.className = "dot" + (i === currentTutorialIndex ? " active" : "");
+        d.addEventListener('click', () => {
           currentTutorialIndex = i;
           renderTutorial();
         });
         tutorialDots.appendChild(d);
       });
-      tutorialPrev.disabled = (currentTutorialIndex===0);
-      tutorialNext.disabled = (currentTutorialIndex===tutorialSlides.length-1);
+      
+      // Mantieni sempre visibile il pulsante "Start"
+      tutorialStart.style.display = "inline-block";
+      
+      // Mantieni sempre visibile le frecce "Prev" e "Next"
+      tutorialPrev.style.display = "inline-block";
+      tutorialNext.style.display = "inline-block";
     }
     tutorialPrev.addEventListener('click', ()=>{
-      if(currentTutorialIndex>0){
+      if(currentTutorialIndex > 0){
         currentTutorialIndex--;
         renderTutorial();
       }
     });
     tutorialNext.addEventListener('click', ()=>{
-      if(currentTutorialIndex<tutorialSlides.length-1){
+      if(currentTutorialIndex < tutorialSlides.length -1){
         currentTutorialIndex++;
         renderTutorial();
       }
@@ -1005,6 +1034,7 @@ let globalWind = Math.random() * 1 - 0.5;
       currentTrack = createTrack();
       bestTimes = [];
       currentTrackName = "";
+      resizeCanvas(); // Chiama la funzione di ridimensionamento
       resetRun();
       drawTrack(currentTrack);
     }
@@ -1017,6 +1047,11 @@ let globalWind = Math.random() * 1 - 0.5;
         location.href = 'index.html';
       }
     });
+
+    // Inizializza il canvas al caricamento
+    window.onload = function() {
+      resizeCanvas();
+    };
   </script>
 </body>
 </html>
