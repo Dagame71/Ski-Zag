@@ -21,7 +21,7 @@
     .container {
       position: relative;
       width: 90%; /* Responsive width */
-      max-width: 80vw; /* 80% della larghezza della viewport */
+      max-width: 90vw; /* 90% della larghezza della viewport */
       aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
@@ -171,24 +171,24 @@
       background-color: #c82333;
     }
 
-    /* Media Queries per Schermi Più Grandi */
-    @media (min-width: 600px) {
-      .container {
-        max-width: 600px;
-      }
-    }
+/* Media Queries per Schermi Più Grandi */
+@media (min-width: 600px) {
+  .container {
+    max-width: 900px; /* Aumentato da 700px a 900px */
+  }
+}
 
-    @media (min-width: 900px) {
-      .container {
-        max-width: 800px;
-      }
-    }
+@media (min-width: 900px) {
+  .container {
+    max-width: 1200px; /* Aumentato da 900px a 1200px */
+  }
+}
 
-    @media (min-width: 1200px) {
-      .container {
-        max-width: 1000px;
-      }
-    }
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1500px; /* Aumentato da 1200px a 1500px */
+  }
+}
   </style>
 </head>
 <body>
