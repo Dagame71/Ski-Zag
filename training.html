@@ -171,22 +171,9 @@
       background-color: #c82333;
     }
 
-/* Media Queries per Schermi Più Grandi */
-@media (min-width: 600px) {
+@media (min-width: 768px) {
   .container {
-    max-width: 900px; /* Aumentato da 700px a 900px */
-  }
-}
-
-@media (min-width: 900px) {
-  .container {
-    max-width: 1200px; /* Aumentato da 900px a 1200px */
-  }
-}
-
-@media (min-width: 1200px) {
-  .container {
-    max-width: 1500px; /* Aumentato da 1200px a 1500px */
+    max-width: 500px !important; 
   }
 }
   </style>
@@ -382,12 +369,12 @@
 
       // Aggiorna i punti di partenza e di arrivo in base alle nuove dimensioni
       startPoint = { x: canvas.width / 2, y: 30 / 520 * canvas.height };
-      finishRect = { 
-        x: (canvas.width / 2) - (40 / 300 * canvas.width) / 2, 
-        y: canvas.height - (30 / 520 * canvas.height), 
-        width: 40 / 300 * canvas.width, 
-        height: 10 / 520 * canvas.height 
-      };
+    finishRect = {
+  x: (canvas.width / 2) - 20,
+  y: canvas.height - 30,
+  width: 40,
+  height: 10
+};
 
       // Ridisegna la pista e gli elementi
       drawTrack(currentTrack);
