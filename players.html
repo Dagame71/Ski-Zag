@@ -307,34 +307,11 @@
       }
     }
 
-    @media (min-width: 900px) {
-      .container {
-        max-width: 1200px; /* Aumentato da 900px a 1200px */
-      }
-      
-      #replayButton { 
-        left: 20%; /* Ulteriore spostamento */
-      }
-      
-      #blindToggle { 
-        left: 85%; /* Adeguamento posizione */
-      }
-    }
-
-    @media (min-width: 1200px) {
-      .container {
-        max-width: 1500px; /* Aumentato da 1200px a 1500px */
-      }
-      
-      #replayButton { 
-        left: 25%; /* Ulteriore spostamento */
-      }
-      
-      #blindToggle { 
-        left: 82%; /* Adeguamento posizione */
-      }
-    }
-
+@media (min-width: 768px) {
+  .container {
+    max-width: 500px !important; 
+  }
+}
   </style>
 </head>
 <body>
@@ -501,7 +478,8 @@
       const container = document.querySelector('.container');
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
-      startPoint = { x: canvas.width / 2, y: 30 };
+      startPoint = { x: canvas.width / 2, y: 30 / 520 * canvas.height };
+
       finishRect = { x: (canvas.width / 2) - 20, y: canvas.height - 30, width:40, height:10 };
       
       // Aggiorna anche il canvas neve
