@@ -76,7 +76,7 @@
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput { margin: -10px 0; font-weight: bold; }
+    #finalTimeOutput { margin: -10px 0; font-weight: bold; font-size: 1.2em; /* Dimensione relativa */ }
     #statusOutput { margin: 15px 0; font-weight: bold; color: red; min-height: 20px; }
     /* Overlay e animazioni */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -91,6 +91,13 @@
       align-items: center;
       animation: fadeIn 0.3s ease;
     }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+.record {
+  animation: blink 0.5s ease-in-out 3;
+}
     .hidden { display: none; }
     .overlay-content {
       background-image: url('backpopup.png');
@@ -384,12 +391,20 @@
 
     function clearCanvas(){ ctx.clearRect(0,0,canvas.width, canvas.height); }
 
-    function drawStartPoint(){
-      ctx.font = `${18 / 520 * canvas.height}px Arial`; // Font relativo
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🏠', startPoint.x, startPoint.y);
-    }
+  function drawStartPoint() {
+  // Ad esempio dimensioni relative (simili ai gate)
+  const iconWidth  = 16 / 300 * canvas.width;
+  const iconHeight = 16 / 520 * canvas.height;
+
+  // Disegno al centro del punto di partenza
+  ctx.drawImage(
+    startIcon,
+    startPoint.x - iconWidth / 2,
+    startPoint.y - iconHeight / 2,
+    iconWidth,
+    iconHeight
+  );
+}
     function drawFinishArea(){
       const { x, y, width, height } = finishRect;
       const sq = width / 8;
@@ -408,6 +423,9 @@
     };
     gateIcons.red.src = "red_gate.svg";
     gateIcons.blue.src = "blue_gate.svg";
+// Icona per il punto di partenza
+const startIcon = new Image();
+startIcon.src = "start.svg";  // Percorso al file .svg
 
     function generateGates(count){
       let startWithRed = (Math.random() < 0.5);
@@ -770,7 +788,15 @@
       bestTimes.push(result);
       bestTimes.sort((a,b)=> a.time - b.time);
       if(bestTimes.length>5) bestTimes.length = 5;
-    }
+   // Se il primo in classifica ha tempo == time appena inserito,
+  // vuol dire che è un nuovo record.
+  if (bestTimes[0].time === time) {
+    finalTimeOutput.classList.add('record');
+    setTimeout(() => {
+      finalTimeOutput.classList.remove('record');
+    }, 2000);
+  }
+}
     function replayTrajectory(customPoints){
       let rp = (customPoints && customPoints.length>=2) ? customPoints : pointsPath;
       if(!rp || rp.length<2){
