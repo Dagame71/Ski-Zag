@@ -12,7 +12,8 @@
       padding: 0;
       height: 100%;
       font-family: "Helvetica Neue", Arial, sans-serif;
-      background: #ffffff;
+      background: #deddfd;
+ margin-top: 10px;
     }
     body {
       display: flex;
@@ -26,7 +27,7 @@
       aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
-      border: 2px solid #ffffff;
+      border: 0px solid #ffffff;
       border-radius: 10px;
       margin-top: 20px;
       box-sizing: border-box;
@@ -95,30 +96,29 @@
     }
     /* Informazioni */
     .info-container {
-      margin-top: 13px;
+      margin-top:-10px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput { 
-      margin: -10px 0; 
+    /* UNICA RIGA di testo per tutti i messaggi */
+    #infoLine { 
+      margin: 10px 0; 
       font-weight: bold; 
       font-size: 1.2em; /* Dimensione relativa */
-    }
-    #statusOutput { 
-      margin: 15px 0; 
-      font-weight: bold; 
-      color: red; 
-      min-height: 20px; 
-      font-size: 1em; /* Dimensione relativa */
+      min-height: 20px;
+      text-align: center;
+      color: black;
     }
     /* Animazioni */
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
-    .record { animation: blink 0.5s ease-in-out 3; }
+    .record { 
+      animation: blink 0.5s ease-in-out 3;
+    }
     @keyframes fadeIn { 
       from { opacity: 0; } 
       to { opacity: 1; } 
@@ -154,8 +154,6 @@
         inset 4px 4px 2px rgba(175,219,245,0.8),  /* Ombra interna scura in basso a destra */
         inset -4px -4px 2px rgba(255,255,255,0.8); /* Ombra interna chiara in alto a sinistra */
     }
-    /* Correzione degli errori di sintassi */
-    /* Rimosso '}' in eccesso */
     /* Bottoni per chiudere gli overlay */
     #closeOverlay { 
       position: absolute; 
@@ -307,11 +305,11 @@
       }
     }
 
-@media (min-width: 768px) {
-  .container {
-    max-width: 500px !important; 
-  }
-}
+    @media (min-width: 768px) {
+      .container {
+        max-width: 500px !important; 
+      }
+    }
   </style>
 </head>
 <body>
@@ -372,9 +370,9 @@
     </div>
   </div>
   
+  <!-- UNICA RIGA PER TUTTI I MESSAGGI -->
   <div class="info-container">
-    <p id="finalTimeOutput">⏰1'00"000'''</p>
-    <p id="statusOutput"></p>
+    <p id="infoLine"></p>
   </div>
   
   <!-- OVERLAY INTRO E SLIDES -->
@@ -393,12 +391,44 @@
     ============================================== */
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
-    const BORDER_THRESHOLD = 5; // Considera "al bordo" se la traiettoria sta entro 5px dal limite del canvas.
+    const BORDER_THRESHOLD    = 5; // Considera "al bordo" se la traiettoria sta entro 5px dal limite del canvas.
     
     const canvas           = document.getElementById('canvas');
     const ctx              = canvas.getContext('2d');
-    const finalTimeOutput  = document.getElementById('finalTimeOutput');
-    const statusOutput     = document.getElementById('statusOutput');
+
+    // === UNIFICO in un solo <p> ===
+    const infoLine = document.getElementById('infoLine');
+    
+    // Label principale (mostra sempre o il nome giocatore o il tempo finale):
+    let mainLabel = "";
+
+    // Comodità: funzione per aggiornare il “label principale”
+    function setMainLabel(label) {
+      mainLabel = label;
+      infoLine.innerHTML = label; // possiamo usare .textContent se non serve HTML
+    }
+
+    // Messaggio temporaneo in testo semplice
+    function showTemporaryMessage(msg, duration = 2000) {
+      const oldLabel = mainLabel;
+      infoLine.textContent = msg;
+      infoLine.classList.remove('record');
+      setTimeout(() => {
+        setMainLabel(oldLabel);
+      }, duration);
+    }
+
+    // Messaggio temporaneo con HTML (se serve tag <span> colorati)
+    function showTemporaryMessageHtml(html, duration = 2000) {
+      const oldLabel = mainLabel;
+      infoLine.innerHTML = html;
+      infoLine.classList.remove('record');
+      setTimeout(() => {
+        setMainLabel(oldLabel);
+      }, duration);
+    }
+    // === Fine unificazione ===
+    
     const sameTrackButton  = document.getElementById('sameTrack');
     const replayButton     = document.getElementById('replayButton');
     const chronoButton     = document.getElementById('chronoButton');
@@ -429,14 +459,12 @@
     let slidesIntro      = [];
     let currentSlideIndex= 0;
     let didFinishOrFailThisRun = false;
-    let lastStatusMessage = '';
-    let lastCompleteRun   = null;
     let falseStartCount   = 0;
     let weatherState      = null;  // "nn", "pn", "mn", "nf"
     let snowIntensity     = 0;     // Intensità neve
     let showSnow          = false; // Flag effetto neve
-    let globalWind = Math.random() * 1 - 0.5;
-    let replaySnowState = false; // Per memorizzare lo stato della neve
+    let globalWind        = Math.random() * 1 - 0.5;
+    let replaySnowState   = false; // Per memorizzare lo stato della neve
     // Nuova variabile per gestire i colpi con l'albero
     let treeHits = {}; // Es.: treeHits["Mario"] = numero di impatti consecutivi
     
@@ -448,22 +476,22 @@
     let isOut = false;       // Flag per rilevare quando si esce ed evitare conteggi multipli continui
     
     /* =======================================
-       Funzione di interpolazione: controlla se tra p1 e p2 viene "toccatto" il bordo
+       Funzione di interpolazione: controlla se tra p1 e p2 viene "toccato" il bordo
     ======================================= */
     function checkInterpolationForBorder(p1, p2) {
-      const stepLength = 2;  // Lunghezza del passo in pixel
+      const stepLength = 2; // o il valore che preferisci
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       const distance = Math.hypot(dx, dy);
       const steps = Math.ceil(distance / stepLength);
-      
-      // Interpola tra p1 e p2
+
       for (let i = 1; i <= steps; i++) {
         const t = i / steps;
         const ix = p1.x + t * dx;
         const iy = p1.y + t * dy;
-        if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD ||
-            iy < BORDER_THRESHOLD || iy > canvas.height - BORDER_THRESHOLD) {
+        
+        // Ignoriamo top e bottom, controlliamo solo left e right
+        if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD) {
           return true;
         }
       }
@@ -480,7 +508,12 @@
       canvas.height = container.clientHeight;
       startPoint = { x: canvas.width / 2, y: 30 / 520 * canvas.height };
 
-      finishRect = { x: (canvas.width / 2) - 20, y: canvas.height - 30, width:40, height:10 };
+      finishRect = { 
+        x: (canvas.width / 2) - 20, 
+        y: canvas.height - 30, 
+        width:40, 
+        height:10 
+      };
       
       // Aggiorna anche il canvas neve
       const snowCanvas = document.getElementById('snowCanvas');
@@ -512,9 +545,9 @@
     };
     gateIcons.red.src = "red_gate.svg";
     gateIcons.blue.src = "blue_gate.svg";
-// Icona per il punto di partenza
-const startIcon = new Image();
-startIcon.src = "start.svg";  // Percorso al file .svg
+    // Icona per il punto di partenza
+    const startIcon = new Image();
+    startIcon.src = "start.svg";  
     
     /* =======================================
        Funzioni Meteo (unificate)
@@ -666,20 +699,17 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawTrees(trees);
     }
     
- function drawStartPoint() {
-  // Ad esempio dimensioni relative (simili ai gate)
-  const iconWidth  = 16 / 300 * canvas.width;
-  const iconHeight = 16 / 520 * canvas.height;
-
-  // Disegno al centro del punto di partenza
-  ctx.drawImage(
-    startIcon,
-    startPoint.x - iconWidth / 2,
-    startPoint.y - iconHeight / 2,
-    iconWidth,
-    iconHeight
-  );
-}
+    function drawStartPoint() {
+      const iconWidth  = 16 / 300 * canvas.width;
+      const iconHeight = 16 / 520 * canvas.height;
+      ctx.drawImage(
+        startIcon,
+        startPoint.x - iconWidth / 2,
+        startPoint.y - iconHeight / 2,
+        iconWidth,
+        iconHeight
+      );
+    }
     
     function drawFinishArea(){
       const { x, y, width, height } = finishRect;
@@ -696,7 +726,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     function drawGates(gArr){
       gArr.forEach(g => {
         const icon = g.color === "red" ? gateIcons.red : gateIcons.blue;
-        const iconWidth = 16 / 300 * canvas.width; // Dimensione relativa
+        const iconWidth = 16 / 300 * canvas.width; 
         const iconHeight = 16 / 520 * canvas.height;
         ctx.drawImage(icon, g.x - iconWidth / 2, g.y - iconHeight / 2, iconWidth, iconHeight);
       });
@@ -707,7 +737,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       treeImg.src = './tree.svg';
       treeImg.onload = () => {
         tArr.forEach(t => {
-          // Disegno con offset: l'immagine viene disegnata a t.x-6, t.y-20, dimensione 12x20
           const treeWidth = 12 / 300 * canvas.width;
           const treeHeight = 20 / 520 * canvas.height;
           ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
@@ -745,17 +774,18 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         falseStartCount++;  // Incrementa il contatore degli errori
     
         if(falseStartCount === 1) {
-          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>';
-          setTimeout(() => {
-            restoreStatusOutput();
-          }, 1000); // Il messaggio resta per 1 secondo
+          // Messaggio temporaneo col colore in HTML
+          showTemporaryMessageHtml(
+            '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>', 
+            1500
+          );
         } else if(falseStartCount === 2) {
-          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>';
-          setTimeout(() => {
-            restoreStatusOutput();
-          }, 1000);
+          showTemporaryMessageHtml(
+            '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>', 
+            1500
+          );
         } else if(falseStartCount >= 3){
-          statusOutput.textContent = 'Run failed due to consecutive false starts!';
+          setMainLabel('Run failed due to consecutive false starts!');
           failAttempt("Run failed due to false starts.");
           falseStartCount = 0;  // Reset dopo il fallimento
         }
@@ -771,46 +801,41 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawing = true;
       pointsPath = [];
       startTime = performance.now();
-      statusOutput.textContent = '';
-      lastStatusMessage = '';
+      // Svuoto l'infoLine? Oppure la mantengo con il mainLabel = #1 / M1 / Run1
+      // Comunque iniziamo a disegnare
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x, y);
       didFinishOrFailThisRun = false;
     }
     
-    
     function handleMouseMove(e){
       if(!drawing) return;
       const { x, y } = getMouseCoords(e);
       
-      // Preleva l'ultimo punto registrato (se esiste)
       let p1 = pointsPath[pointsPath.length - 1];
       let p2 = { x, y };
-    
-      // Usa l'interpolazione per verificare se il segmento attraversa il bordo
       if (p1 && checkInterpolationForBorder(p1, p2)) {
-        if(!isOut) {  // Se non è già stato segnato come "al bordo"
-          outPenaltyCount++; // Incrementa la penalità
+        if(!isOut) {
+          outPenaltyCount++;
           isOut = true;
         }
       } else {
         isOut = false;
       }
     
-      // Registra il nuovo punto con il tempo relativo
       const now = performance.now() - startTime;
       pointsPath.push({ x, y, t: now });
       
       if(!isBlind){
         ctx.lineTo(x, y);
         ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.lineWidth = 2 / 520 * canvas.height;
         ctx.stroke();
       }
       checkIntersections();
     }
-        
+    
     function handleMouseUp(e){
       if(!drawing) return;
       drawing = false;
@@ -823,26 +848,22 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       e.preventDefault();
       const { x, y } = getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent = 'You must start from the start point!';
+        setMainLabel('You must start from the start point!');
         return;
       }
       
-      // Reset delle variabili per la penalità "uscita dal campo"
       outPenaltyCount = 0;
       isOut = false;
       
       drawing = true;
       pointsPath = [];
       startTime = performance.now();
-      statusOutput.textContent = '';
-      lastStatusMessage = '';
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x, y);
       didFinishOrFailThisRun = false;
     }
     
-        
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing) return;
@@ -851,7 +872,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       let p1 = pointsPath[pointsPath.length - 1];
       let p2 = { x, y };
     
-      // Utilizza la funzione di interpolazione per controllare il contatto con il bordo
       if (p1 && checkInterpolationForBorder(p1, p2)) {
         if(!isOut) {
           outPenaltyCount++;
@@ -867,13 +887,12 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       if(!isBlind){
         ctx.lineTo(x, y);
         ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.lineWidth = 2 / 520 * canvas.height; 
         ctx.stroke();
       }
       checkIntersections();
     }
     
-        
     function handleTouchEnd(e){
       e.preventDefault();
       if(!drawing) return;
@@ -892,11 +911,8 @@ startIcon.src = "start.svg";  // Percorso al file .svg
             for(let j = 0; j <= steps; j++){
               const ix = p1.x + (p2.x-p1.x) * (j/steps);
               const iy = p1.y + (p2.y-p1.y) * (j/steps);
-              // Per l'immagine dell'albero, il disegno usa un offset: l'icona è disegnata in (tree.x-6, tree.y-20)
-              // Il centro visivo è dunque (tree.x, tree.y-10)
               const dist = Math.hypot(ix - tree.x, iy - (tree.y - 10));
               if(dist < 10 / 520 * canvas.height){
-                // Registra il colpo dell'albero per il giocatore attuale
                 let currentPlayer = participants[currentIndex];
                 if (!treeHits[currentPlayer]) {
                   treeHits[currentPlayer] = 1;
@@ -959,12 +975,12 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     
       // Salva il percorso della run non conclusa
       if (pointsPath.length > 0) {
-        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath)); // Salva il percorso corrente
+        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
       }
     
-      // Se stiamo giocando in modalità blind, assegniamo +3 punti agli altri giocatori
+      // Se stiamo giocando in modalità blind, penalità
       if (isBlind) {
-        statusOutput.textContent = "Blind failed! Penalty!";
+        setMainLabel("Blind failed! Penalty!");
         for (let player in championScores) {
           if (player !== participants[currentIndex]) {
             championScores[player] += 3;
@@ -972,10 +988,9 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         }
         updatePointsLeaderboard();
       } else {
-        statusOutput.textContent = msg;
+        setMainLabel(msg);
       }
-    
-      lastStatusMessage = statusOutput.textContent;
+      
       attemptCount++;
       setTimeout(() => nextParticipant(), 2000);
     }
@@ -988,39 +1003,43 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       const distPx = calculateDistance(pointsPath);
       const realLength = distPx * (window.conversionFactor || 1);
       
-      // Calcola il tempo base
       let baseTime = calculateFinalTime(elapsedTime, realLength);
       
-      // Penalità per alberi (già esistente)
       let currentPlayer = participants[currentIndex];
       let extraPenalty = 0;
       if (treeHits[currentPlayer]) {
         extraPenalty = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
       }
       
-      // Nuova penalità: per ogni uscita dal campo, +0.10 secondi
       let outPenaltyTotal = outPenaltyCount * 0.10;
       
-      // Calcola il tempo finale sommando le penalità
       const finalTime = baseTime + extraPenalty + outPenaltyTotal;
       
-      // Visualizza il tempo finale e mostra la penalità tra parentesi (se presente)
-      finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}${(outPenaltyTotal > 0) ? `(+${outPenaltyTotal.toFixed(2)})` : ""}`;
-      statusOutput.textContent = 'Finished!';
-      lastStatusMessage = 'Finished!';
+      // Mostra il tempo nella "riga principale"
+      // Eventuale indicazione della penalità tra parentesi
+      let penaltyText = (outPenaltyTotal > 0) ? ` (+${outPenaltyTotal.toFixed(2)})` : "";
+      setMainLabel(`⏰${formatTime(finalTime)}${penaltyText}`);
       
-      // Salva il percorso per il replay
+      // Lampeggio se record
+      let isBestTime = false; // lo verifichiamo dopo l'ordinamento nel updateTimes,
+                             // ma il codice sotto fa un check subito. 
+                             // => Facciamo un check a posteriori
+      // Salviamo la run completata
       lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-      
-      // Salva lo stato della neve
       lastSnowActive = showSnow;
       
-      updateTimes(finalTime);
+      // Aggiorno i best times: se è il più veloce => lampeggio
+      const wasFirst = updateTimes(finalTime);
+      if(wasFirst){
+        infoLine.classList.add('record');
+        setTimeout(() => infoLine.classList.remove('record'), 2000);
+      }
+   
+      
       attemptCount++;
       resetBlindMode();
       setTimeout(() => nextParticipant(), 2500);
     }
-    
     
     function calculateDistance(arr){
       let tot = 0;
@@ -1059,11 +1078,9 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       bestTimes.push(newResult);
       bestTimes.sort((a, b) => a.time - b.time);
       if(bestTimes.length > 5) bestTimes.length = 5;
-      if(bestTimes[0].time === t){
-        finalTimeOutput.classList.add('record');
-        setTimeout(() => finalTimeOutput.classList.remove('record'), 2000);
-      }
+      const isBest = (bestTimes[0].time === t);
       updateLeaderboard();
+      return isBest;
     }
     
     chronoButton.addEventListener('click', () => {
@@ -1117,29 +1134,21 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     /* =======================================
        REPLAY della Traiettoria
     ======================================= */
+    let lastCompleteRun = null;
+    
     replayButton.addEventListener('click', () => {
       if (lastCompleteRun && lastCompleteRun.length >= 2) {
         replayTrajectory(lastCompleteRun);
       } else {
-        statusOutput.textContent = "No run to replay!";
-        setTimeout(() => {
-          restoreStatusOutput();
-        }, 2000); // 2000 millisecondi = 2 secondi
+        showTemporaryMessage("No run to replay!", 2000);
       }
     });
-        
+    
     function replayTrajectory(customPoints) {
       const rp = (customPoints && customPoints.length >= 2)
         ? customPoints : pointsPath;
       if (!rp || rp.length < 2) {
-        statusOutput.textContent = "No run to replay!";
-        lastStatusMessage = "No run to replay!";
-        
-        // Ripristina il messaggio di stato dopo 2 secondi
-        setTimeout(() => {
-          restoreStatusOutput();
-        }, 1000);
-        
+        showTemporaryMessage("No run to replay!", 1000);
         return;
       }
     
@@ -1158,7 +1167,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         snowCanvas.classList.add('hidden');
       }
     
-      lastStatusMessage = statusOutput.innerHTML;
       clearCanvas();
       drawStartPoint();
       drawFinishArea();
@@ -1184,8 +1192,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
               showSnow = false;
               snowCanvas.classList.add('hidden');
             }
-    
-            restoreStatusOutput();
           }, 500);
           return;
         }
@@ -1194,7 +1200,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         ctx.moveTo(rp[i].x, rp[i].y);
         ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
         ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.lineWidth = 2 / 520 * canvas.height;
         ctx.stroke();
         const dt = rp[i + 1].t - rp[i].t;
         i++;
@@ -1202,19 +1208,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       }
       
       setTimeout(step, 0);
-    }
-    
-    
-    function restoreStatusOutput(){
-      if(!champOverlay.classList.contains('hidden')){
-          return;
-      }
-      // Se lastStatusMessage è "No run to replay!", ripristina lo stato di gioco
-      if (lastStatusMessage === "No run to replay!") {
-          statusOutput.innerHTML = `Play ${participants[currentIndex]} (G${raceNumber}/M${runNumber}/R${attemptCount + 1})`;
-      } else {
-          statusOutput.innerHTML = lastStatusMessage || '';
-      }
     }
     
     /* =======================================
@@ -1278,32 +1271,25 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       let currentPlayer = participants[currentIndex];
       let penaltyDisplay = "";
       if (treeHits[currentPlayer]) {
-        // Calcola il penalty in secondi:
         let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
-        // Formatta il valore con 2 decimali, es. "0.02s"
-        penaltyDisplay = `/+${penaltyVal.toFixed(2)}s`;
+        penaltyDisplay = ` (+${penaltyVal.toFixed(2)}s)`;
       }
-      let msg = `<span style="color:black;">${currentPlayer}</span> (
-        #<span style="color:black;">${raceNumber}</span>/
-        M<span style="color:black;">${runNumber}</span>/
-        Run<span style="color:black;">${att}</span>${penaltyDisplay}
-      )`;
-      statusOutput.innerHTML = msg;
-      lastStatusMessage = msg;
+      // Esempio di label: "#1 / M1 / Run1 (+0.04s)"
+let msg = `${currentPlayer}  #${raceNumber}/M${runNumber}/Run${att}${penaltyDisplay}`;
+setMainLabel(msg);
       
-      // Rivaluta il meteo all'inizio di ogni discesa
+      // Rivaluta meteo
       let newWeatherState = chooseWeatherState(weatherState);
       showSnow = applyWeatherState(newWeatherState);
       
-      const snowCanvas = document.getElementById('snowCanvas');
       if (showSnow) {
-          snowCanvas.classList.remove('hidden');
-          snowCanvas.width = canvas.width;
-          snowCanvas.height = canvas.height;
-          initSnow();
-          updateSnow();
+        snowCanvas.classList.remove('hidden');
+        snowCanvas.width = canvas.width;
+        snowCanvas.height = canvas.height;
+        initSnow();
+        updateSnow();
       } else {
-          snowCanvas.classList.add('hidden');
+        snowCanvas.classList.add('hidden');
       }
     }
     
@@ -1311,9 +1297,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawing = false;
       pointsPath = [];
       intersectedGates.clear();
-      finalTimeOutput.textContent = `⏰1'00"000'''`;
-      statusOutput.innerHTML = '';
-      lastStatusMessage = '';
+      setMainLabel(`⏰1'00"000'''`); // default iniziale 
       resetBlindMode();
       clearCanvas();
       if(track) drawTrack(track);
@@ -1335,25 +1319,24 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     
     function showRaceResults(){
       let sortedTimes = [...bestTimes].sort((a, b) => a.time - b.time);
-      let html = `
-        <h2>Tempi finali (Top 5)</h2>
+      let html = 
+        `<h2>Tempi finali (Top 5)</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Player</th><th>Tempo</th></tr>
-      `;
+            <tr><th>Player</th><th>Tempo</th></tr>`;
       sortedTimes.forEach(e => {
         const blindMark = e.blind ? ' (B)' : '';
         html += `<tr><td>${e.name}</td><td>${formatTime(e.time)}${blindMark}</td></tr>`;
       });
       html += `</table></div>`;
+      
       const sortedPlayers = Object.keys(championScores)
         .sort((a, b) => championScores[b] - championScores[a]);
-      html += `
-        <h2>Race Standings #${raceNumber}</h2>
+      html += 
+        `<h2>Race Standings #${raceNumber}</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Player</th><th>Total Points</th></tr>
-      `;
+            <tr><th>Player</th><th>Total Points</th></tr>`;
       sortedPlayers.forEach(name => {
         html += `<tr><td>${name}</td><td>${championScores[name]}</td></tr>`;
       });
@@ -1379,23 +1362,21 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       let sortedPlayers = Object.keys(championScores)
         .sort((a, b) => championScores[b] - championScores[a]);
       const winner = sortedPlayers[0];
-      let html = `
-        <h2>Final Standings</h2>
+      let html = 
+        `<h2>Final Standings</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Player</th><th>Punti</th></tr>
-      `;
+            <tr><th>Player</th><th>Punti</th></tr>`;
       sortedPlayers.forEach(n => {
         html += `<tr><td>${n}</td><td>${championScores[n]}</td></tr>`;
       });
       html += `</table></div>`;
       html += `<h3>Wins ${winner}!!!</h3>`;
-      html += `
-        <div class="end-buttons">
+      html += 
+        `<div class="end-buttons">
           <button id="btnReplayChamp">Play Again!</button>
           <button id="btnSolo">Play Solo</button>
-        </div>
-      `;
+        </div>`;
       champContent.innerHTML = html;
       champContent.querySelector('#btnReplayChamp').addEventListener('click', () => {
         champOverlay.classList.add('hidden');
@@ -1410,15 +1391,9 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     }
     
     function setupRace(){
-      // Azzeriamo la lastCompleteRun per dimenticare la run precedente
       lastCompleteRun = null;
-    
-      // Resetta il tempo mostrato
-      finalTimeOutput.textContent = `⏰1'00"000'''`;
-    
-      // ==================================================
-      // METEO: Rivalutazione all'inizio della gara
-      // ==================================================
+      setMainLabel(`⏰1'00"000'''`);
+
       let newWeatherState;
       if (!weatherState) {
         newWeatherState = chooseWeatherState(null);
@@ -1426,8 +1401,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         newWeatherState = chooseWeatherState(weatherState);
       }
       showSnow = applyWeatherState(newWeatherState);
-    
-      const snowCanvas = document.getElementById('snowCanvas');
+      
       if (showSnow) {
         snowCanvas.classList.remove('hidden');
         snowCanvas.width = canvas.width;
@@ -1453,16 +1427,14 @@ startIcon.src = "start.svg";  // Percorso al file .svg
        Popup generico
     ======================================= */
     function showPopup(message, onOk){
-      champContent.innerHTML = `
-        <h2>Attention</h2>
-        <p class="slide-content">${message}</p>
-        <button class="nav-button">OK</button>
-      `;
+      champContent.innerHTML = 
+        `<h2>Attention</h2>
+         <p class="slide-content">${message}</p>
+         <button class="nav-button">OK</button>`;
       champOverlay.classList.remove('hidden');
       champContent.querySelector('.nav-button').addEventListener('click', () => {
         champOverlay.classList.add('hidden');
         if(onOk) onOk();
-        restoreStatusOutput();
       });
     }
     
@@ -1472,30 +1444,26 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     slidesIntro = [
       {
         title:"Ski-Zag Championship!⛷️",
-        content: `
-          Enter the players!<br>
+        content: 
+          `Enter the players!<br>
           <div id="playersInputContainer"></div>
           <button id="addPlayerBtn" style="margin-right:8px;">Add Player</button>
-          <button id="removePlayerBtn">Remove Player</button>
-        `
+          <button id="removePlayerBtn">Remove Player</button>`
       },
       {
         title:"Race Info 🏁",
-        content: `
-          There will be 3 distinct races (Giant, Special, SuperG). Each race has 2 runs (manches), and in each run every participant has 3 consecutive attempts.
-        `
+        content: 
+          `There will be 3 distinct races (Giant, Special, SuperG). Each race has 2 runs (manches), and in each run every participant has 3 consecutive attempts.`
       },
       {
         title:"Top 5 Scoring ⏰",
-        content: `
-          At the end of each race, the top 5 best times are awarded points (9, 7, 5, 3, 1).
-        `
+        content: 
+          `At the end of each race, the top 5 best times are awarded points (9, 7, 5, 3, 1).`
       },
       {
         title:"Final Victory🏆",
-        content: `
-          At the end of the 3rd race, whoever has the most points wins the championship! Have fun!!
-        `
+        content: 
+          `At the end of the 3rd race, whoever has the most points wins the championship! Have fun!!`
       }
     ];
     let draftParticipants = [];
@@ -1503,16 +1471,15 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     function renderSlide(){
       slidesOverlay.classList.remove('hidden');
       const slide = slidesIntro[currentSlideIndex];
-      slidesContent.innerHTML = `
-        <h2 class="slide-title">${slide.title}</h2>
+      slidesContent.innerHTML = 
+        `<h2 class="slide-title">${slide.title}</h2>
         <p class="slide-content">${slide.content}</p>
         <div class="tutorial-dots"></div>
         <div class="slides-nav">
           <button class="nav-button" id="btnPrev">←</button>
           <button class="nav-button" id="btnStartNow">Start!</button>
           <button class="nav-button" id="btnNext">→</button>
-        </div>
-      `;
+        </div>`;
       const dotsC = slidesContent.querySelector('.tutorial-dots');
       slidesIntro.forEach((s, i) => {
         const d = document.createElement('div');
@@ -1555,6 +1522,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     
     function renderPlayersInput(){
       const cont = slidesContent.querySelector('#playersInputContainer');
+      if(!cont) return;
       cont.innerHTML = '';
       if(draftParticipants.length < 2){
         draftParticipants = ['', ''];
@@ -1581,16 +1549,15 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     }
     
     function addPlayerField(container, def = ''){
-  const d = document.createElement('div');
-  d.innerHTML = `
-    <input type="text" class="player-name-input"
-     placeholder="Player name"
-     style="margin-bottom:5px;width:80%;padding:6px;border-radius:6px;border:1px solid #ccc;"
-     value="${def}"
-    />
-  `;
-  container.appendChild(d);
-}
+      const d = document.createElement('div');
+      d.innerHTML = 
+        `<input type="text" class="player-name-input"
+         placeholder="Player name"
+         style="margin-bottom:5px;width:80%;padding:6px;border-radius:6px;border:1px solid #ccc;"
+         value="${def}"
+        />`;
+      container.appendChild(d);
+    }
     
     function syncDraftParticipants(){
       const inputs = slidesContent.querySelectorAll('.player-name-input');
@@ -1628,8 +1595,8 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     function startChampionship(){
       championScores = {};
       participants.forEach(p => {
-        championScores[p] = 0; // Reset dei punti del campionato
-        treeHits[p] = 0;       // Reset delle penalità accumulate
+        championScores[p] = 0; 
+        treeHits[p] = 0;       
       });
       slidesOverlay.classList.add('hidden');
       raceNumber = 1;
@@ -1643,7 +1610,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     document.getElementById('quit').addEventListener('click', () => {
       const confirmQuit = confirm("Are you sure you want to quit?");
       if (confirmQuit) {
-        window.location.href = 'index.html'; // Reindirizza alla pagina iniziale
+        window.location.href = 'index.html'; 
       }
     });
     
@@ -1655,24 +1622,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       renderSlide();
       resetBlindMode();
     });
-    
-    /* =======================================
-       Funzioni Helper
-    ======================================= */
-    function clearCanvas(){
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    
-    /* =======================================
-       Popup generico
-    ======================================= */
-    // (Funzione già definita sopra)
-    
-    /* =======================================
-       SLIDES INTRO & GESTIONE PLAYER
-    ======================================= */
-    // (Funzioni già definite sopra)
-    
   </script>
 </body>
 </html>
