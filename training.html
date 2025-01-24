@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ski Solo – Responsive Version</title>
   <style>
+
     /* Stili di base */
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       font-family: "Helvetica Neue", Arial, sans-serif;
-      background: #ffffff;
+      background: #deddfd;
+ margin-top: 10px;
     }
     body {
       display: flex;
@@ -25,7 +27,7 @@
       aspect-ratio: 300 / 520; /* Mantiene il rapporto di aspetto */
       background: #e1dffc url("sfondo.png") no-repeat center center;
       background-size: cover;
-      border: 2px solid #ffffff;
+      border: 0px solid #ffffff;
       border-radius: 10px;
       margin-top: 20px;
       box-sizing: border-box;
@@ -61,6 +63,7 @@
       z-index: 20;
     }
     button:hover { opacity: 0.7; }
+
     /* Posizionamento bottoni di controllo con percentuali */
     #sameTrack  { position: absolute; bottom: 1.15%; right: 16.67%; }
     #replayButton { position: absolute; bottom: 0.96%; left: 3.33%; }
@@ -69,15 +72,26 @@
     #chronoButton { position: absolute; top: 1.92%; right: 3.33%; }
     #viewBtn { position: absolute; bottom: 1.15%; left: 33.33%; transform: translateX(-50%); }
     #saveResultBtn { position: absolute; bottom: 1.15%; left: 17.33%; }
+
+    /* Contenitore delle info */
     .info-container {
-      margin-top: 13px;
+      margin-top: -10px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    #finalTimeOutput { margin: -10px 0; font-weight: bold; font-size: 1.2em; /* Dimensione relativa */ }
-    #statusOutput { margin: 15px 0; font-weight: bold; color: red; min-height: 20px; }
+
+    /* UNICO PARAGRAFO per final time + messaggi */
+    #infoLine {
+      margin: 10px 0;
+      font-weight: bold;
+      font-size: 1.2em; /* dimensione unificata, puoi variare */
+      min-height: 20px; 
+      text-align: center;
+      color: black; 
+    }
+
     /* Overlay e animazioni */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .overlay {
@@ -91,13 +105,15 @@
       align-items: center;
       animation: fadeIn 0.3s ease;
     }
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0; }
-}
-.record {
-  animation: blink 0.5s ease-in-out 3;
-}
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0; }
+    }
+    .record {
+      animation: blink 0.5s ease-in-out 3;
+    }
+
     .hidden { display: none; }
     .overlay-content {
       background-image: url('backpopup.png');
@@ -163,6 +179,7 @@
     .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; cursor: pointer; transition: background 0.3s; }
     .dot.active { background: #007bff; }
+
     /* Pulsanti delete per le piste salvate */
     .deleteBtn {
       background-color: #dc3545;
@@ -178,11 +195,11 @@
       background-color: #c82333;
     }
 
-@media (min-width: 768px) {
-  .container {
-    max-width: 500px !important; 
-  }
-}
+    @media (min-width: 768px) {
+      .container {
+        max-width: 500px !important; 
+      }
+    }
   </style>
 </head>
 <body>
@@ -202,7 +219,7 @@
     <button id="quit" title="New Track">
       <img src="new.png" alt="New Track" style="width:20px;height:20px;">
     </button>
-    <!-- Bottone Home aggiunto: puntando a index.html -->
+    <!-- Bottone Home -->
     <button id="homeBtn" title="Home">
       <img src="home.png" alt="Home" style="width:18px;height:18px;">
     </button>
@@ -217,9 +234,9 @@
     </button>
   </div>
 
+  <!-- UNICA RIGA PER TUTTI I MESSAGGI (tempo + avvisi) -->
   <div class="info-container">
-    <p id="finalTimeOutput">⏰1'00"000'''</p>
-    <p id="statusOutput"></p>
+    <p id="infoLine">⏰1'00"000'''</p>
   </div>
 
   <!-- OVERLAY TOP 5 -->
@@ -307,24 +324,49 @@
     let ctx = canvas.getContext('2d');
     let snowCanvas = document.getElementById('snowCanvas');
     let snowCtx = snowCanvas.getContext('2d');
-    let finalTimeOutput = document.getElementById('finalTimeOutput');
-    let statusOutput = document.getElementById('statusOutput');
 
+    // ELIMINATI finalTimeOutput E statusOutput, usiamo un UNICO <p id="infoLine">
+    const infoLine = document.getElementById('infoLine');
+    
+    // Per gestire il testo base e i messaggi temporanei
+    let mainLabel = "⏰1'00\"000'''";
+    function setMainLabel(text) {
+      mainLabel = text;
+      infoLine.innerHTML = text;
+    }
+    function showTemporaryMessage(msg, duration=2000) {
+      let old = mainLabel;
+      infoLine.innerHTML = msg;
+      infoLine.classList.remove('record');
+      setTimeout(() => {
+        infoLine.innerHTML = old;
+      }, duration);
+    }
+    function showTemporaryMessageHtml(html, duration=2000) {
+      let old = mainLabel;
+      infoLine.innerHTML = html;
+      infoLine.classList.remove('record');
+      setTimeout(() => {
+        infoLine.innerHTML = old;
+      }, duration);
+    }
+
+    // Bottoni
     let sameTrackButton = document.getElementById('sameTrack');
     let replayButton = document.getElementById('replayButton');
     let quitButton = document.getElementById('quit');
-    let homeBtn = document.getElementById('homeBtn'); // Il nuovo pulsante Home
+    let homeBtn = document.getElementById('homeBtn');
     let chronoButton = document.getElementById('chronoButton');
     let viewBtn = document.getElementById('viewBtn');
     let saveResultBtn = document.getElementById('saveResultBtn');
 
+    // Overlay
     let chronoOverlay = document.getElementById('chronoOverlay');
     let closeChronoOverlay = document.getElementById('closeChronoOverlay');
     let viewOverlay = document.getElementById('viewOverlay');
     let closeViewOverlay = document.getElementById('closeViewOverlay');
     let saveResultOverlay = document.getElementById('saveResultOverlay');
     let closeSaveResultOverlay = document.getElementById('closeSaveResultOverlay');
-
     let tutorialOverlay = document.getElementById('tutorialOverlay');
     let tutorialContent = document.getElementById('tutorialContent');
     let tutorialDots = document.getElementById('tutorialDots');
@@ -333,8 +375,8 @@
     let tutorialStart = document.getElementById('tutorialStart');
 
     // Variabili di gioco
-    let currentTrack = null;     // { gates, trees }
-    let bestTimes = [];          // Array dei migliori tempi della pista corrente
+    let currentTrack = null; // { gates, trees }
+    let bestTimes = [];      // Array dei migliori tempi della pista corrente
     // Saved tracks saranno salvate in localStorage
     let savedTracks = {};
     // Variabile per ricordare il nome della pista corrente (se salvata)
@@ -350,14 +392,15 @@
     let outPenaltyCount = 0;
     let isOut = false;
     let falseStartCount = 0;
-    let intersectedGates = new Set();  // Insieme degli indici delle porte attraversate
+    let intersectedGates = new Set();
+    let didFinishOrFail = false; // Flag per terminazione run
 
-    // Punto di partenza ed area di arrivo
+    // Punto di partenza e arrivo
     let startPoint = { x: 150, y: 30 };
     let finishRect = { x: 130, y: 490, width: 40, height: 10 };
     let globalWind = Math.random() * 1 - 0.5;
 
-    // Slides del tutorial
+    // Tutorial slides
     let tutorialSlides = [
       { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
       { title: "How to Play", content: "Draw your path starting from the house icon. Pass through all gates and finish at the finish area. Avoid trees and boundaries." },
@@ -366,7 +409,7 @@
     ];
     let currentTutorialIndex = 0;
 
-    const container = document.getElementById('gameContainer'); // Per il ridimensionamento
+    const container = document.getElementById('gameContainer');
 
     function resizeCanvas(){
       canvas.width = container.clientWidth;
@@ -374,37 +417,29 @@
       snowCanvas.width = container.clientWidth;
       snowCanvas.height = container.clientHeight;
 
-      // Aggiorna i punti di partenza e di arrivo in base alle nuove dimensioni
+      // Aggiorna i punti di start/finish
       startPoint = { x: canvas.width / 2, y: 30 / 520 * canvas.height };
-    finishRect = {
-  x: (canvas.width / 2) - 20,
-  y: canvas.height - 30,
-  width: 40,
-  height: 10
-};
+      finishRect = {
+        x: (canvas.width / 2) - 20,
+        y: canvas.height - 30,
+        width: 40,
+        height: 10
+      };
 
-      // Ridisegna la pista e gli elementi
       drawTrack(currentTrack);
     }
-    // Rimuovi la chiamata iniziale a resizeCanvas() qui
-    // resizeCanvas();
-
     function clearCanvas(){ ctx.clearRect(0,0,canvas.width, canvas.height); }
 
-  function drawStartPoint() {
-  // Ad esempio dimensioni relative (simili ai gate)
-  const iconWidth  = 16 / 300 * canvas.width;
-  const iconHeight = 16 / 520 * canvas.height;
-
-  // Disegno al centro del punto di partenza
-  ctx.drawImage(
-    startIcon,
-    startPoint.x - iconWidth / 2,
-    startPoint.y - iconHeight / 2,
-    iconWidth,
-    iconHeight
-  );
-}
+    function drawStartPoint() {
+      const iconWidth  = 16 / 300 * canvas.width;
+      const iconHeight = 16 / 520 * canvas.height;
+      ctx.drawImage(startIcon, 
+        startPoint.x - iconWidth/2, 
+        startPoint.y - iconHeight/2, 
+        iconWidth, 
+        iconHeight
+      );
+    }
     function drawFinishArea(){
       const { x, y, width, height } = finishRect;
       const sq = width / 8;
@@ -416,16 +451,14 @@
         }
       }
     }
-    // Icone per i gate
     const gateIcons = {
       red: new Image(),
       blue: new Image()
     };
     gateIcons.red.src = "red_gate.svg";
     gateIcons.blue.src = "blue_gate.svg";
-// Icona per il punto di partenza
-const startIcon = new Image();
-startIcon.src = "start.svg";  // Percorso al file .svg
+    const startIcon = new Image();
+    startIcon.src = "start.svg";
 
     function generateGates(count){
       let startWithRed = (Math.random() < 0.5);
@@ -453,8 +486,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
             minGate = 50 / 300 * canvas.width, 
             minTree = 30 / 520 * canvas.height, 
             minFinish = 50 / 300 * canvas.width, 
-            minStart = 20 / 520 * canvas.height, 
-            minTop = 30 / 520 * canvas.height;
+            minStart = 20 / 520 * canvas.height;
       while(arr.length < treeCount){
         let tx = margin + Math.random()*(canvas.width-2*margin);
         let ty = 20 / 520 * canvas.height + Math.random()*(canvas.height - (20 / 520 * canvas.height) - margin);
@@ -475,10 +507,10 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     }
     function drawGates(gArr){
       gArr.forEach(g=>{
-        let icon = g.color==="red" ? gateIcons.red : gateIcons.blue;
-        let iconWidth = 16 / 300 * canvas.width; // Dimensione relativa
+        let icon = (g.color==="red") ? gateIcons.red : gateIcons.blue;
+        let iconWidth = 16 / 300 * canvas.width; 
         let iconHeight = 16 / 520 * canvas.height;
-        ctx.drawImage(icon, g.x - iconWidth / 2, g.y - iconHeight / 2, iconWidth, iconHeight);
+        ctx.drawImage(icon, g.x - iconWidth/2, g.y - iconHeight/2, iconWidth, iconHeight);
       });
     }
     function drawTrees(tArr){
@@ -488,22 +520,23 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         tArr.forEach(t=>{
           let treeWidth = 12 / 300 * canvas.width;
           let treeHeight = 20 / 520 * canvas.height;
-          ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
+          ctx.drawImage(treeImg, t.x - treeWidth/2, t.y - treeHeight, treeWidth, treeHeight);
         });
       };
     }
     function drawTrack(track){
+      if(!track) return;
       clearCanvas();
       gates = track.gates;
       trees = track.trees;
-      intersectedGates = new Set();
+      intersectedGates.clear();
       drawStartPoint();
       drawFinishArea();
       drawGates(gates);
       drawTrees(trees);
     }
 
-    // (Opzionale) Effetto neve – come nel campionato
+    /* Neve */
     let snowflakes = [];
     function initSnow(){
       snowflakes = [];
@@ -537,9 +570,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       requestAnimationFrame(updateSnow);
     }
 
-    // ------------------------------------------------------------------
-    // GESTIONE EVENTI MOUSE / TOUCH PER IL TRACCIARE IL PERCORSO
-    // ------------------------------------------------------------------
+    /* Eventi mouse / touch */
     if(!canvas._eventsAttached){
       canvas.addEventListener('mousedown', handleMouseDown);
       canvas.addEventListener('mousemove', handleMouseMove);
@@ -557,21 +588,16 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     }
     function isNearStartPoint(x,y){ return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20 / 520 * canvas.height); }
 
-    // ------------------------------------------------------------------
-    // GESTIONE FALSE START CON MESSAGGI ORIGINALI
-    // ------------------------------------------------------------------
     function handleMouseDown(e){
       let {x,y} = getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
         falseStartCount++;
         if(falseStartCount===1){
-          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>';
-          setTimeout(()=>{ restoreStatusOutput(); }, 1000);
+          showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>', 1500);
         } else if(falseStartCount===2){
-          statusOutput.innerHTML = '<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>';
-          setTimeout(()=>{ restoreStatusOutput(); }, 1000);
+          showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>', 1500);
         } else if(falseStartCount>=3){
-          statusOutput.textContent = 'Run failed due to consecutive false starts!';
+          setMainLabel('Run failed due to consecutive false starts!');
           failRun("Run failed due to false starts.");
           falseStartCount = 0;
         }
@@ -583,7 +609,9 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawing = true;
       pointsPath = [];
       startTime = performance.now();
-      statusOutput.textContent = "";
+      didFinishOrFail = false;
+
+      setMainLabel(""); // reset momentaneamente?
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x,y);
@@ -600,7 +628,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       pointsPath.push({ x, y, t: now });
       ctx.lineTo(x,y);
       ctx.strokeStyle = '#a4b8eb';
-      ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+      ctx.lineWidth = 2 / 520 * canvas.height;
       ctx.stroke();
       checkIntersections();
     }
@@ -613,7 +641,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       e.preventDefault();
       let {x,y} = getMouseCoords(e);
       if(!isNearStartPoint(x,y)){
-        statusOutput.textContent = "You must start from the house icon!";
+        setMainLabel("You must start from the house icon!");
         return;
       }
       falseStartCount = 0;
@@ -622,7 +650,9 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawing = true;
       pointsPath = [];
       startTime = performance.now();
-      statusOutput.textContent = "";
+      didFinishOrFail = false;
+
+      setMainLabel("");
       ctx.beginPath();
       pointsPath.push({ x, y, t: 0 });
       ctx.moveTo(x,y);
@@ -640,7 +670,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       pointsPath.push({ x, y, t: now });
       ctx.lineTo(x,y);
       ctx.strokeStyle = '#a4b8eb';
-      ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+      ctx.lineWidth = 2 / 520 * canvas.height;
       ctx.stroke();
       checkIntersections();
     }
@@ -650,40 +680,34 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       drawing = false;
       if(!didFinishOrFail){ failRun("Run interrupted!"); }
     }
-    function checkInterpolationForBorder(p1, p2){
-      const stepLength = 2 / 520 * canvas.height; // Step relativo
-      const dx = p2.x - p1.x, dy = p2.y - p1.y;
-      const distance = Math.hypot(dx,dy);
-      const steps = Math.ceil(distance/stepLength);
-      for(let i=1; i<=steps; i++){
-        let t = i/steps;
-        let ix = p1.x + t*dx;
-        let iy = p1.y + t*dy;
-        if(ix < BORDER_THRESHOLD / 300 * canvas.width || ix > canvas.width - BORDER_THRESHOLD / 300 * canvas.width ||
-           iy < BORDER_THRESHOLD / 520 * canvas.height || iy > canvas.height - BORDER_THRESHOLD / 520 * canvas.height){
+    function checkInterpolationForBorder(p1, p2) {
+      const stepLength = 2;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const distance = Math.hypot(dx, dy);
+      const steps = Math.ceil(distance / stepLength);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const ix = p1.x + t * dx;
+        const iy = p1.y + t * dy;
+        if (ix < BORDER_THRESHOLD || ix > canvas.width - BORDER_THRESHOLD) {
           return true;
         }
       }
       return false;
     }
 
-    // Flag per terminazione o fallimento della run
-    let didFinishOrFail = false;
-
-    // ------------------------------------------------------------------
-    // CHECK INTERSECTIONS: Alberi, Porte e Traguardo
-    // ------------------------------------------------------------------
+    /* Collisioni */
     function checkIntersections(){
       for(let i=1; i<pointsPath.length; i++){
         let p1 = pointsPath[i-1], p2 = pointsPath[i];
-        // Collisione con alberi (come nella versione campionato)
+        // Alberi
         if(hardMode){
           for(const tree of trees){
             let steps = Math.ceil(Math.hypot(p2.x-p1.x, p2.y-p1.y)/5);
             for(let j=0; j<=steps; j++){
               let ix = p1.x + (p2.x-p1.x)*(j/steps);
               let iy = p1.y + (p2.y-p1.y)*(j/steps);
-              // Centro visivo dell'albero: (tree.x, tree.y-10 / 520 * canvas.height)
               let dist = Math.hypot(ix - tree.x, iy - (tree.y - 10 / 520 * canvas.height));
               if(dist < 10 / 520 * canvas.height){
                 didFinishOrFail = true;
@@ -693,13 +717,13 @@ startIcon.src = "start.svg";  // Percorso al file .svg
             }
           }
         }
-        // Controllo porte
+        // Porte
         for(const [idx, gate] of gates.entries()){
           if(linesIntersect(p1.x, p1.y, p2.x, p2.y, gate.line.x1, gate.line.y1, gate.line.x2, gate.line.y2)){
             intersectedGates.add(idx);
           }
         }
-        // Controllo traguardo: la run termina appena il segmento interseca l'area di finish
+        // Finish
         if(isSegmentInFinishArea(p1, p2, finishRect)){
           didFinishOrFail = true;
           if(intersectedGates.size === gates.length){
@@ -730,9 +754,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
                y>= rect.y-minD && y<= rect.y+rect.height+minD );
     }
 
-    // ------------------------------------------------------------------
-    // FINISH RUN / FAIL RUN CON RESET AUTOMATICO (dopo 2 secondi)
-    // ------------------------------------------------------------------
+    /* Fine run / fallimento run */
     function finishRun(){
       drawing = false;
       didFinishOrFail = true;
@@ -742,26 +764,28 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       let baseTime = calculateFinalTime(elapsedTime, distPx);
       let outPenaltyTotal = outPenaltyCount * 0.10;
       let finalTime = baseTime + outPenaltyTotal;
-      finalTimeOutput.textContent = `⏰ ${formatTime(finalTime)}${(outPenaltyTotal>0)?` (+${outPenaltyTotal.toFixed(2)})`:""}`;
-      statusOutput.textContent = "Finished!";
+      // Mettiamo il tempo finale in "infoLine"
+      setMainLabel(`⏰${formatTime(finalTime)}${(outPenaltyTotal>0)?` (+${outPenaltyTotal.toFixed(2)})`:""}`);
+      
+
       lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
       updateBestTimes(finalTime, lastCompleteRun);
-      // Salva il tempo finale in una variabile globale
       window.lastFinalTime = finalTime;
-      // Se la pista corrente è stata salvata, aggiorniamo i record in localStorage
+
+      // Se la pista è salvata, aggiorna bestTimes in localStorage
       if(currentTrackName !== ""){
         savedTracks[currentTrackName].bestTimes = bestTimes;
         storeSavedTracks();
       }
-      // Dopo 2 secondi reset della pista
+      // Reset dopo 2 secondi
       setTimeout(()=>{ resetRun(); }, 2000);
     }
     function failRun(msg){
       drawing = false;
       didFinishOrFail = true;
-      statusOutput.textContent = msg;
+      setMainLabel(msg);
       lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-      // Dopo 2 secondi reset della pista
+      // Reset dopo 2 secondi
       setTimeout(()=>{ resetRun(); }, 2000);
     }
     function calculateDistance(arr){
@@ -788,20 +812,20 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       bestTimes.push(result);
       bestTimes.sort((a,b)=> a.time - b.time);
       if(bestTimes.length>5) bestTimes.length = 5;
-   // Se il primo in classifica ha tempo == time appena inserito,
-  // vuol dire che è un nuovo record.
-  if (bestTimes[0].time === time) {
-    finalTimeOutput.classList.add('record');
-    setTimeout(() => {
-      finalTimeOutput.classList.remove('record');
-    }, 2000);
-  }
-}
+      // Se è un nuovo record
+      if(bestTimes[0].time === time){
+        infoLine.classList.add('record');
+        setTimeout(() => {
+          infoLine.classList.remove('record');
+        }, 2000);
+      }
+    }
+
+    /* Replay */
     function replayTrajectory(customPoints){
       let rp = (customPoints && customPoints.length>=2) ? customPoints : pointsPath;
       if(!rp || rp.length<2){
-        statusOutput.textContent = "No run to replay!";
-        setTimeout(()=>{ statusOutput.textContent = ""; }, 1000);
+        showTemporaryMessage("No run to replay!", 1000);
         return;
       }
       clearCanvas();
@@ -815,7 +839,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
           setTimeout(()=>{
             clearCanvas();
             drawTrack(currentTrack);
-            statusOutput.textContent = "";
           },500);
           return;
         }
@@ -823,7 +846,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         ctx.moveTo(rp[i].x, rp[i].y);
         ctx.lineTo(rp[i+1].x, rp[i+1].y);
         ctx.strokeStyle = '#a4b8eb';
-        ctx.lineWidth = 2 / 520 * canvas.height; // Line width relativo
+        ctx.lineWidth = 2 / 520 * canvas.height;
         ctx.stroke();
         let dt = rp[i+1].t - rp[i].t;
         i++;
@@ -831,41 +854,31 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       }
       setTimeout(step, 0);
     }
-    function restoreStatusOutput(){ statusOutput.textContent = "Play Ski Solo"; }
 
-    // ------------------------------------------------------------------
-    // GESTIONE BOTTONI (Modalità solitario)
-    // ------------------------------------------------------------------
-
-    // Modifica del tasto SAME TRACK: ora il tasto inverte il flag snowLocked,
-    // cambia leggermente l'opacità del bottone e mostra un breve messaggio nello status
+    /* Bottoni */
     sameTrackButton.addEventListener('click', ()=> { 
       snowLocked = !snowLocked;
       if(snowLocked){
         sameTrackButton.style.opacity = "0.5";  
-        statusOutput.textContent = "Snow locked";
+        showTemporaryMessage("Snow locked", 1000);
       } else {
         sameTrackButton.style.opacity = "1";    
-        statusOutput.textContent = "Snow enabled";
+        showTemporaryMessage("Snow enabled", 1000);
       }
-      setTimeout(restoreStatusOutput, 1000);
       resetRun();
     });
-
     replayButton.addEventListener('click', ()=>{
       if(lastCompleteRun && lastCompleteRun.length>=2){
         replayTrajectory(lastCompleteRun);
       } else {
-        statusOutput.textContent = "No run to replay!";
-        setTimeout(()=>{ statusOutput.textContent = ""; }, 1000);
+        showTemporaryMessage("No run to replay!", 1000);
       }
     });
     quitButton.addEventListener('click', ()=>{
-      // Genera una nuova pista: se la pista cambia, resetta anche il replay
       currentTrack = createTrack();
       bestTimes = [];
-      currentTrackName = ""; // Azzeriamo il nome se si genera una nuova pista
-      lastCompleteRun = null; // Resettiamo il replay perché la pista è cambiata
+      currentTrackName = "";
+      lastCompleteRun = null;
       resetRun();
       drawTrack(currentTrack);
     });
@@ -881,7 +894,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     closeViewOverlay.addEventListener('click', ()=>{ viewOverlay.classList.add('hidden'); });
     saveResultBtn.addEventListener('click', ()=>{ saveResultOverlay.classList.remove('hidden'); });
     closeSaveResultOverlay.addEventListener('click', ()=>{ saveResultOverlay.classList.add('hidden'); });
-    // Salvataggio del risultato: se esiste già un record "Anonymous" con lo stesso final time, ne aggiorna il nome
     document.getElementById('saveResultConfirmBtn').addEventListener('click', ()=>{
       let name = document.getElementById('resultNameInput').value.trim();
       if(name===""){
@@ -903,20 +915,17 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       saveResultOverlay.classList.add('hidden');
       updateLeaderboard();
     });
+
     function resetRun(){
       drawing = false;
       didFinishOrFail = false;
       pointsPath = [];
-      statusOutput.textContent = "";
-      finalTimeOutput.textContent = `⏰1'00"000'''`;
+      setMainLabel("⏰1'00\"000'''"); // Tornare al default
       clearCanvas();
       drawTrack(currentTrack);
-      // Aggiorna il vento: assegna un nuovo valore casuale ad ogni reset
       globalWind = Math.random() * 1 - 0.5;
-      // Gestione neve: seleziona meteo e, se previsto, attiva l’effetto
       weatherState = chooseWeatherState(weatherState);
       applyWeatherState(weatherState);
-      // Se la neve è bloccata, nascondi il canvas della neve
       if(snowLocked){
         snowCanvas.classList.add('hidden');
       } else {
@@ -929,6 +938,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         }
       }
     }
+
     function updateLeaderboard(){
       let lb = document.getElementById('leaderboardList');
       lb.innerHTML = "";
@@ -948,9 +958,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       });
     }
 
-    // ------------------------------------------------------------------
-    // GESTIONE TRACK SAVE E CARICAMENTO (localStorage)
-    // ------------------------------------------------------------------
+    /* Gestione localStorage piste salvate */
     const LS_KEY = "skiSolo_savedTracks";
     function loadSavedTracks() {
       let saved = localStorage.getItem(LS_KEY);
@@ -967,7 +975,6 @@ startIcon.src = "start.svg";  // Percorso al file .svg
     function storeSavedTracks() {
       localStorage.setItem(LS_KEY, JSON.stringify(savedTracks));
     }
-    // Aggiorna la lista del popup (con possibilità di cancellazione)
     function updateSavedTracksList(){
       loadSavedTracks();
       let listDiv = document.getElementById('savedTracksList');
@@ -986,7 +993,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
           currentTrack = saved.track;
           bestTimes = saved.bestTimes || [];
           currentTrackName = name;
-          resizeCanvas(); // Ridimensiona il canvas dopo aver caricato la nuova pista
+          resizeCanvas();
           resetRun();
           viewOverlay.classList.add('hidden');
         });
@@ -1016,12 +1023,10 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       storeSavedTracks();
       alert("Track saved!");
       updateSavedTracksList();
-      viewOverlay.classList.add('hidden'); // Chiude il popup automaticamente
+      viewOverlay.classList.add('hidden');
     });
 
-    // ------------------------------------------------------------------
-    // TUTORIAL (Overlay iniziale)
-    // ------------------------------------------------------------------
+    /* Tutorial */
     function renderTutorial(){
       let slide = tutorialSlides[currentTutorialIndex];
       tutorialContent.innerHTML = `<h2>${slide.title}</h2><p>${slide.content}</p>`;
@@ -1036,11 +1041,7 @@ startIcon.src = "start.svg";  // Percorso al file .svg
         });
         tutorialDots.appendChild(d);
       });
-      
-      // Mantieni sempre visibile il pulsante "Start"
       tutorialStart.style.display = "inline-block";
-      
-      // Mantieni sempre visibile le frecce "Prev" e "Next"
       tutorialPrev.style.display = "inline-block";
       tutorialNext.style.display = "inline-block";
     }
@@ -1065,21 +1066,18 @@ startIcon.src = "start.svg";  // Percorso al file .svg
       currentTrack = createTrack();
       bestTimes = [];
       currentTrackName = "";
-      resizeCanvas(); // Chiama la funzione di ridimensionamento
+      resizeCanvas();
       resetRun();
       drawTrack(currentTrack);
     }
     renderTutorial();
-    // Il tutorial viene mostrato all'avvio
 
-    // Aggiunta dell'event listener per il pulsante Home (già presente nel codice)
     document.getElementById('homeBtn').addEventListener('click', function() {
       if (confirm('Are you sure you want to quit?')) { 
         location.href = 'index.html';
       }
     });
 
-    // Inizializza il canvas al caricamento
     window.onload = function() {
       resizeCanvas();
     };
