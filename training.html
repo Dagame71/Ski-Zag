@@ -42,15 +42,15 @@
       cursor: crosshair;
     }
     /* Canvas per la neve */
-    #snowCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 10;
-    }
+#snowCanvas {
+  position: fixed;     /* per coprire tutto lo schermo */
+  top: 0;
+  left: 0;
+  width: 100vw;        /* copre l'intera larghezza finestra */
+  height: 100vh;       /* copre l'intera altezza finestra */
+  pointer-events: none;/* la neve non intercetta clic/touch */
+  z-index: 5;          /* layer medio */
+}
     /* Bottoni */
     button {
       border: none;
@@ -60,7 +60,7 @@
       margin: 0;
       padding: 0;
       color: black;
-      z-index: 20;
+      z-index: 9999;
     }
     button:hover { opacity: 0.7; }
 
@@ -203,11 +203,12 @@
   </style>
 </head>
 <body>
+<!-- Canvas NEVE a pagina intera -->
+<canvas id="snowCanvas" class="hidden"></canvas>
   <!-- CONTENITORE DI GIOCO -->
   <div class="container" id="gameContainer">
     <canvas id="canvas"></canvas>
     <!-- Canvas per l'effetto neve -->
-    <canvas id="snowCanvas" class="hidden"></canvas>
     <!-- Bottoni di controllo -->
     <!-- Il tasto sameTrack ora viene usato per abilitare/disabilitare la neve -->
     <button id="sameTrack" title="Toggle Snow">
