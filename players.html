@@ -852,13 +852,13 @@ z-index: 9999;
       }
     }
     
-    function handleTouchStart(e){
-      e.preventDefault();
-      const { x, y } = getMouseCoords(e);
-      if(!isNearStartPoint(x,y)){
-        setMainLabel('You must start from the start point!');
-        return;
-      }
+   function handleTouchStart(e){
+  e.preventDefault();
+  const { x, y } = getMouseCoords(e);
+  if(!isNearStartPoint(x,y)){
+    showTemporaryMessage('You must start from the start point!', 1500);
+    return;
+  }
       
       outPenaltyCount = 0;
       isOut = false;
