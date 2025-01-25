@@ -166,7 +166,7 @@ z-index: 9999;
       position: absolute; 
       top: 10px; 
       left: 10px; 
-      background-color: #dc3545; 
+      background-color: #8fa2f7; 
       font-size: 0.875em; /* Dimensione relativa */
       padding: 0.5em 1em; /* Padding relativo */
       color: white; 
@@ -175,7 +175,7 @@ z-index: 9999;
       cursor: pointer; 
     }
     #closeOverlay:hover { 
-      background-color: #c82333; 
+      background-color: #bdc9fb; 
     }
     /* Leaderboard */
     .leaderboard-container { 
@@ -482,7 +482,10 @@ z-index: 9999;
     let lastSnowActive = false;
     let outPenaltyCount = 0; // Conta quante volte la traiettoria esce dal campo
     let isOut = false;       // Flag per rilevare quando si esce ed evitare conteggi multipli continui
-    
+   // === VARIABILI PER L'EDITOR ===
+let editingMode = false;        // se true => stiamo spostando gate/alberi
+let draggedElement = null;      // { type:'gate'|'tree', index, oldX, oldY, offsetX, offsetY }
+ 
     /* =======================================
        Funzione di interpolazione: controlla se tra p1 e p2 viene "toccato" il bordo
     ======================================= */
@@ -678,7 +681,7 @@ z-index: 9999;
       const treeCount = Math.floor(Math.random() * 3) + 6;
       let arr = [];
       const margin = 15;
-      const minGate = 50, minTree = 30, minFinish = 50, minStart = 20, minTop = 30;
+      const minGate = 50, minTree = 30, minFinish = 50, minStart = 40, minTop = 60;
       while(arr.length < treeCount){
         const tx = margin + Math.random() * (canvas.width - 2 * margin);
         const ty = minTop + Math.random() * (canvas.height - minTop - margin);
@@ -755,15 +758,7 @@ z-index: 9999;
     /* =======================================
        Eventi Mouse / Touch (unificati)
     ======================================= */
-    if(!canvas._eventsAttached){
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mousemove', handleMouseMove);
-      canvas.addEventListener('mouseup', handleMouseUp);
-      canvas.addEventListener('touchstart', handleTouchStart);
-      canvas.addEventListener('touchmove', handleTouchMove);
-      canvas.addEventListener('touchend', handleTouchEnd);
-      canvas._eventsAttached = true;
-    }
+
     
     function getMouseCoords(e){
       const rect = canvas.getBoundingClientRect();
@@ -776,7 +771,7 @@ z-index: 9999;
       return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20 / 520 * canvas.height);
     }
     
-    function handleMouseDown(e){
+function handleMouseDownGame(e) {
       const { x, y } = getMouseCoords(e);
       if(!isNearStartPoint(x, y)){
         falseStartCount++;  // Incrementa il contatore degli errori
@@ -817,7 +812,7 @@ z-index: 9999;
       didFinishOrFailThisRun = false;
     }
     
-    function handleMouseMove(e){
+ function handleMouseMoveGame(e) {
       if(!drawing) return;
       const { x, y } = getMouseCoords(e);
       
@@ -844,7 +839,7 @@ z-index: 9999;
       checkIntersections();
     }
     
-    function handleMouseUp(e){
+  function handleMouseUpGame(e) {
       if(!drawing) return;
       drawing = false;
       if(!didFinishOrFailThisRun){
@@ -852,7 +847,7 @@ z-index: 9999;
       }
     }
     
-   function handleTouchStart(e){
+  function handleTouchStartGame(e){
   e.preventDefault();
   const { x, y } = getMouseCoords(e);
   if(!isNearStartPoint(x,y)){
@@ -872,7 +867,7 @@ z-index: 9999;
       didFinishOrFailThisRun = false;
     }
     
-    function handleTouchMove(e){
+    function handleTouchMoveGame(e){
       e.preventDefault();
       if(!drawing) return;
       const { x, y } = getMouseCoords(e);
@@ -901,7 +896,7 @@ z-index: 9999;
       checkIntersections();
     }
     
-    function handleTouchEnd(e){
+    function handleTouchEndGame(e){
       e.preventDefault();
       if(!drawing) return;
       drawing = false;
@@ -909,7 +904,322 @@ z-index: 9999;
         failAttempt("Run interrupted!");
       }
     }
+    // FUNZIONI "dispatcher" => se editingMode=true => EDITOR, altrimenti => GAME
+function handleMouseDown(e){
+  if(editingMode){
+    handleMouseDownEditor(e);
+  } else {
+    handleMouseDownGame(e);  // la tua funzione di prima
+  }
+}
+function handleMouseMove(e){
+  if(editingMode){
+    handleMouseMoveEditor(e);
+  } else {
+    handleMouseMoveGame(e);
+  }
+}
+function handleMouseUp(e){
+  if(editingMode){
+    handleMouseUpEditor(e);
+  } else {
+    handleMouseUpGame(e);
+  }
+}
+function handleMouseUpEditor(e){
+  if(!draggedElement) {
+    console.log("Nessun elemento era stato trascinato.");
+    return;
+  }
+  console.log(`Rilasciato elemento: ${draggedElement.type} all'indice ${draggedElement.index}`);
+  
+  // Controllo i vincoli
+  checkEditorConstraints(draggedElement);
+  
+  // Imposta draggedElement a null per fermare il trascinamento
+  draggedElement = null;
+  console.log("Elemento rilasciato correttamente.");
+  
+  // Ridisegna la pista per aggiornare la posizione dell'elemento
+  drawTrack(currentTrack);
+}
+
+
+// VERSIONI TOUCH
+function handleTouchStart(e){
+  e.preventDefault();
+  if(editingMode){
+    handleTouchStartEditor(e);
+  } else {
+    handleTouchStartGame(e);
+  }
+}
+function handleTouchMove(e){
+  e.preventDefault();
+  if(editingMode){
+    handleTouchMoveEditor(e);
+  } else {
+    handleTouchMoveGame(e);
+  }
+}
+function handleTouchEnd(e){
+  e.preventDefault();
+
+  const currentTime = new Date().getTime();
+  const tapLength = currentTime - lastTap;
+
+  if(tapLength < 300 && tapLength > 0){
+    // Doppio tap rilevato
+    handleDoubleConfirm();
+  }
+  lastTap = currentTime;
+
+  if(editingMode){
+    handleTouchEndEditor(e);
+  } else {
+    handleTouchEndGame(e);
+  }
+function handleTouchEndEditor(e){
+  if(!draggedElement) {
+    console.log("Nessun elemento era stato trascinato.");
+    return;
+  }
+  console.log(`Rilasciato elemento: ${draggedElement.type} all'indice ${draggedElement.index}`);
+  
+  // Controllo i vincoli
+  checkEditorConstraints(draggedElement);
+  
+  // Imposta draggedElement a null per fermare il trascinamento
+  draggedElement = null;
+  console.log("Elemento rilasciato correttamente.");
+  
+  // Ridisegna la pista per aggiornare la posizione dell'elemento
+  drawTrack(currentTrack);
+}
+
+}// 3) Poi i NUOVI addEventListener:
+if (!document._eventsAttached) {
+  // Eventi Mouse
+  canvas.addEventListener('mousedown', handleMouseDown);
+  canvas.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp); // Modificato da canvas a document
+
+  // Eventi Touch
+  canvas.addEventListener('touchstart', handleTouchStart);
+  canvas.addEventListener('touchmove', handleTouchMove);
+  document.addEventListener('touchend', handleTouchEnd); // Modificato da canvas a document
+
+  // Doppio Click e Tap
+  canvas.addEventListener('dblclick', handleDoubleConfirm, false);
+
+
+  document._eventsAttached = true;
+}
+function handleMouseDownEditor(e){
+  const { x,y } = getMouseCoords(e);
+
+  // 1. trovo un gate vicino
+  let foundG = findNearestGate(x,y, 20);
+  if(foundG){
+    let g = gates[foundG.index];
+    draggedElement = {
+      type:'gate',
+      index: foundG.index,
+      oldX: g.x,
+      oldY: g.y,
+      offsetX: g.x- x,
+      offsetY: g.y- y
+    };
+    return;
+  }
+
+  // 2. se non e' un gate, trovo un albero
+  let foundT = findNearestTree(x,y, 20);
+  if(foundT){
+    let t = trees[foundT.index];
+    draggedElement = {
+      type:'tree',
+      index: foundT.index,
+      oldX: t.x,
+      oldY: t.y,
+      offsetX: t.x- x,
+      offsetY: t.y- y
+    };
+    return;
+  }
+  // 3. se non trovo nulla
+  draggedElement= null;
+}
+
+function handleMouseMoveEditor(e){
+  if(!draggedElement) return;
+  const { x, y }= getMouseCoords(e);
+  
+  if(draggedElement.type === 'gate'){
+    const gate = gates[draggedElement.index];
+    gate.x = x + draggedElement.offsetX;
+    gate.y = y + draggedElement.offsetY;
     
+    // Determina la direzione basata sul colore
+    const dir = (gate.color === 'red') ? 1 : -1;
+    
+    // Aggiorna le coordinate della linea del gate
+    gate.line.x1 = gate.x;
+    gate.line.y1 = gate.y;
+    gate.line.x2 = gate.x + dir * 200; // 200 è la lunghezza della linea come nel generateGates
+    gate.line.y2 = gate.y;
+    
+  } else {
+    const tree = trees[draggedElement.index];
+    tree.x = x + draggedElement.offsetX;
+    tree.y = y + draggedElement.offsetY;
+  }
+  // Ridisegno la pista in tempo reale
+  drawTrack(currentTrack);
+}
+
+function findNearestGate(x, y, maxDist) {
+  let foundIndex = null;
+  let bestDist = Infinity;
+
+  for (let i = 0; i < gates.length; i++) {
+    let dx = gates[i].x - x;
+    let dy = gates[i].y - y;
+    let dist = Math.hypot(dx, dy);
+
+    // Se è entro maxDist e più vicino di qualunque trovato prima, prendo questo
+    if (dist < maxDist && dist < bestDist) {
+      bestDist = dist;
+      foundIndex = i;
+    }
+  }
+  // Se ho trovato qualcosa, ritorno { index: foundIndex }, altrimenti null
+  return (foundIndex !== null) ? { index: foundIndex } : null;
+}
+
+function findNearestTree(x, y, maxDist) {
+  let foundIndex = null;
+  let bestDist = Infinity;
+
+  for (let i = 0; i < trees.length; i++) {
+    let dx = trees[i].x - x;
+    let dy = trees[i].y - y;
+    let dist = Math.hypot(dx, dy);
+
+    if (dist < maxDist && dist < bestDist) {
+      bestDist = dist;
+      foundIndex = i;
+    }
+  }
+  return (foundIndex !== null) ? { index: foundIndex } : null;
+}
+
+function handleTouchStartEditor(e){
+  e.preventDefault();
+  const { x,y } = getMouseCoords(e);
+
+  // (stessa logica di handleMouseDownEditor)
+  // ...
+}
+function handleTouchMoveEditor(e){
+  e.preventDefault();
+  if(!draggedElement) return;
+  const { x, y }= getMouseCoords(e);
+  
+  if(draggedElement.type === 'gate'){
+    const gate = gates[draggedElement.index];
+    gate.x = x + draggedElement.offsetX;
+    gate.y = y + draggedElement.offsetY;
+    
+    // Determina la direzione basata sul colore
+    const dir = (gate.color === 'red') ? 1 : -1;
+    
+    // Aggiorna le coordinate della linea del gate
+    gate.line.x1 = gate.x;
+    gate.line.y1 = gate.y;
+    gate.line.x2 = gate.x + dir * 200; // 200 è la lunghezza della linea come nel generateGates
+    gate.line.y2 = gate.y;
+    
+  } else {
+    const tree = trees[draggedElement.index];
+    tree.x = x + draggedElement.offsetX;
+    tree.y = y + draggedElement.offsetY;
+  }
+  // Ridisegno la pista in tempo reale
+  drawTrack(currentTrack);
+}
+
+function checkEditorConstraints(dragged){
+  if(dragged.type==='gate'){
+    let g= gates[dragged.index];
+    if(! isValidGatePosition(g.x, g.y, dragged.index)){
+      // revert
+      g.x= dragged.oldX;
+      g.y= dragged.oldY;
+    }
+  } else {
+    let t= trees[dragged.index];
+    if(! isValidTreePosition(t.x, t.y, dragged.index)){
+      // revert
+      t.x= dragged.oldX;
+      t.y= dragged.oldY;
+    }
+  }
+}
+
+// Ad esempio:
+function isValidGatePosition(x, y, idxGate){
+  const minEdge=20;
+  if(x< minEdge || x> canvas.width- minEdge) return false;
+  if(y< 60 || y> canvas.height-60) return false;
+  // Evita vicinanze con altri gate
+  const minGate=35;
+  for(let i=0; i<gates.length; i++){
+    if(i=== idxGate) continue;
+    let dist= Math.hypot(x- gates[i].x, y- gates[i].y);
+    if(dist< minGate) return false;
+  }
+  // Evita vicinanza con alberi
+  const minTree=30;
+  for(let tr of trees){
+    let dist= Math.hypot(x- tr.x, y- tr.y);
+    if(dist< minTree) return false;
+  }
+  // Evita start/finish etc...
+  const minStart=40;
+  if(Math.hypot(x- startPoint.x, y- startPoint.y)< minStart) return false;
+  if(isNearFinish(x,y, finishRect, 50)) return false;
+
+  return true;
+}
+
+function isValidTreePosition(x, y, idxTree){
+  const margin=15;
+  if(x< margin || x> canvas.width- margin) return false;
+  if(y< 60 || y> canvas.height- margin) return false;
+
+  // Evita gates
+  const minGate=50;
+  for(let g of gates){
+    let dist= Math.hypot(x- g.x, y- g.y);
+    if(dist< minGate) return false;
+  }
+  // Evita altri alberi
+  const minTree=30;
+  for(let i=0; i<trees.length; i++){
+    if(i=== idxTree) continue;
+    let dist= Math.hypot(x- trees[i].x, y- trees[i].y);
+    if(dist< minTree) return false;
+  }
+  // Evita finish
+  if(isNearFinish(x,y, finishRect, 50)) return false;
+  // Evita start
+  const minStart=40;
+  if(Math.hypot(x- startPoint.x, y- startPoint.y)< minStart) return false;
+
+  return true;
+}
+
     function checkIntersections(){
       for(let i = 1; i < pointsPath.length; i++){
         const p1 = pointsPath[i-1], p2 = pointsPath[i];
@@ -1428,7 +1738,7 @@ setMainLabel(msg);
       currentIndex = 0;
       attemptCount = 0;
       runNumber = 1;
-      callParticipant();
+  editingMode = true;
     }
     
     /* =======================================
@@ -1615,12 +1925,13 @@ setMainLabel(msg);
     /* =======================================
        Gestione Quit
     ======================================= */
-    document.getElementById('quit').addEventListener('click', () => {
-      const confirmQuit = confirm("Are you sure you want to quit?");
-      if (confirmQuit) {
-        window.location.href = 'index.html'; 
-      }
-    });
+document.getElementById('quit').addEventListener('click', () => {
+  // Logica di quit invariata
+  const confirmQuit = confirm("Are you sure you want to quit?");
+  if(confirmQuit){
+    window.location.href = 'index.html';
+  }
+});
     
     /* =======================================
        Inizializzazione alla DOMContentLoaded
@@ -1630,6 +1941,17 @@ setMainLabel(msg);
       renderSlide();
       resetBlindMode();
     });
+let lastTap = 0; // Tempo dell'ultimo tap
+
+function handleDoubleConfirm(){
+  if(editingMode && !draggedElement){
+    editingMode = false;
+    callParticipant();  // Avvia la gara
+    showTemporaryMessage("Pista confermata! Inizio gara...", 2000);
+  }
+}
+
+
   </script>
 </body>
 </html>
