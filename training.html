@@ -138,7 +138,7 @@
     #closeChronoOverlay, #closeViewOverlay, #closeSaveResultOverlay {
       position: absolute;
       top: 10px; left: 10px;
-      background-color: #dc3545;
+      background-color: #8fa2f7;
       font-size: 14px;
       padding: 5px 10px;
       color: white;
@@ -147,13 +147,13 @@
       cursor: pointer;
     }
     #closeChronoOverlay:hover, #closeViewOverlay:hover, #closeSaveResultOverlay:hover {
-      background-color: #c82333;
+      background-color: #bdc9fb;
     }
     /* Leaderboard */
     .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
     .leaderboard { width: 80%; margin: 0 auto; }
     .leaderboard h2 { text-align: center; margin: 10px 0; }
-    ol { border: 1px solid #ccc; border-radius: 5px; list-style: decimal inside; min-height: 100px; padding: 10px; margin: 0; }
+    ol { border: 1px solid #999bf2; border-radius: 5px; list-style: decimal inside; min-height: 100px; padding: 10px; margin: 0; }
     li { padding: 5px 0; }
     /* Stili per il tutorial (slide) */
     .intro-overlay { }
@@ -184,7 +184,7 @@
 
     /* Pulsanti delete per le piste salvate */
     .deleteBtn {
-      background-color: #dc3545;
+      background-color: #999bf2;
       color: white;
       border: none;
       border-radius: 4px;
@@ -194,7 +194,7 @@
       cursor: pointer;
     }
     .deleteBtn:hover {
-      background-color: #c82333;
+      background-color: #cbcdf9;
     }
 
     @media (min-width: 768px) {
@@ -489,10 +489,10 @@
             minGate = 50 / 300 * canvas.width, 
             minTree = 30 / 520 * canvas.height, 
             minFinish = 50 / 300 * canvas.width, 
-            minStart = 20 / 520 * canvas.height;
+            minStart = 40 / 520 * canvas.height;
       while(arr.length < treeCount){
         let tx = margin + Math.random()*(canvas.width-2*margin);
-        let ty = 20 / 520 * canvas.height + Math.random()*(canvas.height - (20 / 520 * canvas.height) - margin);
+        let ty = 40 / 520 * canvas.height + Math.random()*(canvas.height - (40 / 520 * canvas.height) - margin);
         let closeGate = gArr.some(g=> Math.hypot(tx-g.x, ty-g.y) < minGate);
         let closeTrees = arr.some(t=> Math.hypot(tx-t.x, ty-t.y) < minTree);
         let closeFinish = isNearFinish(tx,ty,finishRect,minFinish);
