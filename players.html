@@ -997,6 +997,7 @@ function handleTouchEndEditor(e){
   drawTrack(currentTrack);
 }
 
+
 }// 3) Poi i NUOVI addEventListener:
 // 3) Poi i NUOVI addEventListener:
 if (!document._eventsAttached) {
@@ -1119,15 +1120,46 @@ function findNearestTree(x, y, maxDist) {
 
 function handleTouchStartEditor(e){
   e.preventDefault();
-  const { x,y } = getMouseCoords(e);
+  const { x, y } = getMouseCoords(e);
+  
+  // 1. Trova un gate vicino al punto toccato
+  let foundG = findNearestGate(x, y, 20);
+  if(foundG){
+    let g = gates[foundG.index];
+    draggedElement = {
+      type: 'gate',
+      index: foundG.index,
+      oldX: g.x,
+      oldY: g.y,
+      offsetX: g.x - x,
+      offsetY: g.y - y
+    };
+    return;
+  }
 
-  // (stessa logica di handleMouseDownEditor)
-  // ...
+  // 2. Se non è un gate, trova un albero vicino
+  let foundT = findNearestTree(x, y, 20);
+  if(foundT){
+    let t = trees[foundT.index];
+    draggedElement = {
+      type: 'tree',
+      index: foundT.index,
+      oldX: t.x,
+      oldY: t.y,
+      offsetX: t.x - x,
+      offsetY: t.y - y
+    };
+    return;
+  }
+
+  // 3. Se non trovi nulla, non c'è nulla da trascinare
+  draggedElement = null;
 }
+
 function handleTouchMoveEditor(e){
   e.preventDefault();
   if(!draggedElement) return;
-  const { x, y }= getMouseCoords(e);
+  const { x, y } = getMouseCoords(e);
   
   if(draggedElement.type === 'gate'){
     const gate = gates[draggedElement.index];
@@ -1143,12 +1175,13 @@ function handleTouchMoveEditor(e){
     gate.line.x2 = gate.x + dir * 200; // 200 è la lunghezza della linea come nel generateGates
     gate.line.y2 = gate.y;
     
-  } else {
+  } else if(draggedElement.type === 'tree'){
     const tree = trees[draggedElement.index];
     tree.x = x + draggedElement.offsetX;
     tree.y = y + draggedElement.offsetY;
   }
-  // Ridisegno la pista in tempo reale
+  
+  // Ridisegna la pista in tempo reale
   drawTrack(currentTrack);
 }
 
