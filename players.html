@@ -998,23 +998,26 @@ function handleTouchEndEditor(e){
 }
 
 }// 3) Poi i NUOVI addEventListener:
+// 3) Poi i NUOVI addEventListener:
 if (!document._eventsAttached) {
   // Eventi Mouse
   canvas.addEventListener('mousedown', handleMouseDown);
   canvas.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp); // Modificato da canvas a document
+  document.addEventListener('mouseup', handleMouseUp); // Mantieni il mouseup su document
 
   // Eventi Touch
   canvas.addEventListener('touchstart', handleTouchStart);
   canvas.addEventListener('touchmove', handleTouchMove);
-  document.addEventListener('touchend', handleTouchEnd); // Modificato da canvas a document
+  canvas.addEventListener('touchend', handleTouchEnd); // Sposta touchend su canvas
 
   // Doppio Click e Tap
   canvas.addEventListener('dblclick', handleDoubleConfirm, false);
-
+  // Rimuovi o commenta questa linea per evitare duplicazioni
+  // canvas.addEventListener('touchend', handleTouchEndForDoubleTap, false); // Gestione specifica per doppio tap
 
   document._eventsAttached = true;
 }
+
 function handleMouseDownEditor(e){
   const { x,y } = getMouseCoords(e);
 
