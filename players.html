@@ -561,6 +561,19 @@ let draggedElement = null;      // { type:'gate'|'tree', index, oldX, oldY, offs
     // Icona per il punto di partenza
     const startIcon = new Image();
     startIcon.src = "start.svg";  
+// Precaricamento dell'immagine dell'albero
+const treeImg = new Image();
+treeImg.src = "tree.svg"; // Assicurati che il percorso sia corretto
+
+treeImg.onload = () => {
+  console.log('Immagine dell\'albero caricata con successo.');
+  drawTrack(currentTrack); // Ridisegna la pista una volta caricata l'immagine
+};
+
+treeImg.onerror = () => {
+  console.error('Errore nel caricamento di tree.svg');
+};
+
     
     /* =======================================
        Funzioni Meteo (unificate)
@@ -745,17 +758,18 @@ let draggedElement = null;      // { type:'gate'|'tree', index, oldX, oldY, offs
       });
     }
     
-    function drawTrees(tArr){
-      const treeImg = new Image();
-      treeImg.src = './tree.svg';
-      treeImg.onload = () => {
-        tArr.forEach(t => {
-          const treeWidth = 12 / 300 * canvas.width;
-          const treeHeight = 20 / 520 * canvas.height;
-          ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
-        });
-      };
-    }
+function drawTrees(tArr){
+  if(!treeImg.complete){
+    console.warn('Immagine dell\'albero non ancora caricata.');
+    return;
+  }
+  tArr.forEach(t => {
+    const treeWidth = 12 / 300 * canvas.width;
+    const treeHeight = 20 / 520 * canvas.height;
+    ctx.drawImage(treeImg, t.x - treeWidth / 2, t.y - treeHeight, treeWidth, treeHeight);
+  });
+}
+
     
     /* =======================================
        Eventi Mouse / Touch (unificati)
