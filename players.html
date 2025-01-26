@@ -400,6 +400,8 @@ z-index: 9999;
     const PATH_LENGTH_SCALING = 500;
     const PENALTY_WEIGHT      = 0.5;
     const BORDER_THRESHOLD    = 5; // Considera "al bordo" se la traiettoria sta entro 5px dal limite del canvas.
+const MIN_VERTICAL_GAP = 30; // Distanza minima in pixel tra bandiere
+
     
     const canvas           = document.getElementById('canvas');
     const ctx              = canvas.getContext('2d');
@@ -1056,13 +1058,28 @@ function handleMouseDownEditor(e){
 }
 
 function handleMouseMoveEditor(e){
-  if(!draggedElement) return;
-  const { x, y }= getMouseCoords(e);
+  if(!draggedElement){
+    return;
+  }
+  const { x, y } = getMouseCoords(e);
+  console.log(`MouseMoveEditor a (${x}, ${y})`);
   
   if(draggedElement.type === 'gate'){
     const gate = gates[draggedElement.index];
+    
+    // Calcola i limiti verticali per questa bandiera
+    const { minY, maxY } = getVerticalLimits(draggedElement.index);
+    
+    // Calcola la nuova posizione y con gli offset
+    let newY = y + draggedElement.offsetY;
+    
+    // Applica i limiti verticali
+    newY = Math.max(newY, minY);
+    newY = Math.min(newY, maxY);
+    
+    // Aggiorna le coordinate della bandiera
     gate.x = x + draggedElement.offsetX;
-    gate.y = y + draggedElement.offsetY;
+    gate.y = newY;
     
     // Determina la direzione basata sul colore
     const dir = (gate.color === 'red') ? 1 : -1;
@@ -1070,15 +1087,18 @@ function handleMouseMoveEditor(e){
     // Aggiorna le coordinate della linea del gate
     gate.line.x1 = gate.x;
     gate.line.y1 = gate.y;
-    gate.line.x2 = gate.x + dir * 200; // 200 è la lunghezza della linea come nel generateGates
+    gate.line.x2 = gate.x + dir * 200;
     gate.line.y2 = gate.y;
     
-  } else {
+    console.log(`Gate aggiornato: (${gate.x}, ${gate.y})`);
+  } else if(draggedElement.type === 'tree'){
     const tree = trees[draggedElement.index];
     tree.x = x + draggedElement.offsetX;
     tree.y = y + draggedElement.offsetY;
+    console.log(`Albero aggiornato: (${tree.x}, ${tree.y})`);
   }
-  // Ridisegno la pista in tempo reale
+  
+  // Ridisegna la pista in tempo reale
   drawTrack(currentTrack);
 }
 
@@ -1158,13 +1178,29 @@ function handleTouchStartEditor(e){
 
 function handleTouchMoveEditor(e){
   e.preventDefault();
-  if(!draggedElement) return;
+  if(!draggedElement){
+    console.log("TouchMoveEditor senza elemento trascinato.");
+    return;
+  }
   const { x, y } = getMouseCoords(e);
-  
+  console.log(`TouchMoveEditor a (${x}, ${y})`);
+
   if(draggedElement.type === 'gate'){
     const gate = gates[draggedElement.index];
+    
+    // Calcola i limiti verticali per questa bandiera
+    const { minY, maxY } = getVerticalLimits(draggedElement.index);
+    
+    // Calcola la nuova posizione y con gli offset
+    let newY = y + draggedElement.offsetY;
+    
+    // Applica i limiti verticali
+    newY = Math.max(newY, minY);
+    newY = Math.min(newY, maxY);
+    
+    // Aggiorna le coordinate della bandiera
     gate.x = x + draggedElement.offsetX;
-    gate.y = y + draggedElement.offsetY;
+    gate.y = newY;
     
     // Determina la direzione basata sul colore
     const dir = (gate.color === 'red') ? 1 : -1;
@@ -1172,13 +1208,15 @@ function handleTouchMoveEditor(e){
     // Aggiorna le coordinate della linea del gate
     gate.line.x1 = gate.x;
     gate.line.y1 = gate.y;
-    gate.line.x2 = gate.x + dir * 200; // 200 è la lunghezza della linea come nel generateGates
+    gate.line.x2 = gate.x + dir * 200;
     gate.line.y2 = gate.y;
     
+    console.log(`Gate aggiornato: (${gate.x}, ${gate.y})`);
   } else if(draggedElement.type === 'tree'){
     const tree = trees[draggedElement.index];
     tree.x = x + draggedElement.offsetX;
     tree.y = y + draggedElement.offsetY;
+    console.log(`Albero aggiornato: (${tree.x}, ${tree.y})`);
   }
   
   // Ridisegna la pista in tempo reale
@@ -1186,19 +1224,35 @@ function handleTouchMoveEditor(e){
 }
 
 function checkEditorConstraints(dragged){
-  if(dragged.type==='gate'){
-    let g= gates[dragged.index];
-    if(! isValidGatePosition(g.x, g.y, dragged.index)){
-      // revert
-      g.x= dragged.oldX;
-      g.y= dragged.oldY;
+  if(dragged.type === 'gate'){
+    let g = gates[dragged.index];
+    const { minY, maxY } = getVerticalLimits(dragged.index);
+    
+    // Controlla se la posizione y è entro i limiti
+    if(g.y < minY || g.y > maxY || !isValidGatePosition(g.x, g.y, dragged.index)){
+      console.log("Posizione gate non valida. Revertendo...");
+      // Reverti alla posizione precedente
+      g.x = dragged.oldX;
+      g.y = dragged.oldY;
+      
+      // Aggiorna la linea del gate
+      const dir = (g.color === 'red') ? 1 : -1;
+      g.line.x1 = g.x;
+      g.line.y1 = g.y;
+      g.line.x2 = g.x + dir * 200;
+      g.line.y2 = g.y;
+    } else {
+      console.log("Posizione gate valida.");
     }
-  } else {
-    let t= trees[dragged.index];
-    if(! isValidTreePosition(t.x, t.y, dragged.index)){
-      // revert
-      t.x= dragged.oldX;
-      t.y= dragged.oldY;
+  } else if(dragged.type === 'tree'){
+    let t = trees[dragged.index];
+    if(!isValidTreePosition(t.x, t.y, dragged.index)){
+      console.log("Posizione albero non valida. Revertendo...");
+      // Reverti alla posizione precedente
+      t.x = dragged.oldX;
+      t.y = dragged.oldY;
+    } else {
+      console.log("Posizione albero valida.");
     }
   }
 }
@@ -1254,6 +1308,22 @@ function isValidTreePosition(x, y, idxTree){
   if(Math.hypot(x- startPoint.x, y- startPoint.y)< minStart) return false;
 
   return true;
+}
+function getVerticalLimits(index) {
+  let minY = 0;
+  let maxY = canvas.height;
+
+  if (index > 0) {
+    // La bandiera precedente determina il limite minimo
+    minY = gates[index - 1].y + MIN_VERTICAL_GAP;
+  }
+
+  if (index < gates.length - 1) {
+    // La bandiera successiva determina il limite massimo
+    maxY = gates[index + 1].y - MIN_VERTICAL_GAP;
+  }
+
+  return { minY, maxY };
 }
 
     function checkIntersections(){
