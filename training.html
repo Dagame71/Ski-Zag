@@ -63,6 +63,32 @@
       z-index: 9999;
     }
     button:hover { opacity: 0.7; }
+.button-disabled {
+  background-color: transparent; 
+  border: 0px solid #aaa; /* Bordo scuro per simulare effetto premuto */
+  color: transparent; /* Colore del testo */
+  cursor: not-allowed; /* Cambia il cursore */
+  opacity: 0.7; /* Rende il pulsante meno evidente */
+}
+.button-disabled:hover {
+  opacity: 0.7; /* Hover non cambia l'aspetto */
+}
+.play-button {
+  display: block;
+  margin: 20px auto 0; /* Sposta il pulsante verso il basso e lo centra */
+  background-color: #8fa2f7; /* Colore del pulsante */
+  font-size: 16px;
+  padding: 10px 20px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.play-button:hover {
+  background-color: #bdc9fb; /* Colore hover */
+}
 
     /* Posizionamento bottoni di controllo con percentuali */
     #sameTrack  { position: absolute; bottom: 1.15%; right: 16.67%; }
@@ -72,6 +98,20 @@
     #chronoButton { position: absolute; top: 1.92%; right: 3.33%; }
     #viewBtn { position: absolute; bottom: 1.15%; left: 33.33%; transform: translateX(-50%); }
     #saveResultBtn { position: absolute; bottom: 1.15%; left: 17.33%; }
+#challengeButton {
+  position: absolute;
+  bottom: 5%;
+  right: 44%;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 9999;
+}
+#challengeButton:hover {
+  opacity: 0.7;
+}
+
 
     /* Contenitore delle info */
     .info-container {
@@ -236,6 +276,9 @@
       <img src="cup.png" alt="Save Result" style="width:18px;height:18px;">
     </button>
   </div>
+<button id="challengeButton" title="Challenge Mode">
+  🏅
+</button>
 
   <!-- UNICA RIGA PER TUTTI I MESSAGGI (tempo + avvisi) -->
   <div class="info-container">
@@ -277,7 +320,13 @@
       <button id="saveResultConfirmBtn">Save Result</button>
     </div>
   </div>
-
+<div id="challengeIntroOverlay" class="overlay hidden">
+  <div class="overlay-content">
+    <h2>Welcome to the Solo Challenge!</h2>
+    <p>You have 3 attempts to beat the time and advance to the next track!</p>
+    <button id="closeChallengeIntroOverlay" class="play-button">Play!</button>
+  </div>
+</div>
   <!-- OVERLAY TUTORIAL -->
   <div id="tutorialOverlay" class="overlay" style="z-index: 1000;">
     <div class="overlay-content intro-overlay">
@@ -402,7 +451,9 @@
     let startPoint = { x: 150, y: 30 };
     let finishRect = { x: 130, y: 490, width: 40, height: 10 };
     let globalWind = Math.random() * 1 - 0.5;
-
+let isChallengeMode = false; // Se siamo in modalità Sfida
+let challengeBestTime = 0; // Tempo da battere
+let challengeAttempts = 0; // Tentativi usati
     // Tutorial slides
     let tutorialSlides = [
       { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
@@ -772,39 +823,111 @@ function drawTrees(tArr){
     }
 
     /* Fine run / fallimento run */
-    function finishRun(){
-      drawing = false;
-      didFinishOrFail = true;
-      let endTime = performance.now();
-      let elapsedTime = endTime - startTime;
-      let distPx = calculateDistance(pointsPath);
-      let baseTime = calculateFinalTime(elapsedTime, distPx);
-      let outPenaltyTotal = outPenaltyCount * 0.10;
-      let finalTime = baseTime + outPenaltyTotal;
-      // Mettiamo il tempo finale in "infoLine"
-      setMainLabel(`⏰${formatTime(finalTime)}${(outPenaltyTotal>0)?` (+${outPenaltyTotal.toFixed(2)})`:""}`);
-      
+function finishRun() {
+  drawing = false;
+  didFinishOrFail = true;
+  let endTime = performance.now();
+  let elapsedTime = endTime - startTime;
 
-      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-      updateBestTimes(finalTime, lastCompleteRun);
-      window.lastFinalTime = finalTime;
+  // Calcolo della distanza percorsa e del tempo finale
+  let distPx = calculateDistance(pointsPath);
+  let baseTime = calculateFinalTime(elapsedTime, distPx);
+  let outPenaltyTotal = outPenaltyCount * 0.10;
+  let finalTime = baseTime + outPenaltyTotal;
 
-      // Se la pista è salvata, aggiorna bestTimes in localStorage
-      if(currentTrackName !== ""){
-        savedTracks[currentTrackName].bestTimes = bestTimes;
-        storeSavedTracks();
+  // Memorizza l'ultima corsa completata
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+  window.lastFinalTime = finalTime;
+
+  // Modalità Sfida
+if (isChallengeMode) {
+  // Mostra il tempo del giocatore
+  setMainLabel(`Your time: ${formatTime(finalTime)}`);
+
+  // Verifica se il tempo è stato battuto
+  setTimeout(() => {
+    if (finalTime <= challengeBestTime) {
+      setMainLabel(`Success! You beat ${formatTime(challengeBestTime)}!`);
+      challengeAttempts = 3; // Reset tentativi
+      startNewChallenge(); // Genera una nuova pista
+    } else {
+      challengeAttempts--;
+      if (challengeAttempts > 0) {
+        setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+        setTimeout(() => {
+          clearCanvas(); // Ripulisce il canvas
+          drawTrack(currentTrack); // Ridisegna la stessa pista
+          setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+        }, 2000);
+      } else {
+        setMainLabel("Failed! Retry!");
+        challengeAttempts = 3; // Reset dei tentativi
+        startNewChallenge(); // Solo ora rigenera la pista
       }
-      // Reset dopo 2 secondi
-      setTimeout(()=>{ resetRun(); }, 2000);
     }
-    function failRun(msg){
-      drawing = false;
-      didFinishOrFail = true;
-      setMainLabel(msg);
-      lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-      // Reset dopo 2 secondi
-      setTimeout(()=>{ resetRun(); }, 2000);
+  }, 2000);
+}
+else {
+    // Modalità normale
+    setMainLabel(
+      `⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`
+    );
+    updateBestTimes(finalTime, lastCompleteRun);
+
+    // Aggiorna i migliori tempi in localStorage se la pista è salvata
+    if (currentTrackName !== "") {
+      savedTracks[currentTrackName].bestTimes = bestTimes;
+      storeSavedTracks();
     }
+  }
+
+  // Reset dopo 2 secondi (solo modalità normale)
+  if (!isChallengeMode) {
+    setTimeout(() => {
+      resetRun();
+    }, 2000);
+  }
+}
+
+
+function failRun(msg) {
+  drawing = false;
+  didFinishOrFail = true;
+  setMainLabel(msg);
+
+  // Salva la corsa completata anche se fallita
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+
+  if (isChallengeMode) {
+    // Modalità Sfida: considera l'errore come un tentativo fallito
+    challengeAttempts--; // Decrementa i tentativi rimanenti
+
+    setTimeout(() => {
+      if (challengeAttempts > 0) {
+        // Se ci sono tentativi rimanenti
+        setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+        setTimeout(() => {
+          clearCanvas(); // Ripulisce il canvas
+          drawTrack(currentTrack); // Ridisegna la stessa pista
+          setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+        }, 2000);
+      } else {
+        // Se i tentativi sono terminati
+        setMainLabel("Failed! Retry!");
+        setTimeout(() => {
+          startNewChallenge(); // Genera una nuova pista e un nuovo tempo da battere
+        }, 2000);
+      }
+    }, 2000);
+  } else {
+    // Modalità Normale: resetta semplicemente la corsa
+    setTimeout(() => {
+      resetRun(); // Resetta tutto come prima
+    }, 2000);
+  }
+}
+
+
     function calculateDistance(arr){
       let tot = 0;
       for(let i=1; i<arr.length; i++){
@@ -837,6 +960,60 @@ function drawTrees(tArr){
         }, 2000);
       }
     }
+function toggleChallengeMode() {
+  if (isChallengeMode) {
+    // Esci dalla modalità medaglia
+    isChallengeMode = false;
+    challengeAttempts = 0;
+    setMainLabel("⏰1'00\"000'''"); // Resetta il tempo
+    toggleButtonState(false); // Riattiva i pulsanti
+    alert("Exited Challenge Mode. Back to normal play.");
+  } else {
+    // Mostra il popup introduttivo
+    document.getElementById('challengeIntroOverlay').classList.remove('hidden');
+  }
+}
+document.getElementById('challengeButton').addEventListener('click', toggleChallengeMode);
+function toggleButtonState(disable) {
+  // Elenco dei pulsanti da disattivare
+  const buttonsToDisable = [
+    document.getElementById('chronoButton'), // Pulsante "Coppa"
+    document.getElementById('sameTrack'), // Pulsante "Neve/Non neve"
+    document.getElementById('quit'), // Pulsante "New Track"
+    document.getElementById('saveResultBtn') // Pulsante "Save Result"
+  ];
+
+  buttonsToDisable.forEach((button) => {
+    if (disable) {
+      button.disabled = true; // Disattiva il pulsante
+      button.classList.add('button-disabled'); // Aggiunge stile disattivato
+    } else {
+      button.disabled = false; // Riattiva il pulsante
+      button.classList.remove('button-disabled'); // Rimuove stile disattivato
+    }
+  });
+}
+
+
+function startNewChallenge() {
+  // Genera una nuova pista casuale
+  currentTrack = createTrack();
+  drawTrack(currentTrack);
+
+  // Calcola la lunghezza della traiettoria ideale
+  let idealLength = calculateIdealPath(currentTrack.gates);
+  challengeBestTime = calculateFinalTime(idealLength * 1.5, idealLength); // Tempo stimato con deviazione
+  setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+}
+function calculateIdealPath(gates) {
+  let length = 0;
+  for (let i = 1; i < gates.length; i++) {
+    let dx = gates[i].x - gates[i - 1].x;
+    let dy = gates[i].y - gates[i - 1].y;
+    length += Math.hypot(dx, dy);
+  }
+  return length;
+}
 
     /* Replay */
     function replayTrajectory(customPoints){
@@ -911,6 +1088,14 @@ function drawTrees(tArr){
     closeViewOverlay.addEventListener('click', ()=>{ viewOverlay.classList.add('hidden'); });
     saveResultBtn.addEventListener('click', ()=>{ saveResultOverlay.classList.remove('hidden'); });
     closeSaveResultOverlay.addEventListener('click', ()=>{ saveResultOverlay.classList.add('hidden'); });
+// Listener per il popup della modalità medaglia
+document.getElementById('closeChallengeIntroOverlay').addEventListener('click', () => {
+  document.getElementById('challengeIntroOverlay').classList.add('hidden');
+  isChallengeMode = true;
+  challengeAttempts = 3;
+  toggleButtonState(true);
+  startNewChallenge();
+});
     document.getElementById('saveResultConfirmBtn').addEventListener('click', ()=>{
       let name = document.getElementById('resultNameInput').value.trim();
       if(name===""){
