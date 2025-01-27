@@ -943,6 +943,7 @@ function showPointsPopup(points) {
   overlay.className = 'overlay';
 
   const content = document.createElement('div');
+ content.className = 'overlay-content'; // Aggiungi questa linea
   content.innerHTML = `
     <h2>Level #${currentLevel} Complete!</h2>
     <p>You earned <strong>${points} points</strong>!</p>
