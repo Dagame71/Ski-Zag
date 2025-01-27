@@ -369,10 +369,14 @@
     
     // Per gestire il testo base e i messaggi temporanei
     let mainLabel = "⏰1'00\"000'''";
-    function setMainLabel(text) {
-      mainLabel = text;
-      infoLine.innerHTML = text;
+  function setMainLabel(text) {
+    if (isChallengeMode && text.startsWith("⏰")) {
+        // Evita di impostare un messaggio che reimposta alla modalità normale
+        return;
     }
+    mainLabel = text;
+    infoLine.innerHTML = text;
+}
     function showTemporaryMessage(msg, duration=2000) {
       let old = mainLabel;
       infoLine.innerHTML = msg;
@@ -657,9 +661,11 @@ function handleMouseDown(e) {
             falseStartCount = 0;
         }
         // Ripristina il messaggio dopo 2 secondi
-        setTimeout(() => {
-            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-        }, 2000);
+      setTimeout(() => {
+    if (isChallengeMode && challengeBestTime > 0) {
+        setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+    }
+}, 2000);
         return;
     }
     falseStartCount = 0;
@@ -703,9 +709,11 @@ function handleTouchStart(e) {
     if (!isNearStartPoint(x, y)) {
         setMainLabel("You must start from the house icon!");
         // Ripristina il messaggio dopo 2 secondi
-        setTimeout(() => {
-            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-        }, 2000);
+      setTimeout(() => {
+    if (isChallengeMode && challengeBestTime > 0) {
+        setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+    }
+}, 2000);
         return;
     }
     falseStartCount = 0;
@@ -820,71 +828,76 @@ function handleTouchStart(e) {
     }
 
     /* Fine run / fallimento run */
-function finishRun() {
-  drawing = false;
-  didFinishOrFail = true;
-  let endTime = performance.now();
-  let elapsedTime = endTime - startTime;
+function finishRun() { 
+    drawing = false;
+    didFinishOrFail = true;
+    let endTime = performance.now();
+    let elapsedTime = endTime - startTime;
 
-  // Calcolo della distanza percorsa e del tempo finale
-  let distPx = calculateDistance(pointsPath);
-  let baseTime = calculateFinalTime(elapsedTime, distPx);
-  let outPenaltyTotal = outPenaltyCount * 0.10;
-  let finalTime = baseTime + outPenaltyTotal;
+    // Calcolo della distanza percorsa e del tempo finale
+    let distPx = calculateDistance(pointsPath);
+    let baseTime = calculateFinalTime(elapsedTime, distPx);
+    let outPenaltyTotal = outPenaltyCount * 0.10;
+    let finalTime = baseTime + outPenaltyTotal;
 
-  // Memorizza l'ultima corsa completata
-  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-  window.lastFinalTime = finalTime;
+    // Memorizza l'ultima corsa completata
+    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+    window.lastFinalTime = finalTime;
 
-  // Modalità Sfida
-if (isChallengeMode) {
-  // Mostra il tempo del giocatore
-  setMainLabel(`Your time: ${formatTime(finalTime)}`);
+    // Modalità Sfida
+    if (isChallengeMode) {
+        // Mostra il tempo del giocatore
+        setMainLabel(`Your time: ${formatTime(finalTime)}`);
 
-  // Verifica se il tempo è stato battuto
-  setTimeout(() => {
-    if (finalTime <= challengeBestTime) {
-      setMainLabel(`Success! You beat ${formatTime(challengeBestTime)}!`);
-      challengeAttempts = 3; // Reset tentativi
-      startNewChallenge(); // Genera una nuova pista
-    } else {
-      challengeAttempts--;
-      if (challengeAttempts > 0) {
-        setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+        // Verifica se il tempo è stato battuto
         setTimeout(() => {
-          clearCanvas(); // Ripulisce il canvas
-          drawTrack(currentTrack); // Ridisegna la stessa pista
-          setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+            if (isChallengeMode && finalTime <= challengeBestTime) {
+                setMainLabel(`Success! You beat ${formatTime(challengeBestTime)}!`);
+                challengeAttempts = 3; // Reset tentativi
+                startNewChallenge(); // Genera una nuova pista
+            } else if (isChallengeMode) {
+                challengeAttempts--;
+                if (challengeAttempts > 0) {
+                    setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+                    setTimeout(() => {
+                        if (isChallengeMode) {
+                            clearCanvas(); // Ripulisce il canvas
+                            drawTrack(currentTrack); // Ridisegna la stessa pista
+                            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+                        }
+                    }, 2000);
+                } else {
+                    setMainLabel("Failed! Retry!");
+                    setTimeout(() => {
+                        if (isChallengeMode) {
+                            startNewChallenge(); // Solo ora rigenera la pista
+                        }
+                    }, 2000);
+                }
+            }
         }, 2000);
-      } else {
-        setMainLabel("Failed! Retry!");
-        challengeAttempts = 3; // Reset dei tentativi
-        startNewChallenge(); // Solo ora rigenera la pista
-      }
-    }
-  }, 2000);
-}
-else {
-    // Modalità normale
-    setMainLabel(
-      `⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`
-    );
-    updateBestTimes(finalTime, lastCompleteRun);
+    } else {
+        // Modalità normale
+        setMainLabel(
+            `⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`
+        );
+        updateBestTimes(finalTime, lastCompleteRun);
 
-    // Aggiorna i migliori tempi in localStorage se la pista è salvata
-    if (currentTrackName !== "") {
-      savedTracks[currentTrackName].bestTimes = bestTimes;
-      storeSavedTracks();
+        // Aggiorna i migliori tempi in localStorage se la pista è salvata
+        if (currentTrackName !== "") {
+            savedTracks[currentTrackName].bestTimes = bestTimes;
+            storeSavedTracks();
+        }
     }
-  }
 
-  // Reset dopo 2 secondi (solo modalità normale)
-  if (!isChallengeMode) {
-    setTimeout(() => {
-      resetRun();
-    }, 2000);
-  }
+    // Reset dopo 2 secondi (solo modalità normale)
+    if (!isChallengeMode) {
+        setTimeout(() => {
+            resetRun();
+        }, 2000);
+    }
 }
+
 
 
 function failRun(msg) {
