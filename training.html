@@ -448,6 +448,10 @@ let challengeAttempts = 0; // Tentativi usati
 let isGeneratingChallenge = false; // Flag per la generazione della sfida
 let challengePoints = 0; // Punti totali accumulati
 let leaderboard = []; // Classifica globale per la modalità sfida
+let speed = 3.5; // Velocità iniziale
+const speedDecrement = 0.1; // Riduzione velocità per ogni livello
+let currentLevel = 1; // Livello corrente
+
     // Tutorial slides
     let tutorialSlides = [
       { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
@@ -857,6 +861,9 @@ function finishRun() {
 
         // Aggiorna la classifica
         updateLeaderboardChallenge(pointsEarned);
+// Qui inserisci le due chiamate
+            adjustSpeedForNextLevel(); // Aggiorna la velocità
+            startNewChallenge(); // Passa al prossimo livello
 
         // Mostra il popup con i punti guadagnati
         showPointsPopup(pointsEarned);
@@ -904,6 +911,32 @@ function showChallengeIntroPopup() {
     challengeIntroOverlay.classList.remove('hidden'); // Mostra il popup
   }
 }
+function showLeaderboardPopup() {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+
+  const content = document.createElement('div');
+  content.className = 'overlay-content';
+  content.innerHTML = `
+    <h2>Game Over!</h2>
+    <p>You reached <strong>Level #${currentLevel}</strong>.</p>
+    <p>Your total score: <strong>${challengePoints}</strong></p>
+    <button class="play-button">Play Again</button>
+  `;
+
+  content.querySelector('button').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    resetChallenge(); // Resetta la sfida
+    toggleChallengeMode(); // Torna al popup iniziale
+  });
+
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+}
+
+function adjustSpeedForNextLevel() {
+  speed = Math.max(1.0, speed - speedDecrement); // Riduce la velocità ma non scende sotto 1.0
+}
 
 function showPointsPopup(points) {
   const overlay = document.createElement('div');
@@ -920,6 +953,9 @@ function showPointsPopup(points) {
 
   content.querySelector('button').addEventListener('click', () => {
     document.body.removeChild(overlay);
+ currentLevel++; // Incrementa il livello
+    adjustSpeedForNextLevel(); // Aggiorna la velocità
+    startNewChallenge(); // Genera una nuova sfida
   });
 
   overlay.appendChild(content);
@@ -938,6 +974,7 @@ function failRun(msg) {
     challengeAttempts--;
 
     if (challengeAttempts > 0) {
+      // Ci sono ancora tentativi disponibili
       setTimeout(() => {
         setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
         setTimeout(() => {
@@ -949,9 +986,8 @@ function failRun(msg) {
     } else {
       // Fallimento al terzo tentativo
       setTimeout(() => {
-        showChallengeIntroPopup(); // Mostra il popup introduttivo
-        resetRun(); // Resetta la corsa per la nuova sfida
-        isChallengeMode = false; // Esce dalla modalità sfida per evitare conflitti
+        // Mostra il popup della classifica con il punteggio e livello raggiunti
+        showLeaderboardPopupWithPlayAgain();
       }, 1500);
     }
   } else {
@@ -960,6 +996,34 @@ function failRun(msg) {
     }, 2000);
   }
 }
+function resetChallenge() {
+  currentLevel = 1; // Resetta il livello
+  speed = 3.5; // Resetta la velocità
+  challengePoints = 0; // Resetta i punti
+}
+function showLeaderboardPopupWithPlayAgain() {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+
+  const content = document.createElement('div');
+  content.className = 'overlay-content';
+  content.innerHTML = `
+    <h2>Challenge Failed</h2>
+    <p>You reached Level <strong>${currentLevel}</strong> with <strong>${challengePoints}</strong> points.</p>
+    <button class="play-button">Play Again</button>
+  `;
+
+  content.querySelector('button').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    resetRun(); // Resetta il gioco
+    isChallengeMode = false; // Esce dalla modalità sfida
+    toggleChallengeMode(); // Torna alla modalità sfida
+  });
+
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+}
+
 function updateLeaderboardChallenge(pointsEarned) {
   leaderboard.push({ points: challengePoints, date: new Date() });
   leaderboard.sort((a, b) => b.points - a.points);
