@@ -92,25 +92,13 @@
 
     /* Posizionamento bottoni di controllo con percentuali */
     #sameTrack  { position: absolute; bottom: 1.15%; right: 16.67%; }
+ #challengeButton { position: absolute; bottom: 1.15%; right: 30%; }
     #replayButton { position: absolute; bottom: 0.96%; left: 3.33%; }
     #quit { position: absolute; bottom: 1.15%; right: 1.92%; }
     #homeBtn { position: absolute; top: 1.92%; left: 3.33%; }
     #chronoButton { position: absolute; top: 1.92%; right: 3.33%; }
     #viewBtn { position: absolute; bottom: 1.15%; left: 33.33%; transform: translateX(-50%); }
     #saveResultBtn { position: absolute; bottom: 1.15%; left: 17.33%; }
-#challengeButton {
-  position: absolute;
-  bottom: 5%;
-  right: 44%;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  z-index: 9999;
-}
-#challengeButton:hover {
-  opacity: 0.7;
-}
 
 
     /* Contenitore delle info */
@@ -275,11 +263,10 @@
     <button id="saveResultBtn" title="Save Result">
       <img src="cup.png" alt="Save Result" style="width:18px;height:18px;">
     </button>
-  </div>
 <button id="challengeButton" title="Challenge Mode">
-  🏅
+  <img src="medal.png" alt="Medal" style="width:19px;height:19px;">
 </button>
-
+ </div>
   <!-- UNICA RIGA PER TUTTI I MESSAGGI (tempo + avvisi) -->
   <div class="info-container">
     <p id="infoLine">⏰1'00"000'''</p>
@@ -656,34 +643,39 @@ function drawTrees(tArr){
     }
     function isNearStartPoint(x,y){ return (Math.hypot(x - startPoint.x, y - startPoint.y) <= 20 / 520 * canvas.height); }
 
-    function handleMouseDown(e){
-      let {x,y} = getMouseCoords(e);
-      if(!isNearStartPoint(x,y)){
+function handleMouseDown(e) {
+    let { x, y } = getMouseCoords(e);
+    if (!isNearStartPoint(x, y)) {
         falseStartCount++;
-        if(falseStartCount===1){
-          showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>', 1500);
-        } else if(falseStartCount===2){
-          showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>', 1500);
-        } else if(falseStartCount>=3){
-          setMainLabel('Run failed due to consecutive false starts!');
-          failRun("Run failed due to false starts.");
-          falseStartCount = 0;
+        if (falseStartCount === 1) {
+            showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">2nd attempt!</span>', 1500);
+        } else if (falseStartCount === 2) {
+            showTemporaryMessageHtml('<span style="color:red;">False start!</span> <span style="color:black;">Last attempt!</span>', 1500);
+        } else if (falseStartCount >= 3) {
+            setMainLabel('Run failed due to consecutive false starts!');
+            failRun("Run failed due to false starts.");
+            falseStartCount = 0;
         }
+        // Ripristina il messaggio dopo 2 secondi
+        setTimeout(() => {
+            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+        }, 2000);
         return;
-      }
-      falseStartCount = 0;
-      outPenaltyCount = 0;
-      isOut = false;
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      didFinishOrFail = false;
-
-      setMainLabel(""); // reset momentaneamente?
-      ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x,y);
     }
+    falseStartCount = 0;
+    outPenaltyCount = 0;
+    isOut = false;
+    drawing = true;
+    pointsPath = [];
+    startTime = performance.now();
+    didFinishOrFail = false;
+
+    setMainLabel(""); // reset momentaneamente?
+    ctx.beginPath();
+    pointsPath.push({ x, y, t: 0 });
+    ctx.moveTo(x, y);
+}
+
     function handleMouseMove(e){
       if(!drawing)return;
       let {x,y} = getMouseCoords(e);
@@ -705,26 +697,31 @@ function drawTrees(tArr){
       drawing = false;
       if(!didFinishOrFail){ failRun("Run interrupted!"); }
     }
-    function handleTouchStart(e){
-      e.preventDefault();
-      let {x,y} = getMouseCoords(e);
-      if(!isNearStartPoint(x,y)){
+function handleTouchStart(e) {
+    e.preventDefault();
+    let { x, y } = getMouseCoords(e);
+    if (!isNearStartPoint(x, y)) {
         setMainLabel("You must start from the house icon!");
+        // Ripristina il messaggio dopo 2 secondi
+        setTimeout(() => {
+            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+        }, 2000);
         return;
-      }
-      falseStartCount = 0;
-      outPenaltyCount = 0;
-      isOut = false;
-      drawing = true;
-      pointsPath = [];
-      startTime = performance.now();
-      didFinishOrFail = false;
-
-      setMainLabel("");
-      ctx.beginPath();
-      pointsPath.push({ x, y, t: 0 });
-      ctx.moveTo(x,y);
     }
+    falseStartCount = 0;
+    outPenaltyCount = 0;
+    isOut = false;
+    drawing = true;
+    pointsPath = [];
+    startTime = performance.now();
+    didFinishOrFail = false;
+
+    setMainLabel("");
+    ctx.beginPath();
+    pointsPath.push({ x, y, t: 0 });
+    ctx.moveTo(x, y);
+}
+
     function handleTouchMove(e){
       e.preventDefault();
       if(!drawing)return;
@@ -910,15 +907,15 @@ function failRun(msg) {
           clearCanvas(); // Ripulisce il canvas
           drawTrack(currentTrack); // Ridisegna la stessa pista
           setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-        }, 2000);
+        }, 1500);
       } else {
         // Se i tentativi sono terminati
         setMainLabel("Failed! Retry!");
         setTimeout(() => {
           startNewChallenge(); // Genera una nuova pista e un nuovo tempo da battere
-        }, 2000);
+        }, 1500);
       }
-    }, 2000);
+    }, 1500);
   } else {
     // Modalità Normale: resetta semplicemente la corsa
     setTimeout(() => {
