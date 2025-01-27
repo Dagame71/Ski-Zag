@@ -1012,7 +1012,7 @@ function startNewChallenge() {
 
   // Calcola la lunghezza della traiettoria ideale
   let idealLength = calculateIdealPath(currentTrack.gates);
-  challengeBestTime = calculateFinalTime(idealLength * 1.2, idealLength); // Tempo stimato con deviazione
+  challengeBestTime = calculateFinalTime(idealLength * 2.0, idealLength); // Tempo stimato con deviazione
   setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
 }
 function calculateIdealPath(gates) {
