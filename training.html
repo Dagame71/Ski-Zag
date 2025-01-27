@@ -445,6 +445,9 @@
 let isChallengeMode = false; // Se siamo in modalità Sfida
 let challengeBestTime = 0; // Tempo da battere
 let challengeAttempts = 0; // Tentativi usati
+let isGeneratingChallenge = false; // Flag per la generazione della sfida
+let challengePoints = 0; // Punti totali accumulati
+let leaderboard = []; // Classifica globale per la modalità sfida
     // Tutorial slides
     let tutorialSlides = [
       { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
@@ -828,76 +831,100 @@ function handleTouchStart(e) {
     }
 
     /* Fine run / fallimento run */
-function finishRun() { 
-    drawing = false;
-    didFinishOrFail = true;
-    let endTime = performance.now();
-    let elapsedTime = endTime - startTime;
+function finishRun() {
+  drawing = false;
+  didFinishOrFail = true;
 
-    // Calcolo della distanza percorsa e del tempo finale
-    let distPx = calculateDistance(pointsPath);
-    let baseTime = calculateFinalTime(elapsedTime, distPx);
-    let outPenaltyTotal = outPenaltyCount * 0.10;
-    let finalTime = baseTime + outPenaltyTotal;
+  let endTime = performance.now();
+  let elapsedTime = endTime - startTime;
 
-    // Memorizza l'ultima corsa completata
-    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-    window.lastFinalTime = finalTime;
+  let distPx = calculateDistance(pointsPath);
+  let baseTime = calculateFinalTime(elapsedTime, distPx);
+  let outPenaltyTotal = outPenaltyCount * 0.10;
+  let finalTime = baseTime + outPenaltyTotal;
 
-    // Modalità Sfida
-    if (isChallengeMode) {
-        // Mostra il tempo del giocatore
-        setMainLabel(`Your time: ${formatTime(finalTime)}`);
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+  window.lastFinalTime = finalTime;
 
-        // Verifica se il tempo è stato battuto
-        setTimeout(() => {
-            if (isChallengeMode && finalTime <= challengeBestTime) {
-                setMainLabel(`Success! You beat ${formatTime(challengeBestTime)}!`);
-                challengeAttempts = 3; // Reset tentativi
-                startNewChallenge(); // Genera una nuova pista
-            } else if (isChallengeMode) {
-                challengeAttempts--;
-                if (challengeAttempts > 0) {
-                    setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
-                    setTimeout(() => {
-                        if (isChallengeMode) {
-                            clearCanvas(); // Ripulisce il canvas
-                            drawTrack(currentTrack); // Ridisegna la stessa pista
-                            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-                        }
-                    }, 2000);
-                } else {
-                    setMainLabel("Failed! Retry!");
-                    setTimeout(() => {
-                        if (isChallengeMode) {
-                            startNewChallenge(); // Solo ora rigenera la pista
-                        }
-                    }, 2000);
-                }
-            }
-        }, 2000);
-    } else {
-        // Modalità normale
-        setMainLabel(
-            `⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`
-        );
-        updateBestTimes(finalTime, lastCompleteRun);
+  if (isChallengeMode) {
+    setMainLabel(`Your time: ${formatTime(finalTime)}`);
 
-        // Aggiorna i migliori tempi in localStorage se la pista è salvata
-        if (currentTrackName !== "") {
-            savedTracks[currentTrackName].bestTimes = bestTimes;
-            storeSavedTracks();
+    setTimeout(() => {
+      if (finalTime <= challengeBestTime) {
+        // Calcola i punti in base al tentativo
+        let pointsEarned = challengeAttempts;
+        challengePoints += pointsEarned;
+
+        // Aggiorna la classifica
+        updateLeaderboardChallenge(pointsEarned);
+
+        // Mostra il popup con i punti guadagnati
+        showPointsPopup(pointsEarned);
+
+        // Resetta e genera una nuova sfida
+        challengeAttempts = 3;
+        startNewChallenge();
+      } else {
+        challengeAttempts--;
+
+        if (challengeAttempts > 0) {
+          setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+          setTimeout(() => {
+            clearCanvas();
+            drawTrack(currentTrack);
+            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+          }, 2000);
+        } else {
+          setMainLabel("Failed! Retry!");
+          setTimeout(() => {
+            showChallengeIntroPopup(); // Mostra il popup introduttivo
+          }, 2000);
         }
-    }
+      }
+    }, 2000);
+  } else {
+    setMainLabel(`⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`);
+    updateBestTimes(finalTime, lastCompleteRun);
 
-    // Reset dopo 2 secondi (solo modalità normale)
-    if (!isChallengeMode) {
-        setTimeout(() => {
-            resetRun();
-        }, 2000);
+    if (currentTrackName !== "") {
+      savedTracks[currentTrackName].bestTimes = bestTimes;
+      storeSavedTracks();
     }
+  }
+
+  if (!isChallengeMode) {
+    setTimeout(() => {
+      resetRun();
+    }, 2000);
+  }
+}
+function showChallengeIntroPopup() {
+  const challengeIntroOverlay = document.getElementById('challengeIntroOverlay');
+  if (challengeIntroOverlay) {
+    challengeIntroOverlay.classList.remove('hidden'); // Mostra il popup
+  }
 }
 
+function showPointsPopup(points) {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+
+  const content = document.createElement('div');
+  content.className = 'overlay-content';
+  content.innerHTML = `
+    <h2>Level Complete!</h2>
+    <p>You earned <strong>${points} points</strong>!</p>
+    <p>Total Points: <strong>${challengePoints}</strong></p>
+    <button class="play-button">Next Level</button>
+  `;
+
+  content.querySelector('button').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+  });
+
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+}
 
 
 function failRun(msg) {
@@ -905,38 +932,39 @@ function failRun(msg) {
   didFinishOrFail = true;
   setMainLabel(msg);
 
-  // Salva la corsa completata anche se fallita
   lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
 
   if (isChallengeMode) {
-    // Modalità Sfida: considera l'errore come un tentativo fallito
-    challengeAttempts--; // Decrementa i tentativi rimanenti
+    challengeAttempts--;
 
-    setTimeout(() => {
-      if (challengeAttempts > 0) {
-        // Se ci sono tentativi rimanenti
+    if (challengeAttempts > 0) {
+      setTimeout(() => {
         setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
         setTimeout(() => {
-          clearCanvas(); // Ripulisce il canvas
-          drawTrack(currentTrack); // Ridisegna la stessa pista
+          clearCanvas();
+          drawTrack(currentTrack);
           setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
         }, 1500);
-      } else {
-        // Se i tentativi sono terminati
-        setMainLabel("Failed! Retry!");
-        setTimeout(() => {
-          startNewChallenge(); // Genera una nuova pista e un nuovo tempo da battere
-        }, 1500);
-      }
-    }, 1500);
+      }, 1500);
+    } else {
+      // Fallimento al terzo tentativo
+      setTimeout(() => {
+        showChallengeIntroPopup(); // Mostra il popup introduttivo
+        resetRun(); // Resetta la corsa per la nuova sfida
+        isChallengeMode = false; // Esce dalla modalità sfida per evitare conflitti
+      }, 1500);
+    }
   } else {
-    // Modalità Normale: resetta semplicemente la corsa
     setTimeout(() => {
-      resetRun(); // Resetta tutto come prima
+      resetRun();
     }, 2000);
   }
 }
-
+function updateLeaderboardChallenge(pointsEarned) {
+  leaderboard.push({ points: challengePoints, date: new Date() });
+  leaderboard.sort((a, b) => b.points - a.points);
+  if (leaderboard.length > 10) leaderboard.length = 10; // Limita la classifica a 10 record
+}
 
     function calculateDistance(arr){
       let tot = 0;
@@ -1006,6 +1034,9 @@ function toggleButtonState(disable) {
 
 
 function startNewChallenge() {
+  if (isGeneratingChallenge) return; // Evita che venga chiamata più volte
+  isGeneratingChallenge = true; // Imposta il flag a true
+
   // Genera una nuova pista casuale
   currentTrack = createTrack();
   drawTrack(currentTrack);
@@ -1013,8 +1044,18 @@ function startNewChallenge() {
   // Calcola la lunghezza della traiettoria ideale
   let idealLength = calculateIdealPath(currentTrack.gates);
   challengeBestTime = calculateFinalTime(idealLength * 2.0, idealLength); // Tempo stimato con deviazione
+
+  // Reset dei tentativi
+  challengeAttempts = 3;
+
   setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+
+  // Disattiva il flag una volta completata la logica
+  setTimeout(() => {
+    isGeneratingChallenge = false;
+  }, 500); // Aspetta mezzo secondo per completare le operazioni
 }
+
 function calculateIdealPath(gates) {
   let length = 0;
   for (let i = 1; i < gates.length; i++) {
