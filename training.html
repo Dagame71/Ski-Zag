@@ -943,9 +943,8 @@ function showPointsPopup(points) {
   overlay.className = 'overlay';
 
   const content = document.createElement('div');
-  content.className = 'overlay-content';
   content.innerHTML = `
-    <h2>Level Complete!</h2>
+    <h2>Level #${currentLevel} Complete!</h2>
     <p>You earned <strong>${points} points</strong>!</p>
     <p>Total Points: <strong>${challengePoints}</strong></p>
     <button class="play-button">Next Level</button>
@@ -953,14 +952,15 @@ function showPointsPopup(points) {
 
   content.querySelector('button').addEventListener('click', () => {
     document.body.removeChild(overlay);
- currentLevel++; // Incrementa il livello
-    adjustSpeedForNextLevel(); // Aggiorna la velocità
-    startNewChallenge(); // Genera una nuova sfida
+    currentLevel++; // Incrementa il livello una sola volta
+    adjustSpeedForNextLevel(); // Riduce la velocità per il prossimo livello
+    startNewChallenge(); // Passa al livello successivo
   });
 
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 }
+
 
 
 function failRun(msg) {
@@ -986,8 +986,14 @@ function failRun(msg) {
     } else {
       // Fallimento al terzo tentativo
       setTimeout(() => {
-        // Mostra il popup della classifica con il punteggio e livello raggiunti
-        showLeaderboardPopupWithPlayAgain();
+        if (challengePoints > 0) {
+          // Mostra la classifica con il punteggio e livello raggiunti
+          showLeaderboardPopupWithPlayAgain();
+        } else {
+          // Se non ci sono punti, torna al popup iniziale
+          showChallengeIntroPopup();
+        }
+        isChallengeMode = false; // Esce dalla modalità sfida
       }, 1500);
     }
   } else {
@@ -996,6 +1002,7 @@ function failRun(msg) {
     }, 2000);
   }
 }
+
 function resetChallenge() {
   currentLevel = 1; // Resetta il livello
   speed = 3.5; // Resetta la velocità
@@ -1015,14 +1022,14 @@ function showLeaderboardPopupWithPlayAgain() {
 
   content.querySelector('button').addEventListener('click', () => {
     document.body.removeChild(overlay);
-    resetRun(); // Resetta il gioco
-    isChallengeMode = false; // Esce dalla modalità sfida
-    toggleChallengeMode(); // Torna alla modalità sfida
+    resetChallenge(); // Resetta la sfida
+    toggleChallengeMode(); // Torna al popup iniziale
   });
 
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 }
+
 
 function updateLeaderboardChallenge(pointsEarned) {
   leaderboard.push({ points: challengePoints, date: new Date() });
@@ -1098,27 +1105,30 @@ function toggleButtonState(disable) {
 
 
 function startNewChallenge() {
-  if (isGeneratingChallenge) return; // Evita che venga chiamata più volte
-  isGeneratingChallenge = true; // Imposta il flag a true
+    if (isGeneratingChallenge) return; // Evita che venga chiamata più volte
+    isGeneratingChallenge = true; // Imposta il flag a true
 
-  // Genera una nuova pista casuale
-  currentTrack = createTrack();
-  drawTrack(currentTrack);
+    adjustSpeedForNextLevel(); // Aggiorna la velocità per il livello successivo
 
-  // Calcola la lunghezza della traiettoria ideale
-  let idealLength = calculateIdealPath(currentTrack.gates);
-  challengeBestTime = calculateFinalTime(idealLength * 3.5, idealLength); // Tempo stimato con deviazione
+    // Genera una nuova pista casuale
+    currentTrack = createTrack();
+    drawTrack(currentTrack);
 
-  // Reset dei tentativi
-  challengeAttempts = 3;
+    // Calcola la lunghezza della traiettoria ideale
+    let idealLength = calculateIdealPath(currentTrack.gates);
+    challengeBestTime = calculateFinalTime(idealLength * 3.5, idealLength); // Tempo stimato con deviazione
 
-  setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+    // Reset dei tentativi
+    challengeAttempts = 3;
 
-  // Disattiva il flag una volta completata la logica
-  setTimeout(() => {
-    isGeneratingChallenge = false;
-  }, 500); // Aspetta mezzo secondo per completare le operazioni
+    setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+
+    // Disattiva il flag una volta completata la logica
+    setTimeout(() => {
+        isGeneratingChallenge = false;
+    }, 500);
 }
+
 
 function calculateIdealPath(gates) {
   let length = 0;
