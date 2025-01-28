@@ -836,70 +836,82 @@ function handleTouchStart(e) {
 
     /* Fine run / fallimento run */
 function finishRun() {
-  drawing = false;
-  didFinishOrFail = true;
+    drawing = false;
+    didFinishOrFail = true;
 
-  let endTime = performance.now();
-  let elapsedTime = endTime - startTime;
+    let endTime = performance.now();
+    let elapsedTime = endTime - startTime;
 
-  let distPx = calculateDistance(pointsPath);
-  let baseTime = calculateFinalTime(elapsedTime, distPx);
-  let outPenaltyTotal = outPenaltyCount * 0.10;
-  let finalTime = baseTime + outPenaltyTotal;
+    let distPx = calculateDistance(pointsPath);
+    let baseTime = calculateFinalTime(elapsedTime, distPx);
+    let outPenaltyTotal = outPenaltyCount * 0.10;
+    let finalTime = baseTime + outPenaltyTotal;
 
-  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-  window.lastFinalTime = finalTime;
+    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+    window.lastFinalTime = finalTime;
 
-if (isChallengeMode) {
-    setMainLabel(`Your time: ${formatTime(finalTime)}`);
+    if (isChallengeMode) {
+        setMainLabel(`Your time: ${formatTime(finalTime)}`);
 
-    setTimeout(() => {
-      if (finalTime <= challengeBestTime) {
-        // Caso di successo
-        let pointsEarned = challengeAttempts;
-        challengePoints += pointsEarned;
-        updateLeaderboardChallenge(pointsEarned);
-        adjustSpeedForNextLevel();
-        showPointsPopup(pointsEarned);
-        challengeAttempts = 3;
-        startNewChallenge();
-      } else {
-        // Caso di fallimento nel battimento del tempo
-        challengeAttempts--;
+        setTimeout(() => {
+            if (finalTime <= challengeBestTime) {
+                // Caso di successo
+                let differenceInCents = Math.max(0, Math.floor((challengeBestTime - finalTime) * 100));
+                let multiplier = challengeAttempts; // 3, 2, 1 per i tentativi rimanenti
+                let pointsEarned = differenceInCents * multiplier;
 
-        if (challengeAttempts > 0) {
-          setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
-          setTimeout(() => {
-            clearCanvas();
-            drawTrack(currentTrack);
-updateWeatherForChallenge(); // Aggiorna il meteo
-            setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-          }, 2000);
-        } else {
-          setMainLabel("Failed! Retry!");
-          setTimeout(() => {
-            showLeaderboardPopupWithPlayAgain(); // Correzione: mostra popup riassuntivo
-            isChallengeMode = false; // Esce dalla modalità sfida
-          }, 2000);
+                // Aggiungi i punti al totale
+                challengePoints += pointsEarned;
+
+                // Aggiorna la leaderboard e prepara il prossimo livello
+                updateLeaderboardChallenge(pointsEarned);
+                adjustSpeedForNextLevel();
+                showPointsPopup(pointsEarned);
+
+                // Ripristina i tentativi e avvia una nuova sfida
+                challengeAttempts = 3;
+                startNewChallenge();
+            } else {
+                // Caso di fallimento nel battere il tempo
+                challengeAttempts--; // Riduci i tentativi
+
+                if (challengeAttempts > 0) {
+                    // Se ci sono tentativi rimanenti
+                    setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+                    setTimeout(() => {
+                        clearCanvas();
+                        drawTrack(currentTrack);
+                        updateWeatherForChallenge(); // Cambia meteo per la nuova prova
+                        setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+                    }, 2000);
+                } else {
+                    // Se i tentativi sono esauriti
+                    setMainLabel("Failed! Retry!");
+                    setTimeout(() => {
+                        showLeaderboardPopupWithPlayAgain(); // Mostra il popup finale
+                        isChallengeMode = false; // Esce dalla modalità Challenge
+                    }, 2000);
+                }
+            }
+        }, 2000);
+    } else {
+        // Modalità normale
+        setMainLabel(`⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`);
+        updateBestTimes(finalTime, lastCompleteRun);
+
+        if (currentTrackName !== "") {
+            savedTracks[currentTrackName].bestTimes = bestTimes;
+            storeSavedTracks();
         }
-      }
-    }, 2000);
-  } else {
-    setMainLabel(`⏰${formatTime(finalTime)}${outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""}`);
-    updateBestTimes(finalTime, lastCompleteRun);
-
-    if (currentTrackName !== "") {
-      savedTracks[currentTrackName].bestTimes = bestTimes;
-      storeSavedTracks();
     }
-  }
 
-  if (!isChallengeMode) {
-    setTimeout(() => {
-      resetRun();
-    }, 2000);
-  }
+    if (!isChallengeMode) {
+        setTimeout(() => {
+            resetRun();
+        }, 2000);
+    }
 }
+
 function showChallengeIntroPopup() {
   const challengeIntroOverlay = document.getElementById('challengeIntroOverlay');
   if (challengeIntroOverlay) {
