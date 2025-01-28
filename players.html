@@ -94,7 +94,7 @@ z-index: 9999;
       padding: 0.5em 0.8em; /* Padding relativo */
       position: absolute;
 z-index: 9999;
-      bottom: 0%; 
+      bottom: 1%; 
       left: 90%; /* Posizionato relativamente alla larghezza */
       transform: translateX(-50%);
       cursor: pointer;
@@ -177,6 +177,15 @@ z-index: 9999;
     #closeOverlay:hover { 
       background-color: #bdc9fb; 
     }
+/* Definizione dell'animazione lampeggiante */
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+/* Classe per applicare l'animazione */
+.blinking {
+  animation: blinker 1s linear infinite;
+}
     /* Leaderboard */
     .leaderboard-container { 
       display: block; 
@@ -413,10 +422,18 @@ const MIN_VERTICAL_GAP = 30; // Distanza minima in pixel tra bandiere
     let mainLabel = "";
 
     // Comodità: funzione per aggiornare il “label principale”
-    function setMainLabel(label) {
-      mainLabel = label;
-      infoLine.innerHTML = label; // possiamo usare .textContent se non serve HTML
-    }
+   function setMainLabel(label) {
+  mainLabel = label;
+  infoLine.innerHTML = label; // Possiamo usare .textContent se non serve HTML
+
+  // Controlla se il label è "Double tap to start!"
+  if (label === "Double tap to start!") {
+    infoLine.classList.add('blinking');
+  } else {
+    infoLine.classList.remove('blinking');
+  }
+}
+
 
     // Messaggio temporaneo in testo semplice
     function showTemporaryMessage(msg, duration = 2000) {
@@ -1829,7 +1846,11 @@ function callParticipant(){
       drawing = false;
       pointsPath = [];
       intersectedGates.clear();
-      setMainLabel(`⏰1'00"000'''`); // default iniziale 
+      if (editingMode) {
+    setMainLabel("Double tap to start!");
+  } else {
+    setMainLabel(`⏰1'00"000'''`); // messaggio predefinito 
+  }
       resetBlindMode();
       clearCanvas();
       if(track) drawTrack(track);
@@ -1949,6 +1970,7 @@ function callParticipant(){
   attemptCount = 0;
   runNumber = 1;
   editingMode = true;
+resetTrack(currentTrack); // Chiama resetTrack dopo aver impostato editingMode su true
 }
 
     
