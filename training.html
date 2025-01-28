@@ -850,28 +850,21 @@ function finishRun() {
   lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
   window.lastFinalTime = finalTime;
 
-  if (isChallengeMode) {
+if (isChallengeMode) {
     setMainLabel(`Your time: ${formatTime(finalTime)}`);
 
     setTimeout(() => {
       if (finalTime <= challengeBestTime) {
-        // Calcola i punti in base al tentativo
+        // Caso di successo
         let pointsEarned = challengeAttempts;
         challengePoints += pointsEarned;
-
-        // Aggiorna la classifica
         updateLeaderboardChallenge(pointsEarned);
-// Qui inserisci le due chiamate
-            adjustSpeedForNextLevel(); // Aggiorna la velocità
-            startNewChallenge(); // Passa al prossimo livello
-
-        // Mostra il popup con i punti guadagnati
+        adjustSpeedForNextLevel();
         showPointsPopup(pointsEarned);
-
-        // Resetta e genera una nuova sfida
         challengeAttempts = 3;
         startNewChallenge();
       } else {
+        // Caso di fallimento nel battimento del tempo
         challengeAttempts--;
 
         if (challengeAttempts > 0) {
@@ -879,12 +872,14 @@ function finishRun() {
           setTimeout(() => {
             clearCanvas();
             drawTrack(currentTrack);
+updateWeatherForChallenge(); // Aggiorna il meteo
             setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
           }, 2000);
         } else {
           setMainLabel("Failed! Retry!");
           setTimeout(() => {
-            showChallengeIntroPopup(); // Mostra il popup introduttivo
+            showLeaderboardPopupWithPlayAgain(); // Correzione: mostra popup riassuntivo
+            isChallengeMode = false; // Esce dalla modalità sfida
           }, 2000);
         }
       }
@@ -943,7 +938,7 @@ function showPointsPopup(points) {
   overlay.className = 'overlay';
 
   const content = document.createElement('div');
- content.className = 'overlay-content'; // Aggiungi questa linea
+  content.className = 'overlay-content'; // Assicurati che questa linea sia presente
   content.innerHTML = `
     <h2>Level #${currentLevel} Complete!</h2>
     <p>You earned <strong>${points} points</strong>!</p>
@@ -964,6 +959,7 @@ function showPointsPopup(points) {
 
 
 
+
 function failRun(msg) {
   drawing = false;
   didFinishOrFail = true;
@@ -971,7 +967,7 @@ function failRun(msg) {
 
   lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
 
-  if (isChallengeMode) {
+ if (isChallengeMode) {
     challengeAttempts--;
 
     if (challengeAttempts > 0) {
@@ -981,19 +977,14 @@ function failRun(msg) {
         setTimeout(() => {
           clearCanvas();
           drawTrack(currentTrack);
+ updateWeatherForChallenge(); // Aggiorna il meteo
           setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
         }, 1500);
       }, 1500);
     } else {
-      // Fallimento al terzo tentativo
+      // Fallimento al terzo tentativo: mostra sempre il popup riassuntivo
       setTimeout(() => {
-        if (challengePoints > 0) {
-          // Mostra la classifica con il punteggio e livello raggiunti
-          showLeaderboardPopupWithPlayAgain();
-        } else {
-          // Se non ci sono punti, torna al popup iniziale
-          showChallengeIntroPopup();
-        }
+        showLeaderboardPopupWithPlayAgain(); // Correzione: mostra popup riassuntivo
         isChallengeMode = false; // Esce dalla modalità sfida
       }, 1500);
     }
@@ -1087,10 +1078,11 @@ document.getElementById('challengeButton').addEventListener('click', toggleChall
 function toggleButtonState(disable) {
   // Elenco dei pulsanti da disattivare
   const buttonsToDisable = [
-    document.getElementById('chronoButton'), // Pulsante "Coppa"
-    document.getElementById('sameTrack'), // Pulsante "Neve/Non neve"
-    document.getElementById('quit'), // Pulsante "New Track"
-    document.getElementById('saveResultBtn') // Pulsante "Save Result"
+ document.getElementById('chronoButton'), // Pulsante "Top 5"
+    document.getElementById('sameTrack'),   // Pulsante "Neve/Non neve"
+    document.getElementById('quit'),        // Pulsante "New Track"
+    document.getElementById('saveResultBtn'), // Pulsante "Save Result"
+    document.getElementById('viewBtn')     // Pulsante "View / Save Track"
   ];
 
   buttonsToDisable.forEach((button) => {
@@ -1114,10 +1106,11 @@ function startNewChallenge() {
     // Genera una nuova pista casuale
     currentTrack = createTrack();
     drawTrack(currentTrack);
-
+    // Aggiorna il meteo per la nuova sfida
+    updateWeatherForChallenge();
     // Calcola la lunghezza della traiettoria ideale
     let idealLength = calculateIdealPath(currentTrack.gates);
-    challengeBestTime = calculateFinalTime(idealLength * 3.5, idealLength); // Tempo stimato con deviazione
+    challengeBestTime = calculateFinalTime(idealLength * 4.0, idealLength); // Tempo stimato con deviazione
 
     // Reset dei tentativi
     challengeAttempts = 3;
@@ -1139,6 +1132,19 @@ function calculateIdealPath(gates) {
     length += Math.hypot(dx, dy);
   }
   return length;
+}
+function updateWeatherForChallenge() {
+    weatherState = chooseWeatherState(weatherState);
+    applyWeatherState(weatherState);
+    if(!snowLocked){
+        if(showSnow){
+            snowCanvas.classList.remove('hidden');
+            initSnow();
+            updateSnow();
+        } else {
+            snowCanvas.classList.add('hidden');
+        }
+    }
 }
 
     /* Replay */
@@ -1212,7 +1218,12 @@ function calculateIdealPath(gates) {
       viewOverlay.classList.remove('hidden');
     });
     closeViewOverlay.addEventListener('click', ()=>{ viewOverlay.classList.add('hidden'); });
-    saveResultBtn.addEventListener('click', ()=>{ saveResultOverlay.classList.remove('hidden'); });
+    saveResultBtn.addEventListener('click', ()=>{ 
+  if (isChallengeMode) {
+    alert('Save Result is disabled in Challenge Mode.');
+    return;
+  }
+saveResultOverlay.classList.remove('hidden'); });
     closeSaveResultOverlay.addEventListener('click', ()=>{ saveResultOverlay.classList.add('hidden'); });
 // Listener per il popup della modalità medaglia
 document.getElementById('closeChallengeIntroOverlay').addEventListener('click', () => {
