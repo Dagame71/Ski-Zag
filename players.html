@@ -477,7 +477,12 @@ const MIN_VERTICAL_GAP = 30; // Distanza minima in pixel tra bandiere
     let replaySnowState   = false; // Per memorizzare lo stato della neve
     // Nuova variabile per gestire i colpi con l'albero
     let treeHits = {}; // Es.: treeHits["Mario"] = numero di impatti consecutivi
-    
+    let longPressTimer = null;
+const LONG_PRESS_DURATION = 1000; // 2 secondi
+const LONG_PRESS_MOVE_THRESHOLD = 10; // Pixels di spostamento massimo consentito
+let touchStartPos = { x: 0, y: 0 };
+let touchMoved = false;
+
     // Impostazioni canvas e coordinate di partenza/arrivo
     let startPoint = { x:150, y:30 };
     let finishRect = { x:130, y:490, width:40, height:10 };
@@ -942,7 +947,13 @@ function handleMouseUp(e){
     handleMouseUpGame(e);
   }
 }
-function handleMouseUpEditor(e){
+function handleMouseUpEditor(e){ 
+  // Annulla il timer del long press se è ancora attivo
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+
   if(!draggedElement) {
     console.log("Nessun elemento era stato trascinato.");
     return;
@@ -995,7 +1006,16 @@ function handleTouchEnd(e){
   } else {
     handleTouchEndGame(e);
   }
+}
 function handleTouchEndEditor(e){
+  e.preventDefault();
+  
+  // Annulla il timer del long press se è ancora attivo
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+
   if(!draggedElement) {
     console.log("Nessun elemento era stato trascinato.");
     return;
@@ -1013,8 +1033,30 @@ function handleTouchEndEditor(e){
   drawTrack(currentTrack);
 }
 
+function addTree(x, y) {
+  if (!editingMode) return;
 
-}// 3) Poi i NUOVI addEventListener:
+  // Verifica se durante il long press l'utente non stava trascinando
+  if (touchMoved) {
+    return; // Non aggiungere un albero se l'utente stava trascinando
+  }
+
+  // Verifica se la posizione è valida per aggiungere un albero
+  if (!isValidTreePosition(x, y, trees.length)) {
+    showTemporaryMessage("Invalid position for new tree!", 1500);
+    return;
+  }
+
+  // Aggiungi il nuovo albero
+  trees.push({ x, y });
+
+  // Ridisegna la pista con il nuovo albero
+  drawTrack(currentTrack);
+
+  showTemporaryMessage("New tree added!", 1500);
+}
+
+// 3) Poi i NUOVI addEventListener:
 // 3) Poi i NUOVI addEventListener:
 if (!document._eventsAttached) {
   // Eventi Mouse
@@ -1035,87 +1077,116 @@ if (!document._eventsAttached) {
   document._eventsAttached = true;
 }
 
-function handleMouseDownEditor(e){
-  const { x,y } = getMouseCoords(e);
+function handleMouseDownEditor(e) {
+  const { x, y } = getMouseCoords(e);
 
-  // 1. trovo un gate vicino
-  let foundG = findNearestGate(x,y, 20);
-  if(foundG){
+  // Inizia il timer per il long press
+  longPressTimer = setTimeout(() => {
+    if (!touchMoved) { // Solo se non si è mosso
+      addTree(x, y);
+    }
+    longPressTimer = null; // Reset del timer
+  }, LONG_PRESS_DURATION);
+
+  // Memorizza la posizione di inizio del touch
+  touchStartPos = { x, y };
+  touchMoved = false;
+
+  // Logica esistente per il drag di gates/alberi
+  let foundG = findNearestGate(x, y, 20);
+  if (foundG) {
     let g = gates[foundG.index];
     draggedElement = {
-      type:'gate',
+      type: 'gate',
       index: foundG.index,
       oldX: g.x,
       oldY: g.y,
-      offsetX: g.x- x,
-      offsetY: g.y- y
+      offsetX: g.x - x,
+      offsetY: g.y - y
     };
+    // Imposta touchMoved a true e cancella il timer
+    touchMoved = true;
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
     return;
   }
 
-  // 2. se non e' un gate, trovo un albero
-  let foundT = findNearestTree(x,y, 20);
-  if(foundT){
+  let foundT = findNearestTree(x, y, 20);
+  if (foundT) {
     let t = trees[foundT.index];
     draggedElement = {
-      type:'tree',
+      type: 'tree',
       index: foundT.index,
       oldX: t.x,
       oldY: t.y,
-      offsetX: t.x- x,
-      offsetY: t.y- y
+      offsetX: t.x - x,
+      offsetY: t.y - y
     };
+    // Imposta touchMoved a true e cancella il timer
+    touchMoved = true;
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
     return;
   }
-  // 3. se non trovo nulla
-  draggedElement= null;
+
+  // Se non trovi nulla, non c'è nulla da trascinare
+  draggedElement = null;
 }
 
-function handleMouseMoveEditor(e){
-  if(!draggedElement){
-    return;
-  }
-  const { x, y } = getMouseCoords(e);
-  console.log(`MouseMoveEditor a (${x}, ${y})`);
-  
-  if(draggedElement.type === 'gate'){
-    const gate = gates[draggedElement.index];
-    
-    // Calcola i limiti verticali per questa bandiera
-    const { minY, maxY } = getVerticalLimits(draggedElement.index);
-    
-    // Calcola la nuova posizione y con gli offset
-    let newY = y + draggedElement.offsetY;
-    
-    // Applica i limiti verticali
-    newY = Math.max(newY, minY);
-    newY = Math.min(newY, maxY);
-    
-    // Aggiorna le coordinate della bandiera
-    gate.x = x + draggedElement.offsetX;
-    gate.y = newY;
-    
-    // Determina la direzione basata sul colore
-    const dir = (gate.color === 'red') ? 1 : -1;
-    
-    // Aggiorna le coordinate della linea del gate
-    gate.line.x1 = gate.x;
-    gate.line.y1 = gate.y;
-    gate.line.x2 = gate.x + dir * 200;
-    gate.line.y2 = gate.y;
-    
-    console.log(`Gate aggiornato: (${gate.x}, ${gate.y})`);
-  } else if(draggedElement.type === 'tree'){
-    const tree = trees[draggedElement.index];
-    tree.x = x + draggedElement.offsetX;
-    tree.y = y + draggedElement.offsetY;
-    console.log(`Albero aggiornato: (${tree.x}, ${tree.y})`);
-  }
-  
-  // Ridisegna la pista in tempo reale
-  drawTrack(currentTrack);
+
+function handleMouseMoveEditor(e) {
+  if (!draggedElement) {
+    const { x, y } = getMouseCoords(e);
+    const dx = Math.abs(x - touchStartPos.x);
+    const dy = Math.abs(y - touchStartPos.y);
+    if (dx > LONG_PRESS_MOVE_THRESHOLD || dy > LONG_PRESS_MOVE_THRESHOLD) {
+      touchMoved = true;
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  } else {
+    // Se stiamo trascinando un elemento, gestisci il drag come di consueto
+    const { x, y } = getMouseCoords(e);
+    const dragX = x + draggedElement.offsetX;
+    const dragY = y + draggedElement.offsetY;
+
+    if (draggedElement.type === 'gate') {
+      const gate = gates[draggedElement.index];
+
+      // Calcola i limiti verticali per questa bandiera
+      const { minY, maxY } = getVerticalLimits(draggedElement.index);
+
+      // Applica i limiti verticali
+      let newY = dragY;
+      newY = Math.max(newY, minY);
+      newY = Math.min(newY, maxY);
+
+      // Aggiorna le coordinate della bandiera
+      gate.x = dragX;
+      gate.y = newY;
+
+      // Aggiorna le coordinate della linea del gate
+      const dir = (gate.color === 'red') ? 1 : -1;
+      gate.line.x1 = gate.x;
+      gate.line.y1 = gate.y;
+      gate.line.x2 = gate.x + dir * 200;
+      gate.line.y2 = gate.y;
+
+    } else if (draggedElement.type === 'tree') {
+      const tree = trees[draggedElement.index];
+      tree.x = dragX;
+      tree.y = dragY;
+    }
+
+    // Ridisegna la pista in tempo reale
+    drawTrack(currentTrack);
+
 }
 
+
+  // Gestione del long press durante il drag (opzionale)
+  // Puoi decidere di cancellare il longPressTimer se necessario
+}
 function findNearestGate(x, y, maxDist) {
   let foundIndex = null;
   let bestDist = Infinity;
@@ -1152,13 +1223,25 @@ function findNearestTree(x, y, maxDist) {
   return (foundIndex !== null) ? { index: foundIndex } : null;
 }
 
-function handleTouchStartEditor(e){
+function handleTouchStartEditor(e) {
   e.preventDefault();
   const { x, y } = getMouseCoords(e);
-  
-  // 1. Trova un gate vicino al punto toccato
+
+  // Avvia il timer per il long press
+  longPressTimer = setTimeout(() => {
+    if (!touchMoved) { // Solo se non si è mosso
+      addTree(x, y);
+    }
+    longPressTimer = null; // Reset del timer
+  }, LONG_PRESS_DURATION);
+
+  // Memorizza la posizione di inizio del touch
+  touchStartPos = { x, y };
+  touchMoved = false;
+
+  // Logica esistente per il drag di gates/alberi
   let foundG = findNearestGate(x, y, 20);
-  if(foundG){
+  if (foundG) {
     let g = gates[foundG.index];
     draggedElement = {
       type: 'gate',
@@ -1168,12 +1251,15 @@ function handleTouchStartEditor(e){
       offsetX: g.x - x,
       offsetY: g.y - y
     };
+    // Imposta touchMoved a true e cancella il timer
+    touchMoved = true;
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
     return;
   }
 
-  // 2. Se non è un gate, trova un albero vicino
   let foundT = findNearestTree(x, y, 20);
-  if(foundT){
+  if (foundT) {
     let t = trees[foundT.index];
     draggedElement = {
       type: 'tree',
@@ -1183,58 +1269,65 @@ function handleTouchStartEditor(e){
       offsetX: t.x - x,
       offsetY: t.y - y
     };
+    // Imposta touchMoved a true e cancella il timer
+    touchMoved = true;
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
     return;
   }
 
-  // 3. Se non trovi nulla, non c'è nulla da trascinare
+  // Se non trovi nulla, non c'è nulla da trascinare
   draggedElement = null;
 }
 
-function handleTouchMoveEditor(e){
+function handleTouchMoveEditor(e) {
   e.preventDefault();
-  if(!draggedElement){
-    console.log("TouchMoveEditor senza elemento trascinato.");
-    return;
-  }
-  const { x, y } = getMouseCoords(e);
-  console.log(`TouchMoveEditor a (${x}, ${y})`);
+  if (!draggedElement) {
+    const { x, y } = getMouseCoords(e);
+    const dx = Math.abs(x - touchStartPos.x);
+    const dy = Math.abs(y - touchStartPos.y);
+    if (dx > LONG_PRESS_MOVE_THRESHOLD || dy > LONG_PRESS_MOVE_THRESHOLD) {
+      touchMoved = true;
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  } else {
+    // Se stiamo trascinando un elemento, gestisci il drag come di consueto
+    const { x, y } = getMouseCoords(e);
+    const dragX = x + draggedElement.offsetX;
+    const dragY = y + draggedElement.offsetY;
 
-  if(draggedElement.type === 'gate'){
-    const gate = gates[draggedElement.index];
-    
-    // Calcola i limiti verticali per questa bandiera
-    const { minY, maxY } = getVerticalLimits(draggedElement.index);
-    
-    // Calcola la nuova posizione y con gli offset
-    let newY = y + draggedElement.offsetY;
-    
-    // Applica i limiti verticali
-    newY = Math.max(newY, minY);
-    newY = Math.min(newY, maxY);
-    
-    // Aggiorna le coordinate della bandiera
-    gate.x = x + draggedElement.offsetX;
-    gate.y = newY;
-    
-    // Determina la direzione basata sul colore
-    const dir = (gate.color === 'red') ? 1 : -1;
-    
-    // Aggiorna le coordinate della linea del gate
-    gate.line.x1 = gate.x;
-    gate.line.y1 = gate.y;
-    gate.line.x2 = gate.x + dir * 200;
-    gate.line.y2 = gate.y;
-    
-    console.log(`Gate aggiornato: (${gate.x}, ${gate.y})`);
-  } else if(draggedElement.type === 'tree'){
-    const tree = trees[draggedElement.index];
-    tree.x = x + draggedElement.offsetX;
-    tree.y = y + draggedElement.offsetY;
-    console.log(`Albero aggiornato: (${tree.x}, ${tree.y})`);
+    if (draggedElement.type === 'gate') {
+      const gate = gates[draggedElement.index];
+
+      // Calcola i limiti verticali per questa bandiera
+      const { minY, maxY } = getVerticalLimits(draggedElement.index);
+
+      // Applica i limiti verticali
+      let newY = dragY;
+      newY = Math.max(newY, minY);
+      newY = Math.min(newY, maxY);
+
+      // Aggiorna le coordinate della bandiera
+      gate.x = dragX;
+      gate.y = newY;
+
+      // Aggiorna le coordinate della linea del gate
+      const dir = (gate.color === 'red') ? 1 : -1;
+      gate.line.x1 = gate.x;
+      gate.line.y1 = gate.y;
+      gate.line.x2 = gate.x + dir * 200;
+      gate.line.y2 = gate.y;
+
+    } else if (draggedElement.type === 'tree') {
+      const tree = trees[draggedElement.index];
+      tree.x = dragX;
+      tree.y = dragY;
+    }
+
+    // Ridisegna la pista in tempo reale
+    drawTrack(currentTrack);
   }
-  
-  // Ridisegna la pista in tempo reale
-  drawTrack(currentTrack);
 }
 
 function checkEditorConstraints(dragged){
@@ -1704,32 +1797,33 @@ function getVerticalLimits(index) {
       }
     }
     
-    function callParticipant(){
-      let att = attemptCount + 1;
-      let currentPlayer = participants[currentIndex];
-      let penaltyDisplay = "";
-      if (treeHits[currentPlayer]) {
-        let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
-        penaltyDisplay = ` (+${penaltyVal.toFixed(2)}s)`;
-      }
-      // Esempio di label: "#1 / M1 / Run1 (+0.04s)"
-let msg = `${currentPlayer}  #${raceNumber}/M${runNumber}/Run${att}${penaltyDisplay}`;
-setMainLabel(msg);
-      
-      // Rivaluta meteo
-      let newWeatherState = chooseWeatherState(weatherState);
-      showSnow = applyWeatherState(newWeatherState);
-      
-      if (showSnow) {
-        snowCanvas.classList.remove('hidden');
-        snowCanvas.width = canvas.width;
-        snowCanvas.height = canvas.height;
-        initSnow();
-        updateSnow();
-      } else {
-        snowCanvas.classList.add('hidden');
-      }
-    }
+function callParticipant(){
+  let att = attemptCount + 1;
+  let currentPlayer = participants[currentIndex];
+  let penaltyDisplay = "";
+  if (treeHits[currentPlayer]) {
+    let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1); 
+    penaltyDisplay = ` (+${penaltyVal.toFixed(2)}s)`;
+  }
+  // Esempio di label: "#1 / M1 / Run1 (+0.04s)"
+  let msg = `${currentPlayer}  #${raceNumber}/M${runNumber}/Run${att}${penaltyDisplay}`;
+  setMainLabel(msg);
+  
+  // Rivaluta meteo
+  let newWeatherState = chooseWeatherState(weatherState);
+  showSnow = applyWeatherState(newWeatherState);
+  
+  if (showSnow) {
+    snowCanvas.classList.remove('hidden');
+    snowCanvas.width = canvas.width;
+    snowCanvas.height = canvas.height;
+    initSnow();
+    updateSnow();
+  } else {
+    snowCanvas.classList.add('hidden');
+  }
+}
+
     
     function resetTrack(track){
       drawing = false;
@@ -1829,37 +1923,34 @@ setMainLabel(msg);
     }
     
     function setupRace(){
-      lastCompleteRun = null;
-      setMainLabel(`⏰1'00"000'''`);
+  lastCompleteRun = null;
+  setMainLabel(`⏰1'00"000'''`);
 
-      let newWeatherState;
-      if (!weatherState) {
-        newWeatherState = chooseWeatherState(null);
-      } else {
-        newWeatherState = chooseWeatherState(weatherState);
-      }
-      showSnow = applyWeatherState(newWeatherState);
-      
-      if (showSnow) {
-        snowCanvas.classList.remove('hidden');
-        snowCanvas.width = canvas.width;
-        snowCanvas.height = canvas.height;
-        initSnow();
-        updateSnow();
-      } else {
-        snowCanvas.classList.add('hidden');
-      }
-    
-      currentTrack = createTrackForRace(raceNumber);
-      resizeCanvas();
-      drawTrack(currentTrack);
-      bestTimes = [];
-      updateLeaderboard();
-      currentIndex = 0;
-      attemptCount = 0;
-      runNumber = 1;
+  let newWeatherState;
+  if (!weatherState) {
+    newWeatherState = chooseWeatherState(null);
+  } else {
+    newWeatherState = chooseWeatherState(weatherState);
+  }
+  
+  // Applica lo stato meteo ma disabilita la neve inizialmente
+  applyWeatherState(newWeatherState);
+  
+  // Disabilita la neve all'inizio della gara
+  showSnow = false;
+  snowCanvas.classList.add('hidden');
+  
+  currentTrack = createTrackForRace(raceNumber);
+  resizeCanvas();
+  drawTrack(currentTrack);
+  bestTimes = [];
+  updateLeaderboard();
+  currentIndex = 0;
+  attemptCount = 0;
+  runNumber = 1;
   editingMode = true;
-    }
+}
+
     
     /* =======================================
        Popup generico
