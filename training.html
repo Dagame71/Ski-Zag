@@ -898,7 +898,7 @@ function finishRun() {
 
                 // Ripristina i tentativi e avvia una nuova sfida
                 challengeAttempts = 3;
-                startNewChallenge();
+               
             } else {
                 // Caso di fallimento nel battere il tempo
                 challengeAttempts--; // Riduci i tentativi
@@ -963,6 +963,7 @@ function showLeaderboardPopup() {
     document.body.removeChild(overlay);
     resetChallenge(); // Resetta la sfida
     toggleChallengeMode(); // Torna al popup iniziale
+
   });
 
   overlay.appendChild(content);
@@ -1108,7 +1109,7 @@ function toggleChallengeMode() {
     challengeAttempts = 0;
     setMainLabel("⏰1'00\"000'''"); // Resetta il tempo
     toggleButtonState(false); // Riattiva i pulsanti
-    alert("Exited Challenge Mode. Back to normal play.");
+    alert("Quit Challenge Mode. Back to Arcade play.");
   } else {
     // Mostra il popup introduttivo
     document.getElementById('challengeIntroOverlay').classList.remove('hidden');
