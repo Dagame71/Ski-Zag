@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ski-Zag!Training & Solo</title>
+  <title>Ski Solo – Responsive Version</title>
   <style>
 
     /* Stili di base */
@@ -193,22 +193,36 @@
       align-items: center;
       margin-top: 15px;
     }
-    .slides-nav .nav-button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 20px; /* Aumentato padding */
-      font-size: 16px;    /* Aumentato font-size */
-      cursor: pointer;
-    }
-    .slides-nav .nav-button:disabled { 
-      background: #999; 
-      cursor: not-allowed; 
-    }
+.tutorial-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  position: relative;
+  top: -2px; /* Regola l'altezza abbassando leggermente l'icona */
+  margin-right: 5px;
+}
+.medal-title-icon {
+  width: 22px;  /* Più grande rispetto alle icone normali */
+  height: 22px;
+  vertical-align: middle; /* Allinea meglio l'icona con il testo */
+  margin-left: 8px; /* Distanza dal titolo */
+}
+   .slides-nav .nav-button {
+  background: #8fa2f7;  /* Azzurro */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.slides-nav .nav-button:hover {
+  background: #bdc9fb;  /* Azzurro più chiaro in hover */
+}
     .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; cursor: pointer; transition: background 0.3s; }
-    .dot.active { background: #007bff; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ffffff; cursor: pointer; transition: background 0.3s; }
+    .dot.active { background: #8fa2f7; }
 
     /* Pulsanti delete per le piste salvate */
     .deleteBtn {
@@ -310,7 +324,7 @@
 <div id="challengeIntroOverlay" class="overlay hidden">
   <div class="overlay-content">
     <h2>Welcome to the Solo Challenge!</h2>
-    <p>You have 3 attempts to beat the time and advance to the next track!</p>
+    <p>Beat the best time, level up, and achieve the highest score!<br>❄ You have 3 attempts to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned.</p>
     <button id="closeChallengeIntroOverlay" class="play-button">Play!</button>
   </div>
 </div>
@@ -455,10 +469,23 @@ let currentLevel = 1; // Livello corrente
 
     // Tutorial slides
     let tutorialSlides = [
-      { title: "Welcome to Ski Solo!", content: "This is a single-player ski game.<br>Start at the house and ski to the finish." },
-      { title: "How to Play", content: "Draw your path starting from the house icon. Pass through all gates and finish at the finish area. Avoid trees and boundaries." },
-      { title: "Controls", content: "Buttons:<br>🔁 Toggle Snow<br>⏯️ Replay (review run)<br>❌ New Track<br>⏱️ Top 5 (view best times)<br>👁️ View (save/load track)<br>🏆 Cup (save your result)" },
-      { title: "Good Luck!", content: "Try to beat your best time! Enjoy the slope!" }
+      { title: "Welcome to Ski-Zag!", content: "Start at the hut and ski to the finish!<br>❄ Draw your path with your finger, pass through all gates, and cross the finish line.<br>❄ Red gates must be passed on the right, and blue gates on the left. <br>❄ Avoid trees and going off-track, and achieve the best time!<br>❄ You can save your favorite tracks, enter your time in the Top 5, review your runs with replay, and remove the snow to train better." },
+      { title: `Solo Challenge<img src="medal.png" class="medal-title-icon" alt="Medal">`, content: "Beat the best time, level up, and achieve the highest score!<br>❄ You have 3 attempts to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned." },
+      { 
+  title: "Controls", 
+  content: `<div class="controls-slide">
+    Buttons:<br>
+    <img src="replay.png" class="tutorial-icon" alt="Replay"> Replay (review run)<br>
+<img src="cup.png" class="tutorial-icon" alt="Save Result"> Save your result<br>
+<img src="save.png" class="tutorial-icon" alt="View / Save Track"> Save/load track<br>
+<img src="medal.png" class="tutorial-icon" alt="Medal">Play Solo Challenge<br>
+<img src="snowflake.png" class="tutorial-icon" alt="Toggle Snow"> Snow On/Off<br>
+    <img src="new.png" class="tutorial-icon" alt="New Track"> New Track<br>
+    <img src="stopwatch.png" class="tutorial-icon" alt="Top 5">Top 5 (view best times)<br>
+<img src="home.png" class="tutorial-icon" alt="homeBtn">Quit/Home
+  </div>`
+},
+      { title: "Good Luck!", content: "Have fun with Ski-Zag!<br>Enjoy the slope!" }
     ];
     let currentTutorialIndex = 0;
 
@@ -1123,7 +1150,7 @@ function startNewChallenge() {
     updateWeatherForChallenge();
     // Calcola la lunghezza della traiettoria ideale
     let idealLength = calculateIdealPath(currentTrack.gates);
-    challengeBestTime = calculateFinalTime(idealLength * 4.0 * (speed / baseSpeed), idealLength); // Tempo più difficile
+    challengeBestTime = calculateFinalTime(idealLength * 5.0 * (speed / baseSpeed), idealLength); // Tempo più difficile
 
 
     // Reset dei tentativi
@@ -1426,7 +1453,7 @@ document.getElementById('closeChallengeIntroOverlay').addEventListener('click', 
     renderTutorial();
 
     document.getElementById('homeBtn').addEventListener('click', function() {
-      if (confirm('Are you sure you want to quit?')) { 
+      if (confirm('Return to home to play the World Cup?')) { 
         location.href = 'index.html';
       }
     });
