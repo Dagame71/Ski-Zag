@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ski Solo – Responsive Version</title>
+  <title>Ski-Zag! Arcade</title>
   <style>
 
     /* Stili di base */
@@ -177,6 +177,32 @@
     #closeChronoOverlay:hover, #closeViewOverlay:hover, #closeSaveResultOverlay:hover {
       background-color: #bdc9fb;
     }
+/* Stile uguale a .player-name-input, applicato agli ID degli input di Ski Solo */
+#trackNameInput,
+#resultNameInput {
+  background: #ffffff;
+  border: 1px solid #bdc9fb;
+  border-radius: 16px;
+  padding: 10px;
+  width: 80%;
+  margin-bottom: 8px;
+  box-shadow:
+    inset 3px 3px 4px rgba(0, 0, 0, 0.2),
+    inset -3px -3px 4px rgba(255, 255, 255, 0.7);
+  outline: none;
+  font-size: 1em;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Effetto focus identico */
+#trackNameInput:focus,
+#resultNameInput:focus {
+  background: #ffffff;
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
     /* Leaderboard */
     .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
     .leaderboard { width: 80%; margin: 0 auto; }
@@ -208,21 +234,21 @@
   margin-left: 8px; /* Distanza dal titolo */
 }
    .slides-nav .nav-button {
-  background: #8fa2f7;  /* Azzurro */
-  color: white;
-  border: none;
-  border-radius: 5px;
+ background: #007bff; 
+      color: #fff; 
+      border: none; 
+border-radius: 8px;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
 }
-
 .slides-nav .nav-button:hover {
   background: #bdc9fb;  /* Azzurro più chiaro in hover */
 }
+
     .tutorial-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background: #ffffff; cursor: pointer; transition: background 0.3s; }
-    .dot.active { background: #8fa2f7; }
+    .dot.active { background: #007bff; }
 
     /* Pulsanti delete per le piste salvate */
     .deleteBtn {
@@ -283,7 +309,11 @@
  </div>
   <!-- UNICA RIGA PER TUTTI I MESSAGGI (tempo + avvisi) -->
   <div class="info-container">
-    <p id="infoLine">⏰1'00"000'''</p>
+    <p id="infoLine">
+  <img src="stopwatch.png" alt="Stopwatch" 
+       style="width:18px; height:18px; vertical-align:middle; margin-right:4px;">
+  1'00"000'''
+</p>
   </div>
 
   <!-- OVERLAY TOP 5 -->
@@ -324,7 +354,7 @@
 <div id="challengeIntroOverlay" class="overlay hidden">
   <div class="overlay-content">
     <h2>Welcome to the Solo Challenge!</h2>
-    <p>Beat the best time, level up, and achieve the highest score!<br>❄ You have 3 attempts to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned.</p>
+    <p><i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned.</p>
     <button id="closeChallengeIntroOverlay" class="play-button">Play!</button>
   </div>
 </div>
@@ -383,13 +413,25 @@
     
     // Per gestire il testo base e i messaggi temporanei
     let mainLabel = "⏰1'00\"000'''";
-  function setMainLabel(text) {
+function setMainLabel(text) {
+    // Se siamo in modalità Challenge e il testo inizia con "⏰",
+    // evitiamo di forzare il testo "normale" (come da tua logica).
     if (isChallengeMode && text.startsWith("⏰")) {
-        // Evita di impostare un messaggio che reimposta alla modalità normale
         return;
     }
-    mainLabel = text;
-    infoLine.innerHTML = text;
+
+    // Sostituisce TUTTE le occorrenze di "⏰" con l'immagine stopwatch.png
+    // (Se preferisci solo la prima occorrenza, usa text.replace() anziché replaceAll).
+   let replacedText = text.replaceAll(
+      "⏰",
+      '<img src="stopwatch.png" alt="Stopwatch" ' +
+      '     style="width:18px; height:18px; position: relative; top:-2px; ' +
+      '            vertical-align:middle; margin-right:4px;">'
+    );
+
+    // Aggiorna le variabili/elementi testuali
+    mainLabel = replacedText;
+    infoLine.innerHTML = replacedText;
 }
     function showTemporaryMessage(msg, duration=2000) {
       let old = mainLabel;
@@ -469,23 +511,23 @@ let currentLevel = 1; // Livello corrente
 
     // Tutorial slides
     let tutorialSlides = [
-      { title: "Welcome to Ski-Zag!", content: "Start at the hut and ski to the finish!<br>❄ Draw your path with your finger, pass through all gates, and cross the finish line.<br>❄ Red gates must be passed on the right, and blue gates on the left. <br>❄ Avoid trees and going off-track, and achieve the best time!<br>❄ You can save your favorite tracks, enter your time in the Top 5, review your runs with replay, and remove the snow to train better." },
-      { title: `Solo Challenge<img src="medal.png" class="medal-title-icon" alt="Medal">`, content: "Beat the best time, level up, and achieve the highest score!<br>❄ You have 3 attempts to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned." },
+      { title: "Welcome to Ski-Zag!", content: "<b><i>Start at the hut and ski to the finish!</b></i><br>❄ Draw your path with your finger, pass through all gates, and cross the finish line.<br>❄ <b>Red gates</b> must be passed on the <b>right</b>, and <b>blue gates</b> on the <b>left</b>. <br>❄ Avoid trees and going off-track, and achieve the best time!<br>❄ You can save your favorite tracks, enter your time in the Top 5, review your runs with replay, and remove the snow to train better." },
+      { title: `Solo Challenge<img src="medal.png" class="medal-title-icon" alt="Medal">`, content: "<i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned." },
       { 
   title: "Controls", 
   content: `<div class="controls-slide">
-    Buttons:<br>
-    <img src="replay.png" class="tutorial-icon" alt="Replay"> Replay (review run)<br>
+    <b>Buttons:</b><br>
+    <img src="replay.png" class="tutorial-icon" alt="Replay"> Replay <i>(review run)</i><br>
 <img src="cup.png" class="tutorial-icon" alt="Save Result"> Save your result<br>
 <img src="save.png" class="tutorial-icon" alt="View / Save Track"> Save/load track<br>
 <img src="medal.png" class="tutorial-icon" alt="Medal">Play Solo Challenge<br>
 <img src="snowflake.png" class="tutorial-icon" alt="Toggle Snow"> Snow On/Off<br>
     <img src="new.png" class="tutorial-icon" alt="New Track"> New Track<br>
-    <img src="stopwatch.png" class="tutorial-icon" alt="Top 5">Top 5 (view best times)<br>
+    <img src="stopwatch.png" class="tutorial-icon" alt="Top 5">Top 5 <i>(view best times)</i><br>
 <img src="home.png" class="tutorial-icon" alt="homeBtn">Quit/Home
   </div>`
 },
-      { title: "Good Luck!", content: "Have fun with Ski-Zag!<br>Enjoy the slope!" }
+      { title: "Good Luck!", content: "Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>" }
     ];
     let currentTutorialIndex = 0;
 
@@ -963,7 +1005,7 @@ function showLeaderboardPopup() {
     document.body.removeChild(overlay);
     resetChallenge(); // Resetta la sfida
     toggleChallengeMode(); // Torna al popup iniziale
-
+ startNewChallenge();
   });
 
   overlay.appendChild(content);
