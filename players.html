@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <!-- Disabilita pinch-to-zoom / doppio tap -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Ski-Zag! World Cup</title>
+  <title>Ski Championship</title>
   <style>
     /* Stili di base */
     html, body {
@@ -152,7 +152,7 @@ z-index: 9999;
       border-radius: 12px;
       padding: 2%; /* Padding relativo */
       width: 80%; /* Responsive width */
-      max-width: 700px; /* Limite massimo */
+      max-width: 300px; /* Limite massimo */
       box-sizing: border-box;
       position: relative; 
       text-align: center; 
@@ -161,6 +161,26 @@ z-index: 9999;
         inset 4px 4px 2px rgba(175,219,245,0.8),  /* Ombra interna scura in basso a destra */
         inset -4px -4px 2px rgba(255,255,255,0.8); /* Ombra interna chiara in alto a sinistra */
     }
+.popup-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+#popupOkButton {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5em 1em;
+  font-size: 1em;
+  cursor: pointer;
+  text-align: center;
+  display: inline-block;
+}
+
+#popupOkButton:hover {
+  background: #bdc9fb;
+}
     /* Bottoni per chiudere gli overlay */
     #closeOverlay { 
       position: absolute; 
@@ -202,7 +222,7 @@ z-index: 9999;
       font-size: 1.2em; /* Dimensione relativa */
     }
     ol { 
-      border: 1px solid #ccc; 
+      border: 1px solid #999bf2; 
       border-radius: 5px; 
       list-style: decimal inside; 
       min-height: 100px; 
@@ -241,7 +261,7 @@ z-index: 9999;
       cursor: pointer; 
     }
     .slides-nav .nav-button:disabled { 
-      background: #999; 
+      background: #bdc9fb; 
       cursor: not-allowed; 
     }
     .tutorial-dots { 
@@ -254,7 +274,7 @@ z-index: 9999;
       width: 10px; 
       height: 10px; 
       border-radius: 50%; 
-      background: #ccc; 
+      background: #ffffff; 
       cursor: pointer; 
       transition: background 0.3s; 
     }
@@ -264,7 +284,7 @@ z-index: 9999;
     /* Tabella del campionato */
     .champ-table { 
       margin: 15px 0; 
-      border: 1px solid #ccc; 
+      border: 1px solid #999bf2; 
       border-radius: 8px; 
       width: 100%; 
       overflow: hidden; 
@@ -276,16 +296,40 @@ z-index: 9999;
     }
     .champ-table th, .champ-table td { 
       padding: 8px; 
-      border-bottom: 1px solid #eee; 
+      border-bottom: 1px solid #999bf2; 
       font-size: 1em; /* Dimensione relativa */
     }
     .champ-table th { 
-      background: #f7f7f7; 
+      background: #8fa2f7; 
       font-weight: bold; 
+color: white; /* Testo bianco */
     }
     .champ-table tr:last-child td { 
       border-bottom: none; 
     }
+.player-name-input {
+  background: #ffffff; /* Sfondo chiaro */
+border: 1px solid #bdc9fb; /* Bordo sottile azzurro */
+  border-radius: 16px; /* Angoli arrotondati */
+  padding: 10px;
+  width: 80%;
+ margin-bottom: 8px; /* Spazio tra gli input */
+  box-shadow: 
+    inset 3px 3px 4px rgba(0, 0, 0, 0.2), /* Ombra interna scura */
+    inset -3px -3px 4px rgba(255, 255, 255, 0.7); /* Ombra interna chiara */
+  outline: none; /* Rimuove il bordo blu quando si clicca */
+  font-size: 1em;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Effetto quando si clicca dentro il campo */
+.player-name-input:focus {
+  background: #ffffff;
+  box-shadow: 
+    inset 2px 2px 4px rgba(0, 0, 0, 0.3), 
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
     /* Bottoni alla fine */
     .end-buttons { 
       display: flex; 
@@ -367,13 +411,13 @@ z-index: 9999;
         <!-- Sezione Classifica Punti -->
         <div class="leaderboard-container">
           <div class="leaderboard">
-            <h2>Classifica Punti</h2>
+            <h2>Points Standings</h2>
             <div class="champ-table">
               <table id="pointsLeaderboardTable">
                 <thead>
                   <tr>
                     <th>Player</th>
-                    <th>Punti</th>
+                    <th>Points</th>
                   </tr>
                 </thead>
                 <tbody id="pointsLeaderboardBody">
@@ -422,17 +466,27 @@ const MIN_VERTICAL_GAP = 30; // Distanza minima in pixel tra bandiere
     let mainLabel = "";
 
     // Comodità: funzione per aggiornare il “label principale”
-   function setMainLabel(label) {
-  mainLabel = label;
-  infoLine.innerHTML = label; // Possiamo usare .textContent se non serve HTML
+ function setMainLabel(label) {
+  // Sostituiamo ogni "⏰" con l'immagine del cronometro
+  const replacedText = label.replaceAll(
+    "⏰",
+    '<img src="stopwatch.png" alt="Stopwatch" ' +
+    '     style="position: relative; top:-2px; ' +
+    '            width:18px; height:18px; ' +
+    '            vertical-align:middle; margin-right:4px;">'
+  );
 
-  // Controlla se il label è "Double tap to start!"
-  if (label === "Double tap to start!") {
+  mainLabel = replacedText;
+  infoLine.innerHTML = replacedText;
+
+  // Manteniamo la logica del blinking se compare "Double tap to start!"
+  if (replacedText.includes("Double tap to start!")) {
     infoLine.classList.add('blinking');
   } else {
     infoLine.classList.remove('blinking');
   }
 }
+
 
 
     // Messaggio temporaneo in testo semplice
@@ -1794,7 +1848,7 @@ function getVerticalLimits(index) {
           if(runNumber === 1){
             runNumber = 2;
             currentIndex = 0;
-            showPopup(`Starting the 2nd manche of race #${raceNumber}!`, () => {
+            showPopup(`Starting the<br> <b>2nd manche</b><br> of <b>race #${raceNumber}!</b>`, () => {
               resetTrack(currentTrack);
               callParticipant();
             });
@@ -1803,7 +1857,7 @@ function getVerticalLimits(index) {
           }
         } else {
           const nxt = participants[currentIndex];
-          showPopup(`Now it's ${nxt}'s turn!`, () => {
+          showPopup(`Now it's <b>${nxt}</b>'s turn!`, () => {
             resetTrack(currentTrack);
             callParticipant();
           });
@@ -1873,10 +1927,10 @@ function callParticipant(){
     function showRaceResults(){
       let sortedTimes = [...bestTimes].sort((a, b) => a.time - b.time);
       let html = 
-        `<h2>Tempi finali (Top 5)</h2>
+        `<h2>Final Times (Top 5)</h2>
         <div class="champ-table">
           <table>
-            <tr><th>Player</th><th>Tempo</th></tr>`;
+            <tr><th>Player</th><th>Time</th></tr>`;
       sortedTimes.forEach(e => {
         const blindMark = e.blind ? ' (B)' : '';
         html += `<tr><td>${e.name}</td><td>${formatTime(e.time)}${blindMark}</td></tr>`;
@@ -1977,24 +2031,30 @@ resetTrack(currentTrack); // Chiama resetTrack dopo aver impostato editingMode s
     /* =======================================
        Popup generico
     ======================================= */
-    function showPopup(message, onOk){
-      champContent.innerHTML = 
-        `<h2>Attention</h2>
-         <p class="slide-content">${message}</p>
-         <button class="nav-button">OK</button>`;
-      champOverlay.classList.remove('hidden');
-      champContent.querySelector('.nav-button').addEventListener('click', () => {
-        champOverlay.classList.add('hidden');
-        if(onOk) onOk();
-      });
-    }
+function showPopup(message, onOk) {
+  champContent.innerHTML = `
+    <h2>Attention!</h2>
+    <p class="slide-content">${message}</p>
+    <div class="popup-button-container">
+      <button class="nav-button" id="popupOkButton">OK</button>
+    </div>`; 
+
+  champOverlay.classList.remove('hidden');
+
+  // Assicura che il pulsante sia cliccabile e funzioni correttamente
+  document.getElementById('popupOkButton').addEventListener('click', () => {
+    champOverlay.classList.add('hidden');
+    if (onOk) onOk();
+  });
+}
+
     
     /* =======================================
        SLIDES INTRO & GESTIONE PLAYER
     ======================================= */
     slidesIntro = [
       {
-        title:"Ski-Zag Championship!⛷️",
+        title:"Ski-Zag! World Cup",
         content: 
           `Enter the players!<br>
           <div id="playersInputContainer"></div>
@@ -2002,19 +2062,31 @@ resetTrack(currentTrack); // Chiama resetTrack dopo aver impostato editingMode s
           <button id="removePlayerBtn">Remove Player</button>`
       },
       {
-        title:"Race Info 🏁",
+        title:"Race Format",
         content: 
-          `There will be 3 distinct races (Giant, Special, SuperG). Each race has 2 runs (manches), and in each run every participant has 3 consecutive attempts.`
+          `There will be <b>3 distinct races</b> <i>(Giant, Special, SuperG)</i>.<br>❄ Each race has <b>2 runs</b> <i>(manches)</i>, and in each run every participant has <b>3 consecutive attempts.</b><br>❄
+At the end of each race, the <b>top 5 best times</b> are awarded points <i><b>(9, 7, 5, 3, 1).</b></i>`
+   },
+      {
+        title:"Editing the Track",
+        content: 
+          `Before each of the three races, you can <b>edit the track</b> by simply dragging the gates and trees with your finger, as long as you respect the constraints set by the editor.<br>
+❄ With a <b>long press</b> (holding your finger still for one second), you can create <b>one new tree</b> at a time and then <b>move it freely</b>.<br>
+❄ With a <b>double tap</b>, the track is <b>confirmed</b>, the race begins, and all runs and manches of the race will be held on the created track.<br>
+<i><b>Remember:</b> no matter how you design the track, red gates must be passed on the right, and blue gates on the left.</i>`
       },
       {
-        title:"Top 5 Scoring ⏰",
+        title:"Blind Mode<br>& Penalties",
         content: 
-          `At the end of each race, the top 5 best times are awarded points (9, 7, 5, 3, 1).`
+          `❄ If you hit a tree, you receive a <b>0.02-second penalty</b> on your next run, and the penalty doubles for each additional tree you hit!<br>❄
+If you hit the side barriers, you might receive a <b>0.10-second penalty!</b><br>
+<img src="view.png" class="tutorial-icon" alt="view" style="margin-bottom:-6px;">
+ If you activate <b>Blind Mode</b>, you must complete the run without seeing your trajectory.<br>If you achieve a Top 5 time in Blind Mode, you earn a <b>3-point bonus</b>, but if you fail, your opponents receive the <b>3-point bonus</b> instead!`
       },
       {
-        title:"Final Victory🏆",
+        title:"Final Victory",
         content: 
-          `At the end of the 3rd race, whoever has the most points wins the championship! Have fun!!`
+          `At the end of the 3rd race, whoever has the most points wins the championship!<br> Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>`
       }
     ];
     let draftParticipants = [];
@@ -2099,16 +2171,15 @@ resetTrack(currentTrack); // Chiama resetTrack dopo aver impostato editingMode s
       });
     }
     
-    function addPlayerField(container, def = ''){
-      const d = document.createElement('div');
-      d.innerHTML = 
-        `<input type="text" class="player-name-input"
-         placeholder="Player name"
-         style="margin-bottom:5px;width:80%;padding:6px;border-radius:6px;border:1px solid #ccc;"
-         value="${def}"
-        />`;
-      container.appendChild(d);
-    }
+function addPlayerField(container, def = ''){
+  const d = document.createElement('div');
+  d.innerHTML = 
+    `<input type="text" class="player-name-input"
+     placeholder="Player name"
+     value="${def}"
+    />`;
+  container.appendChild(d);
+}
     
     function syncDraftParticipants(){
       const inputs = slidesContent.querySelectorAll('.player-name-input');
@@ -2180,7 +2251,7 @@ function handleDoubleConfirm(){
   if(editingMode && !draggedElement){
     editingMode = false;
     callParticipant();  // Avvia la gara
-    showTemporaryMessage("Pista confermata! Inizio gara...", 2000);
+    showTemporaryMessage("Slope confirmed! Race starting...", 2000);
   }
 }
 
