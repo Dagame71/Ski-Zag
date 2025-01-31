@@ -508,6 +508,23 @@ const baseSpeed = 3.5; // Velocità iniziale
 let speed = baseSpeed; // Velocità attuale
 const speedDecrement = 0.05; // Riduzione velocità per ogni livello
 let currentLevel = 1; // Livello corrente
+// TITOLI E VARIABILE DI STATO
+const challengeTitles = [
+  "Snowflake Apprentice",
+  "Frosty Daredevil",
+  "Blizzard Tamer",
+  "Polar Maestro",
+  "Avalanche Overlord"
+];
+let currentTitleUnlocked = "";
+function getTitleForLevel(level) {
+  const index = Math.floor(level / 5);
+  if (index >= 1 && index <= 5) {
+    return challengeTitles[index - 1];
+  }
+  return "";
+}
+
 
     // Tutorial slides
     let tutorialSlides = [
@@ -1021,24 +1038,55 @@ function showPointsPopup(points) {
   overlay.className = 'overlay';
 
   const content = document.createElement('div');
-  content.className = 'overlay-content'; // Assicurati che questa linea sia presente
+  content.className = 'overlay-content';
+
+  // 1) Calcoliamo il titolo relativo a currentLevel
+  let newTitle = getTitleForLevel(currentLevel);
+  let titleHtml = "";
+
+  if (newTitle !== "") {
+    // Abbiamo un titolo
+    if (newTitle !== currentTitleUnlocked) {
+      // È un NUOVO titolo sbloccato
+      titleHtml = `<span style="color:blue; font-size:1.1em;">
+        You are now <br><b>${newTitle}</b>!
+      </span>`;
+      currentTitleUnlocked = newTitle; // Aggiorniamo la variabile globale
+    } else {
+      // Titolo già ottenuto
+      titleHtml = `<span style="color:grey; font-size:0.9em;">
+        Current title: <br><b>${newTitle}</b>
+      </span>`;
+    }
+  } 
+  else {
+    // newTitle === "" => non hai ancora sbloccato un titolo
+    titleHtml = ""; // Mostra nulla (oppure "No Title")
+  }
+
+  // 2) Adesso costruiamo l'HTML inserendo <p id="titleLine"> con titleHtml
   content.innerHTML = `
     <h2>Level #${currentLevel} Complete!</h2>
-    <p>You earned <strong>${points} points</strong>!</p>
+    <p>You earned <strong>${points}</strong> points!</p>
     <p>Total Points: <strong>${challengePoints}</strong></p>
+    <p id="titleLine">${titleHtml}</p>
     <button class="play-button">Next Level</button>
   `;
 
+  // 3) Listener del pulsante "Next Level"
   content.querySelector('button').addEventListener('click', () => {
     document.body.removeChild(overlay);
-    currentLevel++; // Incrementa il livello una sola volta
-    adjustSpeedForNextLevel(); // Riduce la velocità per il prossimo livello
-    startNewChallenge(); // Passa al livello successivo
+
+    // Incrementiamo e passiamo al livello successivo come prima
+    currentLevel++; 
+    adjustSpeedForNextLevel();
+    startNewChallenge();
   });
 
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 }
+
 
 
 
@@ -1089,21 +1137,31 @@ function showLeaderboardPopupWithPlayAgain() {
 
   const content = document.createElement('div');
   content.className = 'overlay-content';
+
+  // Se hai già sbloccato un titolo, usalo nella frase
+  let titleText = "";
+  if (currentTitleUnlocked) {
+    // ad esempio "Blizzard Tamer "
+    titleText = currentTitleUnlocked + " ";
+  }
+
   content.innerHTML = `
     <h2>Challenge Failed</h2>
-    <p>You reached Level <strong>${currentLevel}</strong> with <strong>${challengePoints}</strong> points.</p>
+    <p>You reached <br><strong>${titleText}<br>Level #${currentLevel}</strong> 
+       <br>with <strong>${challengePoints}</strong> points.</p>
     <button class="play-button">Play Again</button>
   `;
 
   content.querySelector('button').addEventListener('click', () => {
     document.body.removeChild(overlay);
-    resetChallenge(); // Resetta la sfida
-    toggleChallengeMode(); // Torna al popup iniziale
+    resetChallenge(); 
+    toggleChallengeMode();
   });
 
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 }
+
 
 
 function updateLeaderboardChallenge(pointsEarned) {
