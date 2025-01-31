@@ -1181,30 +1181,54 @@ function toggleButtonState(disable) {
 
 
 function startNewChallenge() {
-    if (isGeneratingChallenge) return; // Evita che venga chiamata più volte
-    isGeneratingChallenge = true; // Imposta il flag a true
+  if (isGeneratingChallenge) return; // Evita doppie esecuzioni
+  isGeneratingChallenge = true;
 
-    adjustSpeedForNextLevel(); // Aggiorna la velocità per il livello successivo
+  // Aggiorna la velocità per il livello successivo
+  adjustSpeedForNextLevel();
 
-    // Genera una nuova pista casuale
-    currentTrack = createTrack();
-    drawTrack(currentTrack);
-    // Aggiorna il meteo per la nuova sfida
-    updateWeatherForChallenge();
-    // Calcola la lunghezza della traiettoria ideale
-    let idealLength = calculateIdealPath(currentTrack.gates);
-    challengeBestTime = calculateFinalTime(idealLength * 7.0 * (speed / baseSpeed), idealLength); // Tempo più difficile
+  // Crea una nuova pista (gates e trees) e disegna
+  currentTrack = createTrack();
+  drawTrack(currentTrack);
 
+  // Conta quanti alberi sono stati generati
+  let numTrees = currentTrack.trees.length;
 
-    // Reset dei tentativi
-    challengeAttempts = 3;
+  // Imposta un fattore di peggioramento base
+  let factor = 1.0;
+  if (numTrees === 6) {
+    factor = 1.05; // +5% se 6 alberi
+  } else if (numTrees === 7) {
+    factor = 1.10; // +10% se 7 alberi
+  } else if (numTrees >= 8) {
+    factor = 1.20; // +20% se 8 (o più) alberi
+  }
 
-    setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+  // Aggiorna il meteo per la nuova sfida
+  updateWeatherForChallenge();
 
-    // Disattiva il flag una volta completata la logica
-    setTimeout(() => {
-        isGeneratingChallenge = false;
-    }, 500);
+  // Calcola la lunghezza ideale della pista
+  let idealLength = calculateIdealPath(currentTrack.gates);
+
+  // Gonfia la lunghezza ideale in base al numero di alberi
+  idealLength *= factor;
+
+  // Calcola il best time da battere
+  challengeBestTime = calculateFinalTime(
+    idealLength * 6.0 * (speed / baseSpeed),
+    idealLength
+  );
+
+  // Resetta i tentativi disponibili
+  challengeAttempts = 3;
+
+  // Mostra la scritta “Beat this time”
+  setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+
+  // Dopo mezzo secondo, sblocca la generazione
+  setTimeout(() => {
+    isGeneratingChallenge = false;
+  }, 500);
 }
 
 
