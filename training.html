@@ -506,7 +506,7 @@ let challengePoints = 0; // Punti totali accumulati
 let leaderboard = []; // Classifica globale per la modalità sfida
 const baseSpeed = 3.5; // Velocità iniziale
 let speed = baseSpeed; // Velocità attuale
-const speedDecrement = 0.1; // Riduzione velocità per ogni livello
+const speedDecrement = 0.05; // Riduzione velocità per ogni livello
 let currentLevel = 1; // Livello corrente
 
     // Tutorial slides
@@ -1215,7 +1215,7 @@ function startNewChallenge() {
 
   // Calcola il best time da battere
   challengeBestTime = calculateFinalTime(
-    idealLength * 6.0 * (speed / baseSpeed),
+    idealLength * 6.5 * (speed / baseSpeed),
     idealLength
   );
 
