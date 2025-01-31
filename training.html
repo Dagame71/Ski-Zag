@@ -1197,11 +1197,11 @@ function startNewChallenge() {
   // Imposta un fattore di peggioramento base
   let factor = 1.0;
   if (numTrees === 6) {
-    factor = 1.05; // +5% se 6 alberi
+    factor = 1.10; // +10% se 6 alberi
   } else if (numTrees === 7) {
-    factor = 1.10; // +10% se 7 alberi
+    factor = 1.20; // +20% se 7 alberi
   } else if (numTrees >= 8) {
-    factor = 1.20; // +20% se 8 (o più) alberi
+    factor = 1.30; // +30% se 8 (o più) alberi
   }
 
   // Aggiorna il meteo per la nuova sfida
