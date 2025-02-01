@@ -1058,7 +1058,8 @@ function showChallengeEndOverlay(failReason = "") {
     <hr>
     <!-- Bottone Nuova partita -->
     <button id="challengeNewGameBtn" class="play-button" style="margin:10px;">New Game</button>
-    <button id="challengeCloseBtn" style="margin:10px;">Close</button>
+    <!-- Bottone Quit (uscire dalla Challenge) -->
+<button id="challengeQuitBtn" style="margin:10px;">Quit</button>
   `;
 
   content.innerHTML = html;
@@ -1095,6 +1096,16 @@ function showChallengeEndOverlay(failReason = "") {
     // Avvia di nuovo la challenge come se fossimo al livello 1
     startNewChallenge();
   });
+// Bottone "Quit" (uscire dalla modalità Challenge e tornare in modalità Arcade)
+const quitBtn = document.getElementById("challengeQuitBtn");
+quitBtn.addEventListener("click", () => {
+    isChallengeMode = false; // Esce dalla Challenge
+    challengeAttempts = 0; // Resetta i tentativi
+    setMainLabel("⏰1'00\"000'''"); // Ripristina il tempo di default
+    toggleButtonState(false); // Riattiva i pulsanti disabilitati
+    overlay.classList.add("hidden"); // Chiudi il popup
+    alert("Exited Challenge Mode. Back to Arcade play!"); // Messaggio di conferma
+});
 
   // Bottone Close (opzionale)
   const closeBtn = document.getElementById("challengeCloseBtn");
@@ -1170,22 +1181,84 @@ function onDeleteSavedGame(name) {
 function checkSavedChallengeGames() {
   let saves = getChallengeSaves();
   let keys = Object.keys(saves);
-  if (keys.length === 0) {
-    // Nessun salvataggio, inizia direttamente la Challenge
-    startNewChallenge();
+  let overlay = document.getElementById("challengeEndOverlay");
+  let content = document.getElementById("challengeEndContent");
+
+  // Se ci sono partite salvate, mostra la lista di salvataggi
+  if (keys.length > 0) {
+    let html = `
+      <h2>Load or Start a New Challenge!</h2>
+      <p><strong>Saved Games:</strong></p>
+      <ul style="list-style: none; padding:0;">`;
+
+    keys.forEach((name) => {
+      let data = saves[name];
+      html += `
+        <li style="margin-bottom:8px;">
+          <span style="cursor:pointer; color:blue; text-decoration:underline;"
+                onclick="onLoadSavedGame('${name}')">
+            ${name} (Lv ${data.level}, ${data.points} pts)
+          </span>
+          <button style="margin-left:10px; font-size:0.8em;"
+                  onclick="onDeleteSavedGame('${name}')">
+            Delete
+          </button>
+        </li>`;
+    });
+
+    html += `</ul>
+      <hr>
+      <button id="challengeNewGameBtn" class="play-button">New Game</button>
+      <button id="challengeQuitBtn" style="margin:10px;">Quit</button>`;
+
+    content.innerHTML = html;
+
+    // Aggiunge il listener per New Game
+    document.getElementById("challengeNewGameBtn").addEventListener("click", () => {
+      resetChallenge();
+      overlay.classList.add("hidden");
+      startNewChallenge();
+    });
+
+    // Aggiunge il listener per Quit
+    document.getElementById("challengeQuitBtn").addEventListener("click", () => {
+      isChallengeMode = false;
+      challengeAttempts = 0;
+      setMainLabel("⏰1'00\"000'''");
+      toggleButtonState(false);
+      overlay.classList.add("hidden");
+    });
+
   } else {
-    // Ci sono partite salvate: mostra il popup
-    // (usando la stessa showChallengeEndOverlay ma con messaggio personalizzato)
-    showChallengeEndOverlay("Load or start a new Challenge!");
+    // Nessun salvataggio → Mostra solo "Start the Challenge!"
+    content.innerHTML = `
+      <h2>Start the Challenge!</h2>
+      <p>Try to beat the best time and level up!</p>
+      <hr>
+      <button id="challengeNewGameBtn" class="play-button">New Game</button>
+      <button id="challengeQuitBtn" style="margin:10px;">Quit</button>`;
+
+    // Aggiunge il listener per New Game
+    document.getElementById("challengeNewGameBtn").addEventListener("click", () => {
+      resetChallenge();
+      overlay.classList.add("hidden");
+      startNewChallenge();
+    });
+
+    // Aggiunge il listener per Quit
+    document.getElementById("challengeQuitBtn").addEventListener("click", () => {
+      isChallengeMode = false;
+      challengeAttempts = 0;
+      setMainLabel("⏰1'00\"000'''");
+      toggleButtonState(false);
+      overlay.classList.add("hidden");
+    });
   }
+
+  // Mostra il popup
+  overlay.classList.remove("hidden");
 }
 
-function showChallengeIntroPopup() {
-  const challengeIntroOverlay = document.getElementById('challengeIntroOverlay');
-  if (challengeIntroOverlay) {
-    challengeIntroOverlay.classList.remove('hidden'); // Mostra il popup
-  }
-}
 function showLeaderboardPopup() {
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
@@ -1547,14 +1620,20 @@ function updateWeatherForChallenge() {
         showTemporaryMessage("No run to replay!", 1000);
       }
     });
-    quitButton.addEventListener('click', ()=>{
-      currentTrack = createTrack();
-      bestTimes = [];
-      currentTrackName = "";
-      lastCompleteRun = null;
-      resetRun();
-      drawTrack(currentTrack);
-    });
+  quitButton.addEventListener('click', () => {
+  isChallengeMode = false; // Assicura che non siamo più in modalità Challenge
+  challengeAttempts = 0; // Resetta i tentativi
+  setMainLabel("⏰1'00\"000'''"); // Ripristina l'etichetta iniziale
+  toggleButtonState(false); // Riattiva i pulsanti disabilitati
+  
+  currentTrack = createTrack();
+  bestTimes = [];
+  currentTrackName = "";
+  lastCompleteRun = null;
+  
+  clearCanvas(); // ✅ Pulisce il canvas dalla vecchia traiettoria
+  drawTrack(currentTrack); // ✅ Ridisegna la pista pulita
+});
     chronoButton.addEventListener('click', ()=>{
       updateLeaderboard();
       chronoOverlay.classList.remove('hidden');
