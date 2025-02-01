@@ -380,7 +380,7 @@ border-radius: 8px;
   </div>
 <div id="challengeIntroOverlay" class="overlay hidden">
   <div class="overlay-content">
-    <h2>Welcome to the Solo Challenge!</h2>
+    <h2>Welcome to the Challenge Mode!</h2>
     <p><i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned.</p>
     <button id="closeChallengeIntroOverlay" class="play-button">Play!</button>
   </div>
@@ -563,7 +563,7 @@ function getTitleForLevel(level) {
     // Tutorial slides
     let tutorialSlides = [
       { title: "Welcome to Ski-Zag!", content: "<b><i>Start at the hut and ski to the finish!</b></i><br>❄ Draw your path with your finger, pass through all gates, and cross the finish line.<br>❄ <b>Red gates</b> must be passed on the <b>right</b>, and <b>blue gates</b> on the <b>left</b>. <br>❄ Avoid trees and going off-track, and achieve the best time!<br>❄ You can save your favorite tracks, enter your time in the Top 5, review your runs with replay, and remove the snow to train better." },
-      { title: `Solo Challenge<img src="medal.png" class="medal-title-icon" alt="Medal">`, content: "<i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned." },
+      { title: `Challenge Mode<img src="medal.png" class="medal-title-icon" alt="Medal">`, content: "<i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned." },
       { 
   title: "Controls", 
   content: `<div class="controls-slide">
@@ -571,7 +571,7 @@ function getTitleForLevel(level) {
     <img src="replay.png" class="tutorial-icon" alt="Replay"> Replay <i>(review run)</i><br>
 <img src="cup.png" class="tutorial-icon" alt="Save Result"> Save your result<br>
 <img src="save.png" class="tutorial-icon" alt="View / Save Track"> Save/load track<br>
-<img src="medal.png" class="tutorial-icon" alt="Medal">Play Solo Challenge<br>
+<img src="medal.png" class="tutorial-icon" alt="Medal">Challenge Mode In/Out<br>
 <img src="snowflake.png" class="tutorial-icon" alt="Toggle Snow"> Snow On/Off<br>
     <img src="new.png" class="tutorial-icon" alt="New Track"> New Track<br>
     <img src="stopwatch.png" class="tutorial-icon" alt="Top 5">Top 5 <i>(view best times)</i><br>
@@ -1004,14 +1004,14 @@ function finishRun() {
                         drawTrack(currentTrack);
                         updateWeatherForChallenge(); // Cambia meteo per la nuova prova
                         setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-                    }, 2000);
+                    }, 1500);
                 } else {
                     // Se i tentativi sono esauriti
                     setMainLabel("Failed! Retry!");
                     setTimeout(() => {
                         showChallengeEndOverlay("Well done!"); // Mostra il popup finale
                         isChallengeMode = false; // Esce dalla modalità Challenge
-                    }, 2000);
+                    }, 1500);
                 }
             }
         }, 2000);
@@ -1453,17 +1453,24 @@ function updateLeaderboardChallenge(pointsEarned) {
     }
 function toggleChallengeMode() {
   if (isChallengeMode) {
-    // Esci dalla modalità medaglia...
-    isChallengeMode = false;
-    challengeAttempts = 0;
-    setMainLabel("⏰1'00\"000'''");
-    toggleButtonState(false);
-    alert("Quit Challenge Mode. Back to Arcade play.");
+    // Chiedi conferma per uscire dalla Challenge Mode
+    if (confirm("Are you sure you want to quit Challenge Mode?")) {
+      // Se l'utente conferma, esci dalla Challenge Mode
+      isChallengeMode = false;
+      challengeAttempts = 0;
+      setMainLabel("⏰1'00\"000'''");
+      toggleButtonState(false);
+      alert("Quit Challenge Mode. Back to Arcade play.");
+    } else {
+      // Se l'utente annulla, non fare nulla (continua la Challenge)
+      return;
+    }
   } else {
     // Mostra il popup introduttivo
     document.getElementById('challengeIntroOverlay').classList.remove('hidden');
   }
 }
+
 document.getElementById('challengeButton').addEventListener('click', toggleChallengeMode);
 function toggleButtonState(disable) {
   // Elenco dei pulsanti da disattivare
