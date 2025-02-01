@@ -121,7 +121,11 @@
       text-align: center;
       color: black; 
     }
-
+.centered-button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
     /* Overlay e animazioni */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .overlay {
@@ -537,6 +541,7 @@ const baseSpeed = 3.5; // Velocità iniziale
 let speed = baseSpeed; // Velocità attuale
 const speedDecrement = 0.05; // Riduzione velocità per ogni livello
 let currentLevel = 1; // Livello corrente
+
 // TITOLI E VARIABILE DI STATO
 const challengeTitles = [
   "Snowflake Apprentice",
@@ -1024,98 +1029,87 @@ function finishRun() {
     if (!isChallengeMode) {
         setTimeout(() => {
             resetRun();
-        }, 2000);
+        }, 1000);
     }
 }
 function showChallengeEndOverlay(failReason = "") {
   const overlay = document.getElementById("challengeEndOverlay");
   const content = document.getElementById("challengeEndContent");
 
-  // Mostriamo i dati della Challenge attuale
-  // Ad esempio: livello, punti e titolo
   let titleText = currentTitleUnlocked ? currentTitleUnlocked : "(no title unlocked)";
   let reasonText = failReason ? `<p style="color:red;">${failReason}</p>` : "";
   
-  // Costruisci una stringa HTML con i dettagli
- let html = `
+  let html = `
     <h2>Challenge End</h2>
     ${reasonText}
     <p>You reached <strong>Level #${currentLevel}</strong></p>
     <p>Your total score: <strong>${challengePoints}</strong></p>
     <p>Title unlocked: <strong>${titleText}</strong></p>
-    <hr>
-    
-    <!-- Campo input per salvare la partita -->
-    <div style="margin:10px 0;">
-      <label>Save your game:</label><br>
-      <input type="text" id="challengeSaveName" placeholder="Enter a name">
-      <button id="challengeSaveBtn" style="margin-left:5px;">Save</button>
-    </div>
+    <hr>`;
 
-    <!-- Lista dei salvataggi esistenti -->
-    <div id="challengeSavedGamesList" style="margin:10px 0;"></div>
+  // 🔹 Mostra il campo di salvataggio **solo se ci sono punti**
+  if (challengePoints > 0) {
+    html += `
+      <div style="margin:10px 0;">
+        <label>Save your game:</label><br>
+        <input type="text" id="challengeSaveName" placeholder="Enter a name">
+        <button id="challengeSaveBtn" style="margin-left:5px;">Save</button>
+      </div>
+      <div id="challengeSavedGamesList" style="margin:10px 0;"></div>
+      <hr>`;
+  }
 
-    <hr>
-    <!-- Bottone Nuova partita -->
-    <button id="challengeNewGameBtn" class="play-button" style="margin:10px;">New Game</button>
-    <!-- Bottone Quit (uscire dalla Challenge) -->
-<button id="challengeQuitBtn" style="margin:10px;">Quit</button>
-  `;
+  html += `
+<div class="centered-button">
+  <button id="challengeNewGameBtn" class="play-button">New Game</button>
+</div>
+  <button id="challengeQuitBtn" style="margin:10px;">Quit</button>`;
 
   content.innerHTML = html;
   overlay.classList.remove("hidden");
 
-  // Gestione SALVATAGGIO
-  const saveBtn = document.getElementById("challengeSaveBtn");
-  saveBtn.addEventListener("click", () => {
-    let name = (document.getElementById("challengeSaveName").value || "").trim();
-    if (!name) {
-      alert("Please enter a valid name for your saved game.");
-      return;
-    }
-    // Salva la partita con i parametri attuali
-    saveChallengeGame(name, {
-      level: currentLevel,
-      points: challengePoints,
-      title: currentTitleUnlocked,
-      attemptsLeft: challengeAttempts,
-      // Se vuoi salvare anche la speed o altro, aggiungili qui
+  // 🔹 Se esiste, aggiungi il listener per salvare la partita
+  if (challengePoints > 0) {
+    document.getElementById("challengeSaveBtn").addEventListener("click", () => {
+      let name = (document.getElementById("challengeSaveName").value || "").trim();
+      if (!name) {
+        alert("Please enter a valid name for your saved game.");
+        return;
+      }
+      saveChallengeGame(name, {
+        level: currentLevel,
+        points: challengePoints,
+        title: currentTitleUnlocked,
+        attemptsLeft: challengeAttempts,
+      });
+      renderSavedGamesList();
+      document.getElementById("challengeSaveName").value = "";
     });
-    // Ricarica la lista salvataggi
-    renderSavedGamesList();
-    // Pulisci l'input
-    document.getElementById("challengeSaveName").value = "";
-  });
+  }
 
-  // Bottone "New Game" (riparte da zero)
-  const newGameBtn = document.getElementById("challengeNewGameBtn");
-  newGameBtn.addEventListener("click", () => {
-    // Resetta i valori globali
+  // Pulsante Nuova Partita
+  document.getElementById("challengeNewGameBtn").addEventListener("click", () => {
     resetChallenge();
     overlay.classList.add("hidden");
-    // Avvia di nuovo la challenge come se fossimo al livello 1
     startNewChallenge();
   });
-// Bottone "Quit" (uscire dalla modalità Challenge e tornare in modalità Arcade)
-const quitBtn = document.getElementById("challengeQuitBtn");
-quitBtn.addEventListener("click", () => {
-    isChallengeMode = false; // Esce dalla Challenge
-    challengeAttempts = 0; // Resetta i tentativi
-    setMainLabel("⏰1'00\"000'''"); // Ripristina il tempo di default
-    toggleButtonState(false); // Riattiva i pulsanti disabilitati
-    overlay.classList.add("hidden"); // Chiudi il popup
-    alert("Exited Challenge Mode. Back to Arcade play!"); // Messaggio di conferma
-});
 
-  // Bottone Close (opzionale)
-  const closeBtn = document.getElementById("challengeCloseBtn");
-  closeBtn.addEventListener("click", () => {
+  // Pulsante Quit
+  document.getElementById("challengeQuitBtn").addEventListener("click", () => {
+    isChallengeMode = false;
+    challengeAttempts = 0;
+    setMainLabel("⏰1'00\"000'''");
+    toggleButtonState(false);
+    resetRun();  // 🔴 Cancella la traiettoria dell'ultima gara!
     overlay.classList.add("hidden");
   });
 
-  // Infine, carichiamo la lista dei salvataggi
-  renderSavedGamesList();
+  // Mostra la lista delle partite salvate (se necessario)
+  if (challengePoints > 0) {
+    renderSavedGamesList();
+  }
 }
+
 
 /**
  * Funzione che legge i salvataggi (getChallengeSaves()) e li mostra
@@ -1221,13 +1215,14 @@ function checkSavedChallengeGames() {
     });
 
     // Aggiunge il listener per Quit
-    document.getElementById("challengeQuitBtn").addEventListener("click", () => {
-      isChallengeMode = false;
-      challengeAttempts = 0;
-      setMainLabel("⏰1'00\"000'''");
-      toggleButtonState(false);
-      overlay.classList.add("hidden");
-    });
+   document.getElementById("challengeQuitBtn").addEventListener("click", () => {
+  isChallengeMode = false;
+  challengeAttempts = 0;
+  setMainLabel("⏰1'00\"000'''");
+  toggleButtonState(false);
+  resetRun();  // 🔴 Aggiungiamo questa riga per cancellare la traiettoria!
+  document.getElementById("challengeEndOverlay").classList.add("hidden");
+});
 
   } else {
     // Nessun salvataggio → Mostra solo "Start the Challenge!"
@@ -1377,7 +1372,7 @@ function failRun(msg) {
   } else {
     setTimeout(() => {
       resetRun();
-    }, 2000);
+    }, 1000);
   }
 }
 function resetChallenge() {
@@ -1767,14 +1762,17 @@ function storeChallengeSaves(savesObj) {
  * usando come 'name' la chiave scelta dall'utente.
  */
 function saveChallengeGame(name, data) {
-  // Carica l'insieme dei salvataggi esistenti
   let saves = getChallengeSaves();
-  // Imposta la partita 'name'
   saves[name] = data;
-  // Salva di nuovo in localStorage
   storeChallengeSaves(saves);
+  
+  // Aggiorna la lista e nasconde l'input
+  renderSavedGamesList();
+  
+  // Nasconde il campo di input e il pulsante dopo il salvataggio
+  document.getElementById("challengeSaveName").style.display = "none";
+  document.getElementById("challengeSaveBtn").style.display = "none";
 }
-
 /**
  * Elimina un salvataggio col nome specifico
  */
