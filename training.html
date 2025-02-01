@@ -202,6 +202,29 @@
     inset 2px 2px 4px rgba(0, 0, 0, 0.3),
     inset -2px -2px 4px rgba(255, 255, 255, 0.8);
 }
+/* Stile per il campo di input del salvataggio Challenge */
+#challengeSaveName {
+  background: #ffffff;
+  border: 1px solid #bdc9fb;
+  border-radius: 16px;
+  padding: 10px;
+  width: 80%;
+  margin-bottom: 8px;
+  box-shadow:
+    inset 3px 3px 4px rgba(0, 0, 0, 0.2),
+    inset -3px -3px 4px rgba(255, 255, 255, 0.7);
+  outline: none;
+  font-size: 1em;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Effetto focus */
+#challengeSaveName:focus {
+  background: #ffffff;
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
 
     /* Leaderboard */
     .leaderboard-container { display: block; width: 100%; margin-top: 10px; }
@@ -356,6 +379,12 @@ border-radius: 8px;
     <h2>Welcome to the Solo Challenge!</h2>
     <p><i><b>Beat the best time, level up, and achieve the highest score!</b></i><br>❄ You have <b>3 attempts</b> to beat the best time; the more you lower it, the more points you earn!<br>❄ If you pass the level on the first attempt, your points are multiplied by 3, on the second attempt, they are multiplied by 2, on the third attempt, you simply pass the level with the points you’ve earned.</p>
     <button id="closeChallengeIntroOverlay" class="play-button">Play!</button>
+  </div>
+</div>
+<!-- OVERLAY FINALE CHALLENGE: per fallimento o fine partita -->
+<div id="challengeEndOverlay" class="overlay hidden">
+  <div class="overlay-content" id="challengeEndContent" style="text-align: center;">
+    <!-- Contenuto gestito via JS -->
   </div>
 </div>
   <!-- OVERLAY TUTORIAL -->
@@ -975,7 +1004,7 @@ function finishRun() {
                     // Se i tentativi sono esauriti
                     setMainLabel("Failed! Retry!");
                     setTimeout(() => {
-                        showLeaderboardPopupWithPlayAgain(); // Mostra il popup finale
+                        showChallengeEndOverlay("Well done!"); // Mostra il popup finale
                         isChallengeMode = false; // Esce dalla modalità Challenge
                     }, 2000);
                 }
@@ -997,6 +1026,158 @@ function finishRun() {
             resetRun();
         }, 2000);
     }
+}
+function showChallengeEndOverlay(failReason = "") {
+  const overlay = document.getElementById("challengeEndOverlay");
+  const content = document.getElementById("challengeEndContent");
+
+  // Mostriamo i dati della Challenge attuale
+  // Ad esempio: livello, punti e titolo
+  let titleText = currentTitleUnlocked ? currentTitleUnlocked : "(no title unlocked)";
+  let reasonText = failReason ? `<p style="color:red;">${failReason}</p>` : "";
+  
+  // Costruisci una stringa HTML con i dettagli
+ let html = `
+    <h2>Challenge End</h2>
+    ${reasonText}
+    <p>You reached <strong>Level #${currentLevel}</strong></p>
+    <p>Your total score: <strong>${challengePoints}</strong></p>
+    <p>Title unlocked: <strong>${titleText}</strong></p>
+    <hr>
+    
+    <!-- Campo input per salvare la partita -->
+    <div style="margin:10px 0;">
+      <label>Save your game:</label><br>
+      <input type="text" id="challengeSaveName" placeholder="Enter a name">
+      <button id="challengeSaveBtn" style="margin-left:5px;">Save</button>
+    </div>
+
+    <!-- Lista dei salvataggi esistenti -->
+    <div id="challengeSavedGamesList" style="margin:10px 0;"></div>
+
+    <hr>
+    <!-- Bottone Nuova partita -->
+    <button id="challengeNewGameBtn" class="play-button" style="margin:10px;">New Game</button>
+    <button id="challengeCloseBtn" style="margin:10px;">Close</button>
+  `;
+
+  content.innerHTML = html;
+  overlay.classList.remove("hidden");
+
+  // Gestione SALVATAGGIO
+  const saveBtn = document.getElementById("challengeSaveBtn");
+  saveBtn.addEventListener("click", () => {
+    let name = (document.getElementById("challengeSaveName").value || "").trim();
+    if (!name) {
+      alert("Please enter a valid name for your saved game.");
+      return;
+    }
+    // Salva la partita con i parametri attuali
+    saveChallengeGame(name, {
+      level: currentLevel,
+      points: challengePoints,
+      title: currentTitleUnlocked,
+      attemptsLeft: challengeAttempts,
+      // Se vuoi salvare anche la speed o altro, aggiungili qui
+    });
+    // Ricarica la lista salvataggi
+    renderSavedGamesList();
+    // Pulisci l'input
+    document.getElementById("challengeSaveName").value = "";
+  });
+
+  // Bottone "New Game" (riparte da zero)
+  const newGameBtn = document.getElementById("challengeNewGameBtn");
+  newGameBtn.addEventListener("click", () => {
+    // Resetta i valori globali
+    resetChallenge();
+    overlay.classList.add("hidden");
+    // Avvia di nuovo la challenge come se fossimo al livello 1
+    startNewChallenge();
+  });
+
+  // Bottone Close (opzionale)
+  const closeBtn = document.getElementById("challengeCloseBtn");
+  closeBtn.addEventListener("click", () => {
+    overlay.classList.add("hidden");
+  });
+
+  // Infine, carichiamo la lista dei salvataggi
+  renderSavedGamesList();
+}
+
+/**
+ * Funzione che legge i salvataggi (getChallengeSaves()) e li mostra
+ * in #challengeSavedGamesList. Cliccando su un nome, carichi la partita.
+ */
+function renderSavedGamesList() {
+  const listDiv = document.getElementById("challengeSavedGamesList");
+  let saves = getChallengeSaves();
+  let keys = Object.keys(saves);
+  
+  if (keys.length === 0) {
+    listDiv.innerHTML = "<p>No saved games.</p>";
+    return;
+  }
+
+  let html = "<p><strong>Saved games:</strong></p>";
+  html += "<ul style='list-style: none; padding:0;'>";
+  keys.forEach((name) => {
+    let data = saves[name];
+    // Mostra info minime
+    html += `
+      <li style="margin-bottom:8px;">
+        <span style="cursor:pointer; color:blue; text-decoration:underline;"
+              onclick="onLoadSavedGame('${name}')">
+          ${name} (Lv ${data.level}, ${data.points} pts)
+        </span>
+        <button style="margin-left:10px; font-size:0.8em;"
+                onclick="onDeleteSavedGame('${name}')">
+          Delete
+        </button>
+      </li>
+    `;
+  });
+  html += "</ul>";
+  listDiv.innerHTML = html;
+}
+
+/**
+ * Funzione chiamata quando clicchiamo su un salvataggio nella lista
+ */
+function onLoadSavedGame(name) {
+  if (loadChallengeGame(name)) {
+    alert("Loaded saved game: " + name);
+    // Chiudiamo l'overlay
+    document.getElementById("challengeEndOverlay").classList.add("hidden");
+    // Prosegui come se stessi continuando la Challenge dal livello salvato
+    // Ad esempio ridisegni la pista:
+    startNewChallenge(); 
+  } else {
+    alert("Error: saved game not found.");
+  }
+}
+
+/**
+ * Funzione chiamata quando clicchiamo su 'Delete'
+ */
+function onDeleteSavedGame(name) {
+  if (confirm(`Are you sure you want to delete '${name}'?`)) {
+    deleteChallengeGame(name);
+    renderSavedGamesList();
+  }
+}
+function checkSavedChallengeGames() {
+  let saves = getChallengeSaves();
+  let keys = Object.keys(saves);
+  if (keys.length === 0) {
+    // Nessun salvataggio, inizia direttamente la Challenge
+    startNewChallenge();
+  } else {
+    // Ci sono partite salvate: mostra il popup
+    // (usando la stessa showChallengeEndOverlay ma con messaggio personalizzato)
+    showChallengeEndOverlay("Load or start a new Challenge!");
+  }
 }
 
 function showChallengeIntroPopup() {
@@ -1098,25 +1279,26 @@ function failRun(msg) {
 
   lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
 
- if (isChallengeMode) {
+  if (isChallengeMode) {
     challengeAttempts--;
 
     if (challengeAttempts > 0) {
-      // Ci sono ancora tentativi disponibili
+      // Ancora tentativi
       setTimeout(() => {
         setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
         setTimeout(() => {
           clearCanvas();
           drawTrack(currentTrack);
- updateWeatherForChallenge(); // Aggiorna il meteo
+          updateWeatherForChallenge();
           setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
         }, 1500);
       }, 1500);
     } else {
-      // Fallimento al terzo tentativo: mostra sempre il popup riassuntivo
+      // Fallimento definitivo
       setTimeout(() => {
-        showLeaderboardPopupWithPlayAgain(); // Correzione: mostra popup riassuntivo
-        isChallengeMode = false; // Esce dalla modalità sfida
+        // Al posto di showLeaderboardPopupWithPlayAgain(), usa:
+        showChallengeEndOverlay("You failed the Challenge!");
+        // isChallengeMode = false; se vuoi uscire dalla challenge subito
       }, 1500);
     }
   } else {
@@ -1125,7 +1307,6 @@ function failRun(msg) {
     }, 2000);
   }
 }
-
 function resetChallenge() {
   currentLevel = 1; // Resetta il livello
   speed = 3.5; // Resetta la velocità
@@ -1204,11 +1385,11 @@ function updateLeaderboardChallenge(pointsEarned) {
     }
 function toggleChallengeMode() {
   if (isChallengeMode) {
-    // Esci dalla modalità medaglia
+    // Esci dalla modalità medaglia...
     isChallengeMode = false;
     challengeAttempts = 0;
-    setMainLabel("⏰1'00\"000'''"); // Resetta il tempo
-    toggleButtonState(false); // Riattiva i pulsanti
+    setMainLabel("⏰1'00\"000'''");
+    toggleButtonState(false);
     alert("Quit Challenge Mode. Back to Arcade play.");
   } else {
     // Mostra il popup introduttivo
@@ -1397,7 +1578,8 @@ document.getElementById('closeChallengeIntroOverlay').addEventListener('click', 
   isChallengeMode = true;
   challengeAttempts = 3;
   toggleButtonState(true);
-  startNewChallenge();
+  // Controlla se ci sono salvataggi
+  checkSavedChallengeGames();
 });
     document.getElementById('saveResultConfirmBtn').addEventListener('click', ()=>{
       let name = document.getElementById('resultNameInput').value.trim();
@@ -1465,6 +1647,83 @@ document.getElementById('closeChallengeIntroOverlay').addEventListener('click', 
 
     /* Gestione localStorage piste salvate */
     const LS_KEY = "skiSolo_savedTracks";
+/**
+ * Salvataggi delle partite Challenge (livello, punti, titolo, ecc.)
+ * Li terremo in un oggetto con struttura simile a:
+ * {
+ *   "NomePartita": {
+ *     level: 3,
+ *     points: 450,
+ *     title: "Blizzard Tamer",
+ *     attemptsLeft: 2,
+ *     // ... altri dati
+ *   },
+ *   "AltroSalvataggio": { ... }
+ * }
+ */
+const CHALLENGE_SAVES_KEY = "skiSolo_challengeSaves";
+
+/**
+ * Ritorna l'oggetto con tutti i salvataggi Challenge da localStorage.
+ */
+function getChallengeSaves() {
+  let raw = localStorage.getItem(CHALLENGE_SAVES_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+}
+
+/**
+ * Salva (sovrascrive) l'oggetto di tutti i salvataggi Challenge in localStorage.
+ */
+function storeChallengeSaves(savesObj) {
+  localStorage.setItem(CHALLENGE_SAVES_KEY, JSON.stringify(savesObj));
+}
+
+/**
+ * Salva una singola partita Challenge nel localStorage,
+ * usando come 'name' la chiave scelta dall'utente.
+ */
+function saveChallengeGame(name, data) {
+  // Carica l'insieme dei salvataggi esistenti
+  let saves = getChallengeSaves();
+  // Imposta la partita 'name'
+  saves[name] = data;
+  // Salva di nuovo in localStorage
+  storeChallengeSaves(saves);
+}
+
+/**
+ * Elimina un salvataggio col nome specifico
+ */
+function deleteChallengeGame(name) {
+  let saves = getChallengeSaves();
+  if (saves[name]) {
+    delete saves[name];
+    storeChallengeSaves(saves);
+  }
+}
+
+/**
+ * Carica un salvataggio esistente e imposta le variabili globali
+ */
+function loadChallengeGame(name) {
+  let saves = getChallengeSaves();
+  if (!saves[name]) return false; // Non esiste
+  let data = saves[name];
+  // Impostiamo le variabili globali della Challenge
+  currentLevel = data.level;
+  challengePoints = data.points;
+  currentTitleUnlocked = data.title;
+  challengeAttempts = data.attemptsLeft;
+  // Se vuoi reimpostare speed e altre variabili, aggiungile in data
+  // ...
+  return true;
+}
+
     function loadSavedTracks() {
       let saved = localStorage.getItem(LS_KEY);
       if(saved) {
