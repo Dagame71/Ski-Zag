@@ -2093,12 +2093,15 @@ document.addEventListener("DOMContentLoaded", () => {
   resetBlindMode();
 
   // Seleziona gli elementi su cui vuoi applicare il double tap
-  const containerEl = document.querySelector(".container");
+  const containerEl = document.querySelector('.container');
   const infoLineEl = document.getElementById("infoLine");
 
   // Funzione per gestire il doppio tap tramite touchend
   function handleTouchEndDoubleTap(e) {
-    e.preventDefault();
+    // Se l'elemento toccato (o uno dei suoi antenati) è un <button>, esci dalla funzione
+    if (e.target.closest('button')) {
+      return;
+    }
     const currentTime = new Date().getTime();
     const tapLength = currentTime - lastTap;
     if (tapLength > 0 && tapLength < 300) {
@@ -2115,6 +2118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   containerEl.addEventListener("touchend", handleTouchEndDoubleTap, false);
   containerEl.addEventListener("dblclick", handleDoubleConfirm, false);
 });
+
 
 let lastTap = 0;
 function handleDoubleConfirm() {
