@@ -109,19 +109,29 @@
         cursor: pointer;
       }
       
-      /* Informazioni */
-      .info-container {
-        margin-top: -10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        z-index: 9999; /* sopra la neve */
-      }
+  .info-container {
+  width: 90vw;
+  max-width: 500px;
+  margin: 2px auto;
+  padding: 1px;
+  margin-top: -10px; /* Valore negativo per alzare il blocco */
+  border: 0px solid #9cc1e2;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2); /* opzione per uno sfondo leggero */
+  display: flex;
+ box-shadow: 
+    inset 1px 1px 3px rgba(0, 0, 0, 0.2), 
+    inset -1px -1px 3px #9cc1e2;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 9999; /* come da impostazione originale */
+}
+
       /* UNICA RIGA di testo per tutti i messaggi */
       #infoLine {
-        margin: 10px 0;
+        margin: 5px 0;
         font-weight: bold;
         font-size: 1.2em; /* Dimensione relativa */
         min-height: 20px;
@@ -1593,14 +1603,45 @@ let bestTimes = [];
         }
       });
       function replayTrajectory(customPoints) {
-        const rp =
-          customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
-        if (!rp || rp.length < 2) {
-          showTemporaryMessage("No run to replay!", 1000);
-          return;
-        }
-        const preReplaySnowState = showSnow;
-        if (lastSnowActive) {
+  // Seleziona il contenitore
+  const container = document.querySelector('.container');
+  // Salviamo il background originale (in questo caso, quello definito in CSS)
+  // In alternativa puoi salvare il valore letterale usato nel CSS.
+  const originalBackground = "#e1dffc url('sfondo.png') no-repeat center center";
+  
+  // Impostiamo il background per il replay
+  container.style.background = "#e1dffc url('sfondoreplay.png') no-repeat center center";
+  container.style.backgroundSize = "cover";
+
+  const rp = customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
+  if (!rp || rp.length < 2) {
+    showTemporaryMessage("No run to replay!", 1000);
+    return;
+  }
+  
+  const preReplaySnowState = showSnow;
+  if (lastSnowActive) {
+    showSnow = true;
+    snowCanvasElem.classList.remove("hidden");
+    snowCanvasElem.width = canvas.width;
+    snowCanvasElem.height = canvas.height;
+    initSnow();
+    updateSnow();
+  } else {
+    snowCanvasElem.classList.add("hidden");
+  }
+  clearCanvas();
+  drawStartPoint();
+  drawFinishArea();
+  drawGates(gates);
+  drawTrees(trees);
+  let i = 0;
+  function step() {
+    if (i >= rp.length - 1) {
+      setTimeout(() => {
+        clearCanvas();
+        if (currentTrack) drawTrack(currentTrack);
+        if (preReplaySnowState) {
           showSnow = true;
           snowCanvasElem.classList.remove("hidden");
           snowCanvasElem.width = canvas.width;
@@ -1608,45 +1649,29 @@ let bestTimes = [];
           initSnow();
           updateSnow();
         } else {
+          showSnow = false;
           snowCanvasElem.classList.add("hidden");
         }
-        clearCanvas();
-        drawStartPoint();
-        drawFinishArea();
-        drawGates(gates);
-        drawTrees(trees);
-        let i = 0;
-        function step() {
-          if (i >= rp.length - 1) {
-            setTimeout(() => {
-              clearCanvas();
-              if (currentTrack) drawTrack(currentTrack);
-              if (preReplaySnowState) {
-                showSnow = true;
-                snowCanvasElem.classList.remove("hidden");
-                snowCanvasElem.width = canvas.width;
-                snowCanvasElem.height = canvas.height;
-                initSnow();
-                updateSnow();
-              } else {
-                showSnow = false;
-                snowCanvasElem.classList.add("hidden");
-              }
-            }, 500);
-            return;
-          }
-          ctx.beginPath();
-          ctx.moveTo(rp[i].x, rp[i].y);
-          ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
-          ctx.strokeStyle = "#a4b8eb";
-          ctx.lineWidth = (2 / 520) * canvas.height;
-          ctx.stroke();
-          const dt = rp[i + 1].t - rp[i].t;
-          i++;
-          setTimeout(step, dt);
-        }
-        setTimeout(step, 0);
-      }
+        // Ripristina il background originale dopo il replay
+        container.style.background = originalBackground;
+        container.style.backgroundSize = "cover";
+      }, 500);
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(rp[i].x, rp[i].y);
+    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
+    ctx.strokeStyle = "#a4b8eb";
+    ctx.lineWidth = (2 / 520) * canvas.height;
+    ctx.stroke();
+    const dt = rp[i + 1].t - rp[i].t;
+    i++;
+    setTimeout(step, dt);
+  }
+  setTimeout(step, 0);
+}
+
+
       /* =======================================
          Blind Mode
       ======================================= */
