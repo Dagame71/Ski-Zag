@@ -103,13 +103,13 @@
         padding: 0.5em 0.8em; /* Padding relativo */
         position: absolute;
         z-index: 9999;
-        bottom: 1%;
+        bottom: 0.4%;
         left: 90%;
         transform: translateX(-50%);
         cursor: pointer;
       }
       
-  .info-container {
+.info-container {
   width: 90vw;
   max-width: 500px;
   margin: 2px auto;
@@ -119,7 +119,7 @@
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.2); /* opzione per uno sfondo leggero */
   display: flex;
- box-shadow: 
+  box-shadow: 
     inset 1px 1px 3px rgba(0, 0, 0, 0.2), 
     inset -1px -1px 3px #9cc1e2;
   flex-direction: column;
@@ -127,17 +127,32 @@
   justify-content: center;
   position: relative;
   z-index: 9999; /* come da impostazione originale */
+
+  /* Disabilita la selezione del testo */
+  user-select: none;
+  -webkit-user-select: none; /* Chrome, Safari, Opera */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+  -webkit-touch-callout: none; /* Disabilita il menu contestuale su iOS */
 }
 
-      /* UNICA RIGA di testo per tutti i messaggi */
-      #infoLine {
-        margin: 5px 0;
-        font-weight: bold;
-        font-size: 1.2em; /* Dimensione relativa */
-        min-height: 20px;
-        text-align: center;
-        color: black;
-      }
+/* UNICA RIGA di testo per tutti i messaggi */
+#infoLine {
+  margin: 5px 0;
+  font-weight: bold;
+  font-size: 1.2em; /* Dimensione relativa */
+  min-height: 20px;
+  text-align: center;
+  color: black;
+
+  /* Disabilita la selezione del testo */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+}
+
       
       /* Animazioni */
       @keyframes blink {
@@ -2069,25 +2084,49 @@ Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>`
           window.location.href = "index.html";
         }
       });
-      /* =======================================
-         Inizializzazione alla DOMContentLoaded
-      ======================================= */
-      document.addEventListener("DOMContentLoaded", () => {
-        resizeCanvas();
-        renderSlide();
-        resetBlindMode();
-      });
-      let lastTap = 0;
-      function handleDoubleConfirm() {
-        if (editingMode && !draggedElement) {
-          editingMode = false;
-          callParticipant();
-          showTemporaryMessage("Slope confirmed! Race starting...", 2000);
-        }
-      }
-      /* =======================================
-         Fine Script
-      ======================================= */
+  /* =======================================
+   Inizializzazione alla DOMContentLoaded
+======================================= */
+document.addEventListener("DOMContentLoaded", () => {
+  resizeCanvas();
+  renderSlide();
+  resetBlindMode();
+
+  // Seleziona gli elementi su cui vuoi applicare il double tap
+  const containerEl = document.querySelector(".container");
+  const infoLineEl = document.getElementById("infoLine");
+
+  // Funzione per gestire il doppio tap tramite touchend
+  function handleTouchEndDoubleTap(e) {
+    e.preventDefault();
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    if (tapLength > 0 && tapLength < 300) {
+      handleDoubleConfirm();
+    }
+    lastTap = currentTime;
+  }
+
+  // Aggiungi i listener per il double tap su #infoLine
+  infoLineEl.addEventListener("touchend", handleTouchEndDoubleTap, false);
+  infoLineEl.addEventListener("dblclick", handleDoubleConfirm, false);
+
+  // Aggiungi i listener per il double tap sull'intero container
+  containerEl.addEventListener("touchend", handleTouchEndDoubleTap, false);
+  containerEl.addEventListener("dblclick", handleDoubleConfirm, false);
+});
+
+let lastTap = 0;
+function handleDoubleConfirm() {
+  if (editingMode && !draggedElement) {
+    editingMode = false;
+    callParticipant();
+    showTemporaryMessage("Slope confirmed! Race starting...", 2000);
+  }
+}
+/* =======================================
+   Fine Script
+======================================= */
     </script>
   </body>
 </html>
