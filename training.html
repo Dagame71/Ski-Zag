@@ -142,7 +142,7 @@
   max-width: 500px;
   margin: 2px auto;
   padding: 1px;
-  margin-top: -10px; /* Valore negativo per alzare il blocco */
+  margin-top: -3px; /* Valore negativo per alzare il blocco */
   border: 0px solid #9cc1e2;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.2); /* opzione per uno sfondo leggero */
@@ -1289,23 +1289,35 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
     alert("Game saved automatically as: " + currentChallengeSaveName);
   } else if (challengePoints > 0) {
     // Se non è presente un salvataggio attivo, aggiungi l'evento per il salvataggio manuale
-    document.getElementById("challengeSaveBtn").addEventListener("click", () => {
-      let name = (document.getElementById("challengeSaveName").value || "").trim();
-      if (!name) {
-        alert("Please enter a valid name for your saved game.");
-        return;
-      }
-      saveChallengeGame(name, {
-        level: currentLevel,
-        points: challengePoints,
-        title: currentTitleUnlocked,
-        attemptsLeft: challengeAttempts,
-        speed: speed
-      });
-      currentChallengeSaveName = name; // Imposta il nome del salvataggio attivo
-      renderSavedGamesList();
-      document.getElementById("challengeSaveName").value = "";
-    });
+document.getElementById("challengeSaveBtn").addEventListener("click", () => {
+  let name = (document.getElementById("challengeSaveName").value || "").trim();
+  if (!name) {
+    alert("Please enter a valid name for your saved game.");
+    return;
+  }
+  
+  // Recupera i salvataggi esistenti
+  let saves = getChallengeSaves();
+  
+  // Controlla se il nome è già presente
+  if (saves.hasOwnProperty(name)) {
+    alert("A game with this name already exists. Please choose a different name.");
+    return;
+  }
+  
+  // Salva la partita se il nome è nuovo
+  saveChallengeGame(name, {
+    level: currentLevel,
+    points: challengePoints,
+    title: currentTitleUnlocked,
+    attemptsLeft: challengeAttempts,
+    speed: speed
+  });
+  currentChallengeSaveName = name; // Imposta il nome del salvataggio attivo
+  renderSavedGamesList();
+  document.getElementById("challengeSaveName").value = "";
+});
+
   }
 
   // Imposta i listener per i pulsanti "New Game" e "Quit"
