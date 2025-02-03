@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ski-Zag! Arcade-Challenge</title>
+    <title>Ski Solo – Responsive Version</title>
     <style>
       /* Stili di base */
       html,
@@ -1205,8 +1205,9 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
           // Modalità normale
           setMainLabel(
             `⏰${formatTime(finalTime)}${
-              outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : ""
-            }`
+              outPenaltyTotal > 0 ? `<span style="color:red;"> (+${outPenaltyTotal.toFixed(2)})</span>` : ""
+  }`
+
           );
           updateBestTimes(finalTime, lastCompleteRun);
           if (currentTrackName !== "") {
