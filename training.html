@@ -138,24 +138,35 @@
 
       /* Contenitore delle info */
       .info-container {
-        margin-top: -10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        z-index: 9999; /* sopra la neve */
-      }
+  width: 90vw;
+  max-width: 500px;
+  margin: 2px auto;
+  padding: 1px;
+  margin-top: -10px; /* Valore negativo per alzare il blocco */
+  border: 0px solid #9cc1e2;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2); /* opzione per uno sfondo leggero */
+  display: flex;
+ box-shadow: 
+    inset 1px 1px 3px rgba(0, 0, 0, 0.2), 
+    inset -1px -1px 3px #9cc1e2;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 9999; /* come da impostazione originale */
+}
 
-      /* UNICO PARAGRAFO per final time + messaggi */
+      /* UNICA RIGA di testo per tutti i messaggi */
       #infoLine {
-        margin: 10px 0;
+        margin: 5px 0;
         font-weight: bold;
-        font-size: 1.2em; /* dimensione unificata, puoi variare */
+        font-size: 1.2em; /* Dimensione relativa */
         min-height: 20px;
         text-align: center;
         color: black;
       }
+
       .centered-button {
         display: flex;
         justify-content: center;
@@ -1165,6 +1176,9 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
 
               // Ripristina i tentativi e avvia una nuova sfida
               challengeAttempts = 3;
+  // Azzeriamo la traiettoria per evitare replay errato
+  lastCompleteRun = null;
+
             } else {
               // Caso di fallimento nel battere il tempo
               challengeAttempts--;
@@ -1638,25 +1652,26 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
           }, 2000);
         }
       }
-      function toggleChallengeMode() {
-        if (isChallengeMode) {
-          // Chiedi conferma per uscire dalla Challenge Mode
-          if (confirm("Are you sure you want to quit Challenge Mode?")) {
-            // Se l'utente conferma, esci dalla Challenge Mode
-            isChallengeMode = false;
-            challengeAttempts = 0;
-            setMainLabel("⏰1'00\"000'''");
-            toggleButtonState(false);
-            alert("Quit Challenge Mode. Back to Arcade play.");
-          } else {
-            // Se l'utente annulla, non fare nulla (continua la Challenge)
-            return;
-          }
-        } else {
-          // Mostra il popup introduttivo
-          document.getElementById("challengeIntroOverlay").classList.remove("hidden");
-        }
-      }
+function toggleChallengeMode() {
+  if (isChallengeMode) {
+    // Chiedi conferma per uscire dalla Challenge Mode
+    if (confirm("Are you sure you want to quit Challenge Mode?")) {
+      // Se l'utente conferma, esci dalla Challenge Mode
+      isChallengeMode = false;
+      challengeAttempts = 0;
+      setMainLabel("⏰1'00\"000'''");
+      toggleButtonState(false);
+      // alert("Quit Challenge Mode. Back to Arcade play."); // Rimosso perché ridondante
+    } else {
+      // Se l'utente annulla, non fare nulla (continua la Challenge)
+      return;
+    }
+  } else {
+    // Mostra il popup introduttivo
+    document.getElementById("challengeIntroOverlay").classList.remove("hidden");
+  }
+}
+
       document.getElementById("challengeButton").addEventListener("click", toggleChallengeMode);
       function toggleButtonState(disable) {
         // Elenco dei pulsanti da disattivare
@@ -1751,37 +1766,59 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
       }
       /* Replay */
       function replayTrajectory(customPoints) {
-        let rp = customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
-        if (!rp || rp.length < 2) {
-          showTemporaryMessage("No run to replay!", 1000);
-          return;
-        }
+  // Recupera il contenitore di gioco
+  let container = document.getElementById("gameContainer");
+  
+  // Salva il background originale per poterlo ripristinare dopo il replay
+  let originalBackground = container.style.background;
+  
+  // Imposta il nuovo background per il replay
+  container.style.background = '#c4d3fc url("sfondoreplay.png") no-repeat center center';
+  container.style.backgroundSize = "cover";
+  
+  // Se viene passato un array di punti custom e contiene almeno 2 punti, altrimenti usa pointsPath
+  let rp = customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
+  if (!rp || rp.length < 2) {
+    showTemporaryMessage("No run to replay!", 1000);
+    // Ripristina il background originale se non c'è una run da replay
+    container.style.background = originalBackground;
+    return;
+  }
+  
+  // Prepara il canvas per il replay: pulisci e ridisegna gli elementi statici
+  clearCanvas();
+  drawStartPoint();
+  drawFinishArea();
+  drawGates(gates);
+  drawTrees(trees);
+  
+  // Esegui il replay della traiettoria
+  let i = 0;
+  function step() {
+    if (i >= rp.length - 1) {
+      // Al termine del replay, attendi 500ms e poi ridisegna la pista con il background originale
+      setTimeout(() => {
         clearCanvas();
-        drawStartPoint();
-        drawFinishArea();
-        drawGates(gates);
-        drawTrees(trees);
-        let i = 0;
-        function step() {
-          if (i >= rp.length - 1) {
-            setTimeout(() => {
-              clearCanvas();
-              drawTrack(currentTrack);
-            }, 500);
-            return;
-          }
-          ctx.beginPath();
-          ctx.moveTo(rp[i].x, rp[i].y);
-          ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
-          ctx.strokeStyle = "#a4b8eb";
-          ctx.lineWidth = (2 / 520) * canvas.height;
-          ctx.stroke();
-          let dt = rp[i + 1].t - rp[i].t;
-          i++;
-          setTimeout(step, dt);
-        }
-        setTimeout(step, 0);
-      }
+        drawTrack(currentTrack);
+        container.style.background = originalBackground;
+      }, 500);
+      return;
+    }
+    ctx.beginPath();
+    ctx.moveTo(rp[i].x, rp[i].y);
+    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
+    ctx.strokeStyle = "#a4b8eb";
+    ctx.lineWidth = (2 / 520) * canvas.height;
+    ctx.stroke();
+    
+    // Calcola il ritardo in base alla differenza di tempo tra i punti
+    let dt = rp[i + 1].t - rp[i].t;
+    i++;
+    setTimeout(step, dt);
+  }
+  setTimeout(step, 0);
+}
+
       /* Bottoni */
       sameTrackButton.addEventListener("click", () => {
         snowLocked = !snowLocked;
