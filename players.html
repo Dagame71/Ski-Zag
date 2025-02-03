@@ -1515,8 +1515,9 @@ let bestTimes = [];
         const finalTime = baseTime + extraPenalty + outPenaltyTotal;
         lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
         lastSnowActive = showSnow;
-        let penaltyText = outPenaltyTotal > 0 ? ` (+${outPenaltyTotal.toFixed(2)})` : "";
-        setMainLabel(`⏰${formatTime(finalTime)}${penaltyText}`);
+       let penaltyText = outPenaltyTotal > 0 ? `<span style="color:red;"> (+${outPenaltyTotal.toFixed(2)})</span>` : "";
+setMainLabel(`⏰${formatTime(finalTime)}${penaltyText}`);
+
         let wasFirst = updateTimes(finalTime);
         if (wasFirst) {
           infoLine.classList.add("record");
@@ -1753,7 +1754,12 @@ function updateLeaderboard() {
           let penaltyVal = 0.02 * Math.pow(2, treeHits[currentPlayer] - 1);
           penaltyDisplay = ` (+${penaltyVal.toFixed(2)}s)`;
         }
-        let msg = `${currentPlayer}  #${raceNumber}/M${runNumber}/Run${att}${penaltyDisplay}`;
+        let msg = 
+  `<span style="color: black;">${currentPlayer}</span> ` +
+  `<span style="color: rgba(0,0,0,0.3);">Race#${raceNumber}</span> ` +
+  `<span style="color: rgba(0,0,0,0.6);">Manche${runNumber}</span> ` +
+  `<span style="color: black;">Run${att}</span> ` +
+  `<span style="color: red;">${penaltyDisplay}</span>`;
         setMainLabel(msg);
         let newWeatherState = chooseWeatherState(weatherState);
         showSnow = applyWeatherState(newWeatherState);
@@ -2066,6 +2072,7 @@ Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>`
           <input type="text" class="player-name-input"
             placeholder="Player name"
             value="${def}"
+maxlength="12"
           />`;
         container.appendChild(d);
       }
