@@ -211,11 +211,12 @@
           inset -4px -4px 2px rgba(255, 255, 255, 0.8);
       }
       
-      .popup-button-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 15px;
-      }
+ .popup-button-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px; /* Aggiunge uno spazio di 20px tra i pulsanti */
+  margin-top: 15px;
+}
       #popupOkButton {
         background: #007bff;
         color: #fff;
@@ -1568,27 +1569,28 @@ let bestTimes = [];
       closeOverlay.addEventListener("click", () => {
         chronoOverlay.classList.add("hidden");
       });
-      function updateLeaderboard() {
-        const lb = document.getElementById("leaderboardList");
-        lb.innerHTML = "";
-        bestTimes.forEach((entry, i) => {
-          const li = document.createElement("li");
-          const blindMark = entry.blind ? " (B)" : "";
-          if (i === 0) {
-            li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <span style="font-size:1.2em;">⏯️</span>`;
-            li.style.fontWeight = "bold";
-            li.style.cursor = "pointer";
-            li.title = "Click to watch the best replay";
-            li.addEventListener("click", () => {
-              chronoOverlay.classList.add("hidden");
-              replayTrajectory(entry.replay);
-            });
-          } else {
-            li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
-          }
-          lb.appendChild(li);
-        });
-      }
+function updateLeaderboard() {
+  const lb = document.getElementById("leaderboardList");
+  lb.innerHTML = "";
+  bestTimes.forEach((entry, i) => {
+    const li = document.createElement("li");
+    const blindMark = entry.blind ? " (B)" : "";
+    if (i === 0) {
+     li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <img src="replay.png" alt="Replay" style="width:1.2em; height:1.2em; cursor:pointer; transform: translateY(0.2em);">`;
+      li.style.fontWeight = "bold";
+      li.style.cursor = "pointer";
+      li.title = "Click to watch the best replay";
+      li.addEventListener("click", () => {
+        chronoOverlay.classList.add("hidden");
+        replayTrajectory(entry.replay);
+      });
+    } else {
+      li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
+    }
+    lb.appendChild(li);
+  });
+}
+
       function updatePointsLeaderboard() {
         const tableBody = document.getElementById("pointsLeaderboardBody");
         tableBody.innerHTML = "";
@@ -1902,6 +1904,39 @@ let bestTimes = [];
           if (onOk) onOk();
         });
       }
+function showConfirmPopup(message, onConfirm, onCancel) {
+  // Creiamo il markup HTML del popup
+  // Usiamo la struttura simile al popup Top 5
+  champContent.innerHTML = `
+    <!-- Bottone di chiusura in alto a sinistra (stile identico al closeOverlay) -->
+    <button id="closePopup" style="position: absolute; top: 10px; left: 10px; background-color: #8fa2f7; font-size: 0.875em; padding: 0.5em 1em; color: white; border: none; border-radius: 5px; cursor: pointer;">X</button>
+    
+    <h2>Attention!</h2>
+    <p class="slide-content">${message}</p>
+    
+    <!-- Container per il bottone OK (posizionato in basso, al centro) -->
+    <div class="popup-button-container" style="margin-top: 15px;">
+      <button class="nav-button" id="popupConfirmButton">OK</button>
+    </div>
+  `;
+
+  // Mostra il popup rimuovendo la classe "hidden" dall'overlay
+  champOverlay.classList.remove("hidden");
+
+  // Aggiungi l'evento per il pulsante OK: conferma
+  document.getElementById("popupConfirmButton").addEventListener("click", () => {
+    champOverlay.classList.add("hidden");
+    if (onConfirm) onConfirm();
+  });
+
+  // Aggiungi l'evento per il pulsante X (close): annulla
+  document.getElementById("closePopup").addEventListener("click", () => {
+    champOverlay.classList.add("hidden");
+    if (onCancel) onCancel();
+  });
+}
+
+
       /* =======================================
          SLIDES INTRO & GESTIONE PLAYER
       ======================================= */
@@ -2078,12 +2113,16 @@ Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>`
       /* =======================================
          Gestione Quit
       ======================================= */
-      document.getElementById("quit").addEventListener("click", () => {
-        const confirmQuit = confirm("Are you sure you want to quit?");
-        if (confirmQuit) {
-          window.location.href = "index.html";
-        }
-      });
+document.getElementById("quit").addEventListener("click", () => {
+  showConfirmPopup("Are you sure you want to quit?", 
+    () => { // onConfirm: se l'utente clicca OK
+      window.location.href = "index.html";
+    },
+    () => { // onCancel: se l'utente chiude il popup con la X
+      console.log("Quit canceled");
+    }
+  );
+});
   /* =======================================
    Inizializzazione alla DOMContentLoaded
 ======================================= */
