@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ski Solo – Responsive Version</title>
+    <title>Ski-Zag! Arcade-Challenge</title>
     <style>
       /* Stili di base */
       html,
@@ -1478,6 +1478,50 @@ document.getElementById("challengeSaveBtn").addEventListener("click", () => {
         // Mostra il popup
         overlay.classList.remove("hidden");
       }
+function showConfirmPopup(message, onConfirm, onCancel) {
+  // Crea un overlay dinamico con struttura simile al popup Top 5
+  const overlay = document.createElement("div");
+  overlay.className = "overlay"; 
+  // Puoi aggiungere eventuali stili inline se desideri personalizzare ulteriormente
+
+  const content = document.createElement("div");
+  content.className = "overlay-content";
+  content.innerHTML = `
+    <!-- Bottone di chiusura in alto a sinistra (stile identico al close dei popup esistenti) -->
+    <button id="closePopup" style="
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background-color: #8fa2f7;
+          font-size: 14px;
+          padding: 5px 10px;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;">X</button>
+    <h2>Attention!</h2>
+    <p class="slide-content">${message}</p>
+    <!-- Un singolo bottone OK centrato -->
+    <div class="popup-button-container" style="margin-top: 15px;">
+      <button class="nav-button" id="popupConfirmButton">OK</button>
+    </div>
+  `;
+
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  // Gestione del click sul bottone OK
+  document.getElementById("popupConfirmButton").addEventListener("click", function () {
+    document.body.removeChild(overlay);
+    if (onConfirm) onConfirm();
+  });
+  // Gestione del click sulla X (considerato come annulla)
+  document.getElementById("closePopup").addEventListener("click", function () {
+    document.body.removeChild(overlay);
+    if (onCancel) onCancel();
+  });
+}
+
 
       function showLeaderboardPopup() {
         const overlay = document.createElement("div");
@@ -1666,23 +1710,27 @@ document.getElementById("challengeSaveBtn").addEventListener("click", () => {
       }
 function toggleChallengeMode() {
   if (isChallengeMode) {
-    // Chiedi conferma per uscire dalla Challenge Mode
-    if (confirm("Are you sure you want to quit Challenge Mode?")) {
-      // Se l'utente conferma, esci dalla Challenge Mode
-      isChallengeMode = false;
-      challengeAttempts = 0;
-      setMainLabel("⏰1'00\"000'''");
-      toggleButtonState(false);
-      // alert("Quit Challenge Mode. Back to Arcade play."); // Rimosso perché ridondante
-    } else {
-      // Se l'utente annulla, non fare nulla (continua la Challenge)
-      return;
-    }
+    // Usa il popup di conferma per chiedere di uscire dalla Challenge Mode
+    showConfirmPopup(
+      "Are you sure you want to quit Challenge Mode?",
+      function () {
+        // Azione in caso di conferma: esci dalla Challenge Mode
+        isChallengeMode = false;
+        challengeAttempts = 0;
+        setMainLabel("⏰1'00\"000'''");
+        toggleButtonState(false);
+      },
+      function () {
+        // Azione in caso di annullamento: non fare nulla
+        console.log("Quit Challenge Mode canceled");
+      }
+    );
   } else {
-    // Mostra il popup introduttivo
+    // Mostra il popup introduttivo (già presente)
     document.getElementById("challengeIntroOverlay").classList.remove("hidden");
   }
 }
+
 
       document.getElementById("challengeButton").addEventListener("click", toggleChallengeMode);
       function toggleButtonState(disable) {
@@ -1946,24 +1994,27 @@ function toggleChallengeMode() {
           }
         }
       }
-      function updateLeaderboard() {
-        let lb = document.getElementById("leaderboardList");
-        lb.innerHTML = "";
-        bestTimes.forEach((entry, i) => {
-          let li = document.createElement("li");
-          if (i === 0) {
-            li.innerHTML = `${entry.name} - ${formatTime(entry.time)} <span style="font-size:18px; cursor:pointer;" title="Click to watch the best replay">⏯️</span>`;
-            li.style.fontWeight = "bold";
-            li.addEventListener("click", () => {
-              chronoOverlay.classList.add("hidden");
-              replayTrajectory(entry.replay);
-            });
-          } else {
-            li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
-          }
-          lb.appendChild(li);
-        });
-      }
+  function updateLeaderboard() {
+  let lb = document.getElementById("leaderboardList");
+  lb.innerHTML = "";
+  bestTimes.forEach((entry, i) => {
+    let li = document.createElement("li");
+    if (i === 0) {
+      // Sostituisci il carattere con un'immagine
+li.innerHTML = `${entry.name} - ${formatTime(entry.time)} <img src="replay.png" alt="Replay" style="width:20px; height:20px; cursor:pointer; transform: translateY(3px);" title="Click to watch the best replay">`;
+
+      li.style.fontWeight = "bold";
+      li.addEventListener("click", () => {
+        chronoOverlay.classList.add("hidden");
+        replayTrajectory(entry.replay);
+      });
+    } else {
+      li.textContent = `${entry.name} - ${formatTime(entry.time)}`;
+    }
+    lb.appendChild(li);
+  });
+}
+
 
       /* Gestione localStorage piste salvate */
       const LS_KEY = "skiSolo_savedTracks";
@@ -2150,11 +2201,19 @@ function toggleChallengeMode() {
       }
       renderTutorial();
 
-      document.getElementById("homeBtn").addEventListener("click", function () {
-        if (confirm("Return to home to play the World Cup?")) {
-          location.href = "index.html";
-        }
-      });
+   document.getElementById("homeBtn").addEventListener("click", function () {
+  showConfirmPopup(
+    "Return to home to play the World Cup?",
+    function () {
+      // Azione in caso di conferma
+      location.href = "index.html";
+    },
+    function () {
+      // Azione in caso di annullamento (facoltativa)
+      console.log("Home action canceled");
+    }
+  );
+});
 
       window.onload = function () {
         resizeCanvas();
