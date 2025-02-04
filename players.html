@@ -335,6 +335,21 @@
       .dot.active {
         background: #007bff;
       }
+.close-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #8fa2f7;
+  font-size: 0.875em;
+  padding: 0.5em 1em;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.close-button:hover {
+  background-color: #bdc9fb;
+}
       
       /* Tabella del campionato */
       .champ-table {
@@ -486,9 +501,12 @@
     </div>
     
     <!-- OVERLAY INTRO E SLIDES -->
-    <div id="slidesOverlay" class="overlay hidden">
-      <div id="slidesContent" class="overlay-content intro-overlay"></div>
-    </div>
+   <div id="slidesOverlay" class="overlay hidden">
+  <div id="slidesContent" class="overlay-content intro-overlay">
+    <button id="closeIntroOverlay" class="close-button">X</button>
+    <!-- Il resto del contenuto introduttivo -->
+  </div>
+</div>
     
     <!-- OVERLAY ANNUNCI E CLASSIFICHE -->
     <div id="champOverlay" class="overlay hidden">
@@ -1258,16 +1276,25 @@ let bestTimes = [];
         showTemporaryMessage("New tree added!", 1500);
       }
       // Aggiungi EventListener se non già attaccati
-      if (!document._eventsAttached) {
-        canvas.addEventListener("mousedown", handleMouseDown);
-        canvas.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-        canvas.addEventListener("touchstart", handleTouchStart);
-        canvas.addEventListener("touchmove", handleTouchMove);
-        canvas.addEventListener("touchend", handleTouchEnd);
-        canvas.addEventListener("dblclick", handleDoubleConfirm, false);
-        document._eventsAttached = true;
-      }
+ if (!document._eventsAttached) {
+  canvas.addEventListener("mousedown", handleMouseDown);
+  canvas.addEventListener("mousemove", handleMouseMove);
+  document.addEventListener("mouseup", handleMouseUp);
+  canvas.addEventListener("touchstart", handleTouchStart);
+  canvas.addEventListener("touchmove", handleTouchMove);
+  canvas.addEventListener("touchend", handleTouchEnd);
+  canvas.addEventListener("dblclick", handleDoubleConfirm, false);
+
+  //listener per il pulsante di chiusura dell'overlay introduttivo
+  let closeIntroOverlay = document.getElementById("closeIntroOverlay");
+  if (closeIntroOverlay) {
+ closeIntroOverlay.addEventListener("click", function() {
+  window.location.href = "index.html";
+});
+  }
+
+  document._eventsAttached = true;
+}
 
       function findNearestGate(x, y, maxDist) {
         let foundIndex = null;
@@ -1988,57 +2015,70 @@ Have fun with Ski-Zag!<br><b>Enjoy the slope!</b>`
       ];
       let currentTutorialIndex = 0;
       let draftParticipants = [];
-      function renderSlide() {
-        slidesOverlay.classList.remove("hidden");
-        const slide = slidesIntro[currentTutorialIndex];
-        slidesContent.innerHTML = `
-          <h2 class="slide-title">${slide.title}</h2>
-          <p class="slide-content">${slide.content}</p>
-          <div class="tutorial-dots"></div>
-          <div class="slides-nav">
-            <button class="nav-button" id="btnPrev">←</button>
-            <button class="nav-button" id="btnStartNow">Start!</button>
-            <button class="nav-button" id="btnNext">→</button>
-          </div>`;
-        const dotsC = slidesContent.querySelector(".tutorial-dots");
-        slidesIntro.forEach((s, i) => {
-          const d = document.createElement("div");
-          d.className = "dot" + (i === currentTutorialIndex ? " active" : "");
-          d.addEventListener("click", () => {
-            syncDraftParticipants();
-            currentTutorialIndex = i;
-            renderSlide();
-          });
-          dotsC.appendChild(d);
-        });
-        const btnPrev = slidesContent.querySelector("#btnPrev");
-        btnPrev.disabled = currentTutorialIndex === 0;
-        btnPrev.addEventListener("click", () => {
-          if (currentTutorialIndex > 0) {
-            syncDraftParticipants();
-            currentTutorialIndex--;
-            renderSlide();
-          }
-        });
-        slidesContent.querySelector("#btnStartNow").addEventListener("click", () => {
-          syncDraftParticipants();
-          if (!checkDraftNames()) return;
-          acceptDraftParticipants();
-          startChampionship();
-        });
-        const btnNext = slidesContent.querySelector("#btnNext");
-        btnNext.disabled = currentTutorialIndex === slidesIntro.length - 1;
-        btnNext.addEventListener("click", () => {
-          if (currentTutorialIndex < slidesIntro.length - 1) {
-            syncDraftParticipants();
-            currentTutorialIndex++;
-            renderSlide();
-          }
-        });
-        if (currentTutorialIndex === 0) {
-          renderPlayersInput();
-        }
-      }
+function renderSlide() {
+  slidesOverlay.classList.remove("hidden");
+  const slide = slidesIntro[currentTutorialIndex];
+  slidesContent.innerHTML = `
+ <button id="closeIntroOverlay" class="close-button">X</button>
+    <div style="margin-top:5px;">
+      <h2 class="slide-title">${slide.title}</h2>
+      <p class="slide-content">${slide.content}</p>
+      <div class="tutorial-dots"></div>
+      <div class="slides-nav">
+        <button class="nav-button" id="btnPrev">←</button>
+        <button class="nav-button" id="btnStartNow">Start!</button>
+        <button class="nav-button" id="btnNext">→</button>
+      </div>
+    </div>`;
+  
+  const dotsC = slidesContent.querySelector(".tutorial-dots");
+  slidesIntro.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "dot" + (i === currentTutorialIndex ? " active" : "");
+    d.addEventListener("click", () => {
+      syncDraftParticipants();
+      currentTutorialIndex = i;
+      renderSlide();
+    });
+    dotsC.appendChild(d);
+  });
+  const btnPrev = slidesContent.querySelector("#btnPrev");
+  btnPrev.disabled = currentTutorialIndex === 0;
+  btnPrev.addEventListener("click", () => {
+    if (currentTutorialIndex > 0) {
+      syncDraftParticipants();
+      currentTutorialIndex--;
+      renderSlide();
+    }
+  });
+  slidesContent.querySelector("#btnStartNow").addEventListener("click", () => {
+    syncDraftParticipants();
+    if (!checkDraftNames()) return;
+    acceptDraftParticipants();
+    startChampionship();
+  });
+  const btnNext = slidesContent.querySelector("#btnNext");
+  btnNext.disabled = currentTutorialIndex === slidesIntro.length - 1;
+  btnNext.addEventListener("click", () => {
+    if (currentTutorialIndex < slidesIntro.length - 1) {
+      syncDraftParticipants();
+      currentTutorialIndex++;
+      renderSlide();
+    }
+  });
+  if (currentTutorialIndex === 0) {
+    renderPlayersInput();
+  }
+  
+  // Aggiungi qui il listener per chiudere l'overlay introduttivo
+  let closeIntroOverlay = document.getElementById("closeIntroOverlay");
+  if (closeIntroOverlay) {
+ closeIntroOverlay.addEventListener("click", function() {
+  window.location.href = "index.html";
+});
+  }
+}
+
       function renderPlayersInput() {
         const cont = slidesContent.querySelector("#playersInputContainer");
         if (!cont) return;
