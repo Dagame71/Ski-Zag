@@ -1792,15 +1792,23 @@ function toggleChallengeMode() {
 
         // Calcola la lunghezza ideale della pista
         let idealLength = calculateIdealPath(currentTrack.gates);
-
+// Se il valore è 0 o NaN, assegna un valore predefinito
+if (isNaN(idealLength) || idealLength <= 0) {
+    idealLength = 300; // Lunghezza di default per evitare errori
+}
         // Gonfia la lunghezza ideale in base al numero di alberi
         idealLength *= factor;
 
         // Calcola il best time da battere
-        challengeBestTime = calculateFinalTime(
-          idealLength * 6.5 * (speed / baseSpeed),
-          idealLength
-        );
+    challengeBestTime = calculateFinalTime(
+    idealLength * 6.5 * (speed / baseSpeed),
+    idealLength
+);
+
+// Se challengeBestTime è NaN o negativo, imposta un valore predefinito
+if (isNaN(challengeBestTime) || challengeBestTime <= 0) {
+    challengeBestTime = 60.000; // Tempo predefinito per evitare errori
+}
 
         // Resetta i tentativi disponibili
         challengeAttempts = 3;
