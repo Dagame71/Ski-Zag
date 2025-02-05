@@ -443,7 +443,7 @@
           alt="Stopwatch"
           style="width:18px; height:18px; vertical-align:middle; margin-right:4px;"
         />
-        1'00"000'''
+        0'00"000'''
       </p>
     </div>
     <!-- OVERLAY TOP 5 -->
@@ -571,7 +571,7 @@
       const infoLine = document.getElementById("infoLine");
 
       // Per gestire il testo base e i messaggi temporanei
-      let mainLabel = "⏰1'00\"000'''";
+      let mainLabel = "⏰0'00\"000'''";
       function setMainLabel(text) {
         // Se siamo in modalità Challenge e il testo inizia con "⏰",
         // evitiamo di forzare il testo "normale" (come da tua logica).
@@ -667,7 +667,8 @@
       const speedDecrement = 0.05; // Riduzione velocità per ogni livello
       let currentLevel = 1; // Livello corrente
 let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio attivo (se esiste)
-
+// Nome attuale del giocatore (predefinito "Anonymous")
+let currentPlayerName = localStorage.getItem("currentPlayerName") || "Anonymous";
 
       // TITOLI E VARIABILE DI STATO
       const challengeTitles = [
@@ -1148,91 +1149,83 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
       }
 
       /* Fine run / fallimento run */
-      function finishRun() {
-        drawing = false;
-        didFinishOrFail = true;
+function finishRun() {
+    drawing = false;
+    didFinishOrFail = true;
 
-        let endTime = performance.now();
-        let elapsedTime = endTime - startTime;
+    let endTime = performance.now();
+    let elapsedTime = endTime - startTime;
 
-        let distPx = calculateDistance(pointsPath);
-        let baseTime = calculateFinalTime(elapsedTime, distPx);
-        let outPenaltyTotal = outPenaltyCount * 0.1;
-        let finalTime = baseTime + outPenaltyTotal;
+    let distPx = calculateDistance(pointsPath);
+    let baseTime = calculateFinalTime(elapsedTime, distPx);
+    let outPenaltyTotal = outPenaltyCount * 0.1;
+    let finalTime = baseTime + outPenaltyTotal;
 
-        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-        window.lastFinalTime = finalTime;
+    lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+    window.lastFinalTime = finalTime;
 
-        if (isChallengeMode) {
-          setMainLabel(`Your time: ${formatTime(finalTime)}`);
+    if (isChallengeMode) {
+        setMainLabel(`Your time: ${formatTime(finalTime)}`);
 
-          setTimeout(() => {
+        setTimeout(() => {
             if (finalTime <= challengeBestTime) {
-              // Caso di successo
-              let differenceInCents = Math.max(
-                0,
-                Math.floor((challengeBestTime - finalTime) * 100)
-              );
-              let multiplier = challengeAttempts; // 3, 2, 1 per i tentativi rimanenti
-              let pointsEarned = differenceInCents * multiplier;
+                let differenceInCents = Math.max(0, Math.floor((challengeBestTime - finalTime) * 100));
+                let multiplier = challengeAttempts;
+                let pointsEarned = differenceInCents * multiplier;
 
-              // Aggiungi i punti al totale
-              challengePoints += pointsEarned;
+                challengePoints += pointsEarned;
 
-              // Aggiorna la leaderboard e prepara il prossimo livello
-              updateLeaderboardChallenge(pointsEarned);
-              adjustSpeedForNextLevel();
-              showPointsPopup(pointsEarned);
+                updateLeaderboardChallenge(pointsEarned);
+                adjustSpeedForNextLevel();
+                showPointsPopup(pointsEarned);
 
-              // Ripristina i tentativi e avvia una nuova sfida
-              challengeAttempts = 3;
-  // Azzeriamo la traiettoria per evitare replay errato
-  lastCompleteRun = null;
+                challengeAttempts = 3;
+                lastCompleteRun = null;
 
             } else {
-              // Caso di fallimento nel battere il tempo
-              challengeAttempts--;
-              if (challengeAttempts > 0) {
-                // Se ci sono tentativi rimanenti
-                setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
-                setTimeout(() => {
-                  clearCanvas();
-                  drawTrack(currentTrack);
-                  updateWeatherForChallenge(); // Cambia meteo per la nuova prova
-                  setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-                }, 1500);
-              } else {
-                // Se i tentativi sono esauriti
-                setMainLabel("Failed! Retry!");
-                setTimeout(() => {
-                  showChallengeEndOverlay("Well done!"); // Mostra il popup finale
-                  isChallengeMode = false; // Esce dalla modalità Challenge
-                }, 1500);
-              }
+                challengeAttempts--;
+                if (challengeAttempts > 0) {
+                    setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+                    setTimeout(() => {
+                        clearCanvas();
+                        drawTrack(currentTrack);
+                        updateWeatherForChallenge();
+                        setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+                    }, 1500);
+                } else {
+                    setMainLabel("Failed! Retry!");
+                    setTimeout(() => {
+                        showChallengeEndOverlay("Well done!");
+                        isChallengeMode = false;
+                    }, 1500);
+                }
             }
-          }, 2000);
-        } else {
-          // Modalità normale
-          setMainLabel(
+        }, 2000);
+    } else {
+        // ✅ Modalità normale: Salva il tempo con il nome attuale
+        setMainLabel(
             `⏰${formatTime(finalTime)}${
-              outPenaltyTotal > 0 ? `<span style="color:red;"> (+${outPenaltyTotal.toFixed(2)})</span>` : ""
-  }`
+                outPenaltyTotal > 0 ? `<span style="color:red;"> (+${outPenaltyTotal.toFixed(2)})</span>` : ""
+            }`
+        );
 
-          );
-          updateBestTimes(finalTime, lastCompleteRun);
-          if (currentTrackName !== "") {
+        // ✅ Usa il nome attuale per salvare il tempo
+        updateBestTimes(finalTime, lastCompleteRun, currentPlayerName);
+
+        if (currentTrackName !== "") {
             savedTracks[currentTrackName].bestTimes = bestTimes;
             storeSavedTracks();
-          }
         }
+    }
 
-        if (!isChallengeMode) {
-          setTimeout(() => {
+    if (!isChallengeMode) {
+        setTimeout(() => {
             resetRun();
-          }, 1000);
-        }
-      }
-      function showChallengeEndOverlay(failReason = "") {
+        }, 1000);
+    }
+}
+
+function showChallengeEndOverlay(failReason = "") {
   const overlay = document.getElementById("challengeEndOverlay");
   const content = document.getElementById("challengeEndContent");
 
@@ -1247,21 +1240,24 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
     <p>Title unlocked: <strong>${titleText}</strong></p>
     <hr>`;
 
-  // Se ci sono punti, mostra l'area per il salvataggio
-  if (challengePoints > 0) {
-    html += `<div style="margin:10px 0;"><label>Save your game:</label><br>`;
-    if (currentChallengeSaveName) {
-      // Se il nome del salvataggio è già presente, salvataggio automatico
-      html += `<p>Your game will be automatically saved as: <strong>${currentChallengeSaveName}</strong></p>`;
-    } else {
-      // Altrimenti, mostra il campo input e il pulsante per il salvataggio manuale
-      html += `<input type="text" id="challengeSaveName" placeholder="Enter a name">
-               <button id="challengeSaveBtn" style="margin-left:5px;">Save</button>`;
-    }
-    html += `</div>
-    <div id="challengeSavedGamesList" style="margin:10px 0;"></div>
-    <hr>`;
+  // **Se la partita è stata caricata da un salvataggio**
+  if (currentChallengeSaveName) {
+    html += `<p>Your game has been saved as: <strong>${currentChallengeSaveName}</strong></p>`;
+  } 
+  // **Se invece la partita NON era stata salvata, permette di salvarla**
+  else if (challengePoints > 0) {
+   html += `<div style="margin-bottom: 15px;">
+           <label style="display: block; font-weight: bold; margin-bottom: 8px;">Save your game:</label>
+           <input type="text" id="challengeSaveName" placeholder="Enter a name">
+           <button id="challengeSaveBtn" style="margin-left:5px;">Save</button>
+         </div>`;
+
   }
+
+  // **Sezione con la lista dei giochi salvati, senza il doppio titolo**
+  html += `<hr>
+           <div id="challengeSavedGamesList" style="margin:10px 0;"></div>
+           <hr>`;
 
   html += `
     <div class="centered-button">
@@ -1271,6 +1267,8 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
 
   content.innerHTML = html;
   overlay.classList.remove("hidden");
+
+  // **Aggiungi il listener per il tasto "New Game"**
   document.getElementById("challengeNewGameBtn").addEventListener("click", function() {
     currentChallengeSaveName = ""; // Resetta il nome per una nuova partita
     resetChallenge();
@@ -1278,81 +1276,48 @@ let currentChallengeSaveName = ""; // Qui verrà salvato il nome del salvataggio
     startNewChallenge();
   });
 
+  // **Aggiungi il listener per il tasto "Quit"**
   document.getElementById("challengeQuitBtn").addEventListener("click", function() {
     currentChallengeSaveName = ""; // Resetta il nome del salvataggio attivo
     isChallengeMode = false;
     challengeAttempts = 0;
-    setMainLabel("⏰1'00\"000'''");
+    setMainLabel("⏰0'00\"000'''");
     toggleButtonState(false);
     resetRun();
     overlay.classList.add("hidden");
   });
 
-  // Se c'è un salvataggio già attivo, esegui il salvataggio automatico
-  if (challengePoints > 0 && currentChallengeSaveName) {
-    saveChallengeGame(currentChallengeSaveName, {
-      level: currentLevel,
-      points: challengePoints,
-      title: currentTitleUnlocked,
-      attemptsLeft: challengeAttempts,
-      speed: speed
+  // **Se la partita NON era salvata, permette di salvarla manualmente**
+  if (!currentChallengeSaveName && challengePoints > 0) {
+    document.getElementById("challengeSaveBtn").addEventListener("click", () => {
+      let name = (document.getElementById("challengeSaveName").value || "").trim();
+      if (!name) {
+        alert("Please enter a valid name for your saved game.");
+        return;
+      }
+
+      let saves = getChallengeSaves();
+      if (saves.hasOwnProperty(name)) {
+        alert("A game with this name already exists. Please choose a different name.");
+        return;
+      }
+
+      saveChallengeGame(name, {
+        level: currentLevel,
+        points: challengePoints,
+        title: currentTitleUnlocked,
+        attemptsLeft: challengeAttempts,
+        speed: speed
+      });
+
+      currentChallengeSaveName = name; // Imposta il nome del salvataggio attivo
+      renderSavedGamesList();
+      document.getElementById("challengeSaveName").value = "";
     });
-    alert("Game saved automatically as: " + currentChallengeSaveName);
-  } else if (challengePoints > 0) {
-    // Se non è presente un salvataggio attivo, aggiungi l'evento per il salvataggio manuale
-document.getElementById("challengeSaveBtn").addEventListener("click", () => {
-  let name = (document.getElementById("challengeSaveName").value || "").trim();
-  if (!name) {
-    alert("Please enter a valid name for your saved game.");
-    return;
   }
-  
-  // Recupera i salvataggi esistenti
-  let saves = getChallengeSaves();
-  
-  // Controlla se il nome è già presente
-  if (saves.hasOwnProperty(name)) {
-    alert("A game with this name already exists. Please choose a different name.");
-    return;
-  }
-  
-  // Salva la partita se il nome è nuovo
-  saveChallengeGame(name, {
-    level: currentLevel,
-    points: challengePoints,
-    title: currentTitleUnlocked,
-    attemptsLeft: challengeAttempts,
-    speed: speed
-  });
-  currentChallengeSaveName = name; // Imposta il nome del salvataggio attivo
+
+  // **Mostra la lista dei giochi salvati**
   renderSavedGamesList();
-  document.getElementById("challengeSaveName").value = "";
-});
-
-  }
-
-  // Imposta i listener per i pulsanti "New Game" e "Quit"
-  document.getElementById("challengeNewGameBtn").addEventListener("click", () => {
-    currentChallengeSaveName = ""; // Resetta il nome per una nuova partita
-    resetChallenge();
-    overlay.classList.add("hidden");
-    startNewChallenge();
-  });
-
-  document.getElementById("challengeQuitBtn").addEventListener("click", () => {
-    isChallengeMode = false;
-    challengeAttempts = 0;
-    currentChallengeSaveName = ""; // Resetta il nome del salvataggio attivo
-    setMainLabel("⏰1'00\"000'''");
-    toggleButtonState(false);
-    resetRun();
-    overlay.classList.add("hidden");
-  });
-
-  // Mostra la lista dei salvataggi (se presente)
-  if (challengePoints > 0) {
-    renderSavedGamesList();
-  }
 }
 
 
@@ -1458,7 +1423,7 @@ document.getElementById("challengeSaveBtn").addEventListener("click", () => {
           document.getElementById("challengeQuitBtn").addEventListener("click", () => {
             isChallengeMode = false;
             challengeAttempts = 0;
-            setMainLabel("⏰1'00\"000'''");
+            setMainLabel("⏰0'00\"000'''");
             toggleButtonState(false);
             resetRun(); // 🔴 Aggiungiamo questa riga per cancellare la traiettoria!
             document.getElementById("challengeEndOverlay").classList.add("hidden");
@@ -1481,7 +1446,7 @@ document.getElementById("challengeSaveBtn").addEventListener("click", () => {
           document.getElementById("challengeQuitBtn").addEventListener("click", () => {
             isChallengeMode = false;
             challengeAttempts = 0;
-            setMainLabel("⏰1'00\"000'''");
+            setMainLabel("⏰0'00\"000'''");
             toggleButtonState(false);
             overlay.classList.add("hidden");
           });
@@ -1614,39 +1579,44 @@ function showConfirmPopup(message, onConfirm, onCancel) {
         document.body.appendChild(overlay);
       }
 
-      function failRun(msg) {
-        drawing = false;
-        didFinishOrFail = true;
-        setMainLabel(msg);
-        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+function failRun(msg) {
+    drawing = false;
+    didFinishOrFail = true;
 
-        if (isChallengeMode) {
-          challengeAttempts--;
-          if (challengeAttempts > 0) {
-            // Ancora tentativi
+    // 🛠️ Salvare comunque la traiettoria fallita
+    if (pointsPath.length > 1) {
+        lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+    }
+
+    // 🛠️ Azzerare il tempo perché la run è fallita
+    window.lastFinalTime = 0; 
+
+    setMainLabel(msg);
+
+    if (isChallengeMode) {
+        challengeAttempts--;
+        if (challengeAttempts > 0) {
             setTimeout(() => {
-              setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
-              setTimeout(() => {
-                clearCanvas();
-                drawTrack(currentTrack);
-                updateWeatherForChallenge();
-                setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
-              }, 1500);
+                setMainLabel(`Try again! ${4 - challengeAttempts}nd attempt!`);
+                setTimeout(() => {
+                    clearCanvas();
+                    drawTrack(currentTrack);
+                    updateWeatherForChallenge();
+                    setMainLabel(`Beat this time: ${formatTime(challengeBestTime)}`);
+                }, 1500);
             }, 1500);
-          } else {
-            // Fallimento definitivo
-            setTimeout(() => {
-              // Al posto di showLeaderboardPopupWithPlayAgain(), usa:
-              showChallengeEndOverlay("You failed the Challenge!");
-              // isChallengeMode = false; se vuoi uscire dalla challenge subito
-            }, 1500);
-          }
         } else {
-          setTimeout(() => {
-            resetRun();
-          }, 1000);
+            setTimeout(() => {
+                showChallengeEndOverlay("You failed the Challenge!");
+            }, 1500);
         }
-      }
+    } else {
+        setTimeout(() => {
+            resetRun();
+        }, 1000);
+    }
+}
+
       function resetChallenge() {
         currentLevel = 1; // Resetta il livello
         speed = 3.5; // Resetta la velocità
@@ -1706,41 +1676,52 @@ function showConfirmPopup(message, onConfirm, onCancel) {
         let r = (sec % 60).toFixed(3);
         return `${m}'${r.replace(".", '"')}'''`;
       }
-      function updateBestTimes(time, replayData) {
-        let result = { name: "Anonymous", time, replay: replayData };
-        bestTimes.push(result);
-        bestTimes.sort((a, b) => a.time - b.time);
-        if (bestTimes.length > 5) bestTimes.length = 5;
-        // Se è un nuovo record
-        if (bestTimes[0].time === time) {
-          infoLine.classList.add("record");
-          setTimeout(() => {
+function updateBestTimes(time, replayData, playerName = "Anonymous") {
+    // ✅ Rimuoviamo eventuali duplicati dello stesso tempo, indipendentemente dal nome
+    bestTimes = bestTimes.filter(entry => entry.time !== time);
+
+    // ✅ Aggiungiamo il nuovo tempo con il nome aggiornato
+    let result = { name: playerName, time, replay: replayData };
+    bestTimes.push(result);
+
+    // ✅ Riordiniamo i tempi dal più veloce al più lento
+    bestTimes.sort((a, b) => a.time - b.time);
+
+    // ✅ Manteniamo solo i migliori 5 tempi
+    if (bestTimes.length > 5) bestTimes.length = 5;
+
+    // ✅ Ripristino del lampeggio se il nuovo tempo è il record
+    if (bestTimes.length > 0 && bestTimes[0].time === time) {
+        infoLine.classList.add("record");
+        setTimeout(() => {
             infoLine.classList.remove("record");
-          }, 2000);
-        }
-      }
+        }, 2000);
+    }
+}
+
 function toggleChallengeMode() {
   if (isChallengeMode) {
-    // Usa il popup di conferma per chiedere di uscire dalla Challenge Mode
     showConfirmPopup(
       "Are you sure you want to quit Challenge Mode?",
       function () {
-        // Azione in caso di conferma: esci dalla Challenge Mode
         isChallengeMode = false;
         challengeAttempts = 0;
-        setMainLabel("⏰1'00\"000'''");
+        setMainLabel("⏰0'00\"000'''");
         toggleButtonState(false);
       },
       function () {
-        // Azione in caso di annullamento: non fare nulla
         console.log("Quit Challenge Mode canceled");
       }
     );
   } else {
-    // Mostra il popup introduttivo (già presente)
     document.getElementById("challengeIntroOverlay").classList.remove("hidden");
+
+    // 🛠️ Reset della traiettoria per evitare che la modalità Challenge usi l'ultima run normale!
+    lastCompleteRun = null;
+    window.lastFinalTime = 0;
   }
 }
+
 
 
       document.getElementById("challengeButton").addEventListener("click", toggleChallengeMode);
@@ -1845,58 +1826,68 @@ if (isNaN(challengeBestTime) || challengeBestTime <= 0) {
       }
       /* Replay */
       function replayTrajectory(customPoints) {
-  // Recupera il contenitore di gioco
-  let container = document.getElementById("gameContainer");
-  
-  // Salva il background originale per poterlo ripristinare dopo il replay
-  let originalBackground = container.style.background;
-  
-  // Imposta il nuovo background per il replay
-  container.style.background = '#c4d3fc url("sfondoreplay.png") no-repeat center center';
-  container.style.backgroundSize = "cover";
-  
-  // Se viene passato un array di punti custom e contiene almeno 2 punti, altrimenti usa pointsPath
-  let rp = customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
-  if (!rp || rp.length < 2) {
-    showTemporaryMessage("No run to replay!", 1000);
-    // Ripristina il background originale se non c'è una run da replay
-    container.style.background = originalBackground;
-    return;
-  }
-  
-  // Prepara il canvas per il replay: pulisci e ridisegna gli elementi statici
-  clearCanvas();
-  drawStartPoint();
-  drawFinishArea();
-  drawGates(gates);
-  drawTrees(trees);
-  
-  // Esegui il replay della traiettoria
-  let i = 0;
-  function step() {
-    if (i >= rp.length - 1) {
-      // Al termine del replay, attendi 500ms e poi ridisegna la pista con il background originale
-      setTimeout(() => {
-        clearCanvas();
-        drawTrack(currentTrack);
-        container.style.background = originalBackground;
-      }, 500);
-      return;
+    let container = document.getElementById("gameContainer");
+    let originalBackground = container.style.background;
+    container.style.background = '#c4d3fc url("sfondoreplay.png") no-repeat center center';
+    container.style.backgroundSize = "cover";
+
+    let rp = customPoints && customPoints.length >= 2 ? customPoints : lastCompleteRun;
+
+    // 🏆 Se stiamo rivedendo il best time, usa il tempo salvato
+    let replayTime = window.lastFinalTime;
+
+    // 📌 Controlla se il replay è del best time
+    if (customPoints && bestTimes.length > 0) {
+        let bestReplay = bestTimes.find(entry => entry.replay === customPoints);
+        if (bestReplay) {
+            replayTime = bestReplay.time;
+        }
     }
-    ctx.beginPath();
-    ctx.moveTo(rp[i].x, rp[i].y);
-    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
-    ctx.strokeStyle = "#a4b8eb";
-    ctx.lineWidth = (2 / 520) * canvas.height;
-    ctx.stroke();
-    
-    // Calcola il ritardo in base alla differenza di tempo tra i punti
-    let dt = rp[i + 1].t - rp[i].t;
-    i++;
-    setTimeout(step, dt);
-  }
-  setTimeout(step, 0);
+
+    // ⏰ Mostra il tempo corretto
+    setMainLabel(`⏰${formatTime(replayTime)}`);
+
+    if (!rp || rp.length < 2) {
+        showTemporaryMessage("No run to replay!", 1000);
+        setTimeout(() => {
+            setMainLabel("⏰0'00\"000'''");
+            container.style.background = originalBackground;
+        }, 1000);
+        return;
+    }
+
+    clearCanvas();
+    drawStartPoint();
+    drawFinishArea();
+    drawGates(gates);
+    drawTrees(trees);
+
+    let i = 0;
+    function step() {
+        if (i >= rp.length - 1) {
+            setTimeout(() => {
+                clearCanvas();
+                drawTrack(currentTrack);
+                container.style.background = originalBackground;
+                setMainLabel("⏰0'00\"000'''");
+            }, 1000);
+            return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(rp[i].x, rp[i].y);
+        ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
+        ctx.strokeStyle = "#a4b8eb";
+        ctx.lineWidth = (2 / 520) * canvas.height;
+        ctx.stroke();
+
+        let dt = rp[i + 1].t - rp[i].t;
+        i++;
+        setTimeout(step, dt);
+    }
+    setTimeout(step, 0);
 }
+
+
 
       /* Bottoni */
       sameTrackButton.addEventListener("click", () => {
@@ -1920,7 +1911,7 @@ if (isNaN(challengeBestTime) || challengeBestTime <= 0) {
       quitButton.addEventListener("click", () => {
         isChallengeMode = false; // Assicura che non siamo più in modalità Challenge
         challengeAttempts = 0; // Resetta i tentativi
-        setMainLabel("⏰1'00\"000'''"); // Ripristina l'etichetta iniziale
+        setMainLabel("⏰0'00\"000'''"); // Ripristina l'etichetta iniziale
         toggleButtonState(false); // Riattiva i pulsanti disabilitati
 
         currentTrack = createTrack();
@@ -1970,36 +1961,34 @@ if (isNaN(challengeBestTime) || challengeBestTime <= 0) {
 document.getElementById("closeChallengeIntroButton").addEventListener("click", function() {
   document.getElementById("challengeIntroOverlay").classList.add("hidden");
 });
-      document
-        .getElementById("saveResultConfirmBtn")
-        .addEventListener("click", () => {
-          let name = document.getElementById("resultNameInput").value.trim();
-          if (name === "") {
-            alert("Please enter a name.");
-            return;
-          }
-          if (typeof window.lastFinalTime !== "number" || window.lastFinalTime === 0) {
-            alert("No valid final time recorded!");
-            return;
-          }
-          let found = bestTimes.find(
-            (item) => item.name === "Anonymous" && item.time === window.lastFinalTime
-          );
-          if (found) {
-            found.name = name;
-          } else {
-            bestTimes.push({ name, time: window.lastFinalTime, replay: lastCompleteRun });
-          }
-          bestTimes.sort((a, b) => a.time - b.time);
-          if (bestTimes.length > 5) bestTimes.length = 5;
-          saveResultOverlay.classList.add("hidden");
-          updateLeaderboard();
-        });
+document.getElementById("saveResultConfirmBtn").addEventListener("click", () => {
+    let name = document.getElementById("resultNameInput").value.trim();
+    if (name === "") {
+        alert("Inserisci un nome!");
+        return;
+    }
+    if (typeof window.lastFinalTime !== "number" || window.lastFinalTime === 0) {
+        alert("Nessun tempo valido registrato!");
+        return;
+    }
+
+    // ✅ Aggiorniamo il nome attuale e lo salviamo nel localStorage
+    currentPlayerName = name;
+    localStorage.setItem("currentPlayerName", name);
+
+    // ✅ Aggiorniamo il tempo con il nuovo nome
+    updateBestTimes(window.lastFinalTime, lastCompleteRun, name);
+
+    // ✅ Chiudiamo il menu di salvataggio
+    saveResultOverlay.classList.add("hidden");
+    updateLeaderboard();
+});
+
       function resetRun() {
         drawing = false;
         didFinishOrFail = false;
         pointsPath = [];
-        setMainLabel("⏰1'00\"000'''"); // Tornare al default
+        setMainLabel("⏰0'00\"000'''"); // Tornare al default
         clearCanvas();
         drawTrack(currentTrack);
         globalWind = Math.random() * 1 - 0.5;
