@@ -1508,9 +1508,10 @@ let bestTimes = [];
       function failAttempt(msg) {
         drawing = false;
         didFinishOrFailThisRun = true;
-        if (pointsPath.length > 0) {
-          lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
-        }
+       if (pointsPath.length > 0) {
+  lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
+  window.lastFinalTime = null; // Segna che non c'è tempo valido per il replay
+}
         if (isBlind) {
           setMainLabel("Blind failed! Penalty!");
           for (let player in championScores) {
@@ -1540,6 +1541,7 @@ let bestTimes = [];
         }
         let outPenaltyTotal = outPenaltyCount * 0.1;
         const finalTime = baseTime + extraPenalty + outPenaltyTotal;
+window.lastFinalTime = finalTime;
         lastCompleteRun = JSON.parse(JSON.stringify(pointsPath));
         lastSnowActive = showSnow;
        let penaltyText = outPenaltyTotal > 0 ? `<span style="color:red;"> (+${outPenaltyTotal.toFixed(2)})</span>` : "";
@@ -1573,22 +1575,26 @@ setMainLabel(`⏰${formatTime(finalTime)}${penaltyText}`);
         const r = (sec % 60).toFixed(3);
         return `${m}'${r.replace(".", '"')}'''`;
       }
-      function updateTimes(t) {
-        const nameValue = participants[currentIndex];
-        const replayData = JSON.parse(JSON.stringify(pointsPath));
-        const newResult = {
-          name: nameValue,
-          time: t,
-          replay: replayData,
-          blind: isBlind
-        };
-        bestTimes.push(newResult);
-        bestTimes.sort((a, b) => a.time - b.time);
-        if (bestTimes.length > 5) bestTimes.length = 5;
-        const isBest = bestTimes[0].time === t;
-        updateLeaderboard();
-        return isBest;
-      }
+function updateTimes(t) {
+  const nameValue = participants[currentIndex];
+  const replayData = JSON.parse(JSON.stringify(pointsPath));
+
+const newResult = {
+  name: nameValue,
+  time: t,
+  replay: replayData,
+  blind: isBlind,
+  correctTime: t !== undefined ? t : null // Se il tempo è null, lo segniamo come "No time to show"
+};
+
+  bestTimes.push(newResult);
+  bestTimes.sort((a, b) => a.time - b.time);
+  if (bestTimes.length > 5) bestTimes.length = 5;
+  const isBest = bestTimes[0].time === t;
+  updateLeaderboard();
+  return isBest;
+}
+
       chronoButton.addEventListener("click", () => {
         updateLeaderboard();
         updatePointsLeaderboard();
@@ -1604,13 +1610,16 @@ function updateLeaderboard() {
     const li = document.createElement("li");
     const blindMark = entry.blind ? " (B)" : "";
     if (i === 0) {
-     li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} <img src="replay.png" alt="Replay" style="width:1.2em; height:1.2em; cursor:pointer; transform: translateY(0.2em);">`;
+      li.innerHTML = `${entry.name} - ${formatTime(entry.time)}${blindMark} 
+        <img src="replay.png" alt="Replay" style="width:1.2em; height:1.2em; cursor:pointer; transform: translateY(0.2em);">`;
       li.style.fontWeight = "bold";
       li.style.cursor = "pointer";
       li.title = "Click to watch the best replay";
+
+      // Ora il replay parte correttamente con i dati salvati!
       li.addEventListener("click", () => {
         chronoOverlay.classList.add("hidden");
-        replayTrajectory(entry.replay);
+        replayTrajectory(entry.replay, entry.correctTime, entry.blind);
       });
     } else {
       li.textContent = `${entry.name} - ${formatTime(entry.time)}${blindMark}`;
@@ -1618,6 +1627,7 @@ function updateLeaderboard() {
     lb.appendChild(li);
   });
 }
+
 
       function updatePointsLeaderboard() {
         const tableBody = document.getElementById("pointsLeaderboardBody");
@@ -1647,23 +1657,31 @@ function updateLeaderboard() {
           showTemporaryMessage("No run to replay!", 2000);
         }
       });
-      function replayTrajectory(customPoints) {
-  // Seleziona il contenitore
-  const container = document.querySelector('.container');
-  // Salviamo il background originale (in questo caso, quello definito in CSS)
-  // In alternativa puoi salvare il valore letterale usato nel CSS.
-  const originalBackground = "#e1dffc url('sfondo.png') no-repeat center center";
-  
-  // Impostiamo il background per il replay
-  container.style.background = "#e1dffc url('sfondoreplay.png') no-repeat center center";
-  container.style.backgroundSize = "cover";
-
-  const rp = customPoints && customPoints.length >= 2 ? customPoints : pointsPath;
-  if (!rp || rp.length < 2) {
+      function replayTrajectory(customPoints, correctTime, wasBlind){
+const savedMainLabel = mainLabel; // Salviamo il testo attuale
+  if (!customPoints || customPoints.length < 2) {
     showTemporaryMessage("No run to replay!", 1000);
     return;
   }
-  
+
+  // Salva il background originale
+  const container = document.querySelector('.container');
+  const originalBackground = container.style.background;
+
+  // Imposta lo sfondo da replay
+  container.style.background = "url('sfondoreplay.png') no-repeat center center";
+  container.style.backgroundSize = "cover";
+
+  // Mostra il tempo corretto per il replay
+const chronoIcon = '⏰';
+
+if (correctTime === null || window.lastFinalTime === null) {
+  setMainLabel(`${chronoIcon} No time to show`);
+} else {
+  setMainLabel(`${chronoIcon} ${formatTime(correctTime !== undefined ? correctTime : window.lastFinalTime)}`);
+}
+
+  // Gestione della neve nel replay
   const preReplaySnowState = showSnow;
   if (lastSnowActive) {
     showSnow = true;
@@ -1675,17 +1693,21 @@ function updateLeaderboard() {
   } else {
     snowCanvasElem.classList.add("hidden");
   }
+
   clearCanvas();
   drawStartPoint();
   drawFinishArea();
   drawGates(gates);
   drawTrees(trees);
+
   let i = 0;
   function step() {
-    if (i >= rp.length - 1) {
+    if (i >= customPoints.length - 1) {
       setTimeout(() => {
         clearCanvas();
         if (currentTrack) drawTrack(currentTrack);
+
+        // Ripristina la neve se era attiva prima del replay
         if (preReplaySnowState) {
           showSnow = true;
           snowCanvasElem.classList.remove("hidden");
@@ -1697,24 +1719,37 @@ function updateLeaderboard() {
           showSnow = false;
           snowCanvasElem.classList.add("hidden");
         }
-        // Ripristina il background originale dopo il replay
+
+        // Ripristina lo sfondo originale dopo il replay
         container.style.background = originalBackground;
         container.style.backgroundSize = "cover";
+
+        // Resetta il tempo visualizzato dopo il replay
+    // Se è un Best Time, ripristina il tempo corretto dopo il replay
+const finalTimeToShow = correctTime !== undefined ? formatTime(correctTime) : (window.lastFinalTime ? formatTime(window.lastFinalTime) : "⏰0'00\"000'''");
+
+// Dopo il replay, ripristina la stringa originale del giocatore
+setMainLabel(savedMainLabel);
       }, 500);
       return;
     }
+
     ctx.beginPath();
-    ctx.moveTo(rp[i].x, rp[i].y);
-    ctx.lineTo(rp[i + 1].x, rp[i + 1].y);
-    ctx.strokeStyle = "#a4b8eb";
+    ctx.moveTo(customPoints[i].x, customPoints[i].y);
+    ctx.lineTo(customPoints[i + 1].x, customPoints[i + 1].y);
+    ctx.strokeStyle = wasBlind ? "#ff4d4d" : "#a4b8eb"; // Linea rossa se era Blind Mode
     ctx.lineWidth = (2 / 520) * canvas.height;
     ctx.stroke();
-    const dt = rp[i + 1].t - rp[i].t;
+
+    const dt = customPoints[i + 1].t - customPoints[i].t;
     i++;
     setTimeout(step, dt);
   }
+
   setTimeout(step, 0);
 }
+
+
 
 
       /* =======================================
@@ -1919,6 +1954,9 @@ function updateLeaderboard() {
         attemptCount = 0;
         runNumber = 1;
         editingMode = true;
+const container = document.querySelector('.container');
+container.style.background = "url('sfondoedit.png') no-repeat center center";
+container.style.backgroundSize = "cover";
         resetTrack(currentTrack);
       }
       /* =======================================
@@ -2208,12 +2246,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 let lastTap = 0;
 function handleDoubleConfirm() {
-  if (editingMode && !draggedElement) {
-    editingMode = false;
-    callParticipant();
-    showTemporaryMessage("Slope confirmed! Race starting...", 2000);
-  }
+    if (editingMode && !draggedElement) {
+        editingMode = false;
+        callParticipant();
+        showTemporaryMessage("Slope confirmed! Race starting...", 2000);
+
+        // 🔄 Ripristina lo sfondo della gara
+        const container = document.querySelector('.container');
+        container.style.background = "url('sfondo.png') no-repeat center center";
+        container.style.backgroundSize = "cover";
+    }
 }
+
 /* =======================================
    Fine Script
 ======================================= */
